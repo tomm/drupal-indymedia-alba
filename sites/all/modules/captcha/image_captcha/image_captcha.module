@@ -1,11 +1,11 @@
 <?php
-// $Id: image_captcha.module,v 1.8.2.2 2008/04/07 22:25:45 soxofaan Exp $
+// $Id: image_captcha.module,v 1.17 2009/01/03 22:14:45 soxofaan Exp $
 
 /**
  * Implementation of image CAPTCHA for use with the CAPTCHA module
  */
 
-define('IMAGE_CAPTCHA_ALLOWED_CHARACTERS', 'aAbBCdEeFfGHhijKLMmNPQRrSTtWXYZ23456789%$#!@+?*');
+define('IMAGE_CAPTCHA_ALLOWED_CHARACTERS', 'aAbBCdEeFfGHhijKLMmNPQRrSTtWXYZ23456789');
 
 /**
  * Implementation of hook_help().
@@ -13,10 +13,11 @@ define('IMAGE_CAPTCHA_ALLOWED_CHARACTERS', 'aAbBCdEeFfGHhijKLMmNPQRrSTtWXYZ23456
 function image_captcha_help($path, $arg) {
   switch ($path) {
     case 'admin/user/captcha/image_captcha':
-      $output = '<p>'. t('The image CAPTCHA is a popular challenge where a random textual code is obfuscated in an image. The image is generated on the fly for each request, which is rather CPU intensive for the server. Be carefull with the size and computation related settings.') .'</p>';
+      $output = '<p>'. t('The image CAPTCHA is a popular challenge where a random textual code is obfuscated in an image. The image is generated on the fly for each request, which is rather CPU intensive for the server. Be careful with the size and computation related settings.') .'</p>';
       if (in_array('Image', image_captcha_captcha('list'))) {
-        $result = image_captcha_captcha('generate', 'Image');
-        $img = $result['form']['captcha_image']['#value'];
+        require_once('./'. drupal_get_path('module', 'captcha') .'/captcha.admin.inc');
+        $captcha = _captcha_generate_example_challenge('image_captcha', 'Image');
+        $img = $captcha['captcha_image']['#value'];
         $output .= t('<p>Example image, generated with the current settings:</p>!img', array('!img' => $img));
       }
       return $output;
@@ -102,7 +103,7 @@ function _image_captcha_utf8_split($str) {
 /**
  * Implementation of hook_captcha
  */
-function image_captcha_captcha($op, $captcha_type='') {
+function image_captcha_captcha($op, $captcha_type='', $arg3='') {
   switch ($op) {
     case 'list':
       // only offer image CAPTCHA if possible to generate an image CAPTCHA
@@ -113,6 +114,7 @@ function image_captcha_captcha($op, $captcha_type='') {
       else {
         return array();
       }
+
     case 'generate':
       if ($captcha_type == 'Image') {
         // In offline mode, the image CAPTCHA does not work because the request
@@ -129,26 +131,48 @@ function image_captcha_captcha($op, $captcha_type='') {
         for ($i = 0; $i < $code_length; $i++) {
           $code .= $allowed_chars[array_rand($allowed_chars)];
         }
-        // store the answer in $_SESSION for the image generator function (which happens in another http request)
-        $seed = mt_rand();
-        $_SESSION['image_captcha'][$seed] = $code;
+
+        $captcha_sid = $arg3;
+
         // build the result to return
         $result = array();
+
+        // Handle the case insesitivity option and change the code to lower case
+        // before saving it as solution.
+        if (variable_get('image_captcha_case_insensitive', FALSE)) {
+          $code = strtolower($code);
+          $result['preprocess'] = TRUE;
+          $description = t('Enter the characters (without spaces) shown in the image.');
+        }
+        else {
+          $description = t('Enter the characters shown in the image. Ignore spaces and be careful about upper and lower case.');
+        }
+
         $result['solution'] = $code;
+        // Generate image source URL (add timestamp to avoid problems with
+        // client side caching: subsequent images of the same CAPTCHA session
+        // have the same URL, but should display a different code).
+        $img_src = check_url(url("image_captcha/$captcha_sid/". time()));
         $result['form']['captcha_image'] = array(
           '#type' => 'markup',
-          '#value' => '<img src="'. check_url(url("image_captcha/$seed")) .'" alt="'. t('Image CAPTCHA') .'" title="'. t('Image CAPTCHA') .'" />',
+          '#value' => '<img src="'. $img_src .'" alt="'. t('Image CAPTCHA') .'" title="'. t('Image CAPTCHA') .'" />',
           '#weight' => -2,
         );
         $result['form']['captcha_response'] = array(
           '#type' => 'textfield',
           '#title' => t('What code is in the image?'),
-          '#description' => t('Copy the characters (respecting upper/lower case) from the image.'),
+          '#description' => $description,
           '#weight' => 0,
           '#required' => TRUE,
           '#size' => 15,
         );
         return $result;
+      }
+
+    case 'preprocess':
+      // Preprocessing the response for case insensitive validation (see above).
+      if ($captcha_type == 'Image') {
+        return strtolower($arg3);
       }
     break;
   }

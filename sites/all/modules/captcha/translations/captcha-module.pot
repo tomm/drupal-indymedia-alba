@@ -1,26 +1,23 @@
-# $Id: captcha-module.pot,v 1.1.2.2 2008/03/22 18:15:42 soxofaan Exp $
+# $Id: captcha-module.pot,v 1.4 2008/06/04 08:24:38 soxofaan Exp $
 #
 # LANGUAGE translation of Drupal (general)
 # Copyright YEAR NAME <EMAIL@ADDRESS>
 # Generated from files:
-#  captcha.admin.inc,v 1.5.2.5 2008/03/09 02:16:57 soxofaan
-#  image_captcha.admin.inc,v 1.3 2008/01/07 13:34:53 soxofaan
-#  captcha.module,v 1.58.2.5 2008/03/09 02:16:57 soxofaan
-#  captcha.info,v 1.5 2007/10/27 18:24:50 robloach
-#  image_captcha.user.inc,v 1.3 2008/01/07 13:34:53 soxofaan
-#  image_captcha.module,v 1.8.2.1 2008/03/09 01:42:07 soxofaan
-#  captcha.install,v 1.3.2.2 2008/03/20 10:27:53 soxofaan
-#  image_captcha.info,v 1.3 2007/12/11 12:05:32 soxofaan
-#  text_captcha.info,v 1.3 2008/01/04 14:29:58 soxofaan
-#  text_captcha.admin.inc,v 1.1 2008/01/04 14:29:58 soxofaan
-#  text_captcha.user.inc,v 1.1 2008/01/04 14:29:58 soxofaan
-#  text_captcha.module,v 1.3.2.1 2008/02/27 15:20:51 soxofaan
+#  captcha.admin.inc,v 1.9 2008/03/08 04:27:12 soxofaan
+#  image_captcha.admin.inc,v 1.5 2008/02/17 12:49:24 soxofaan
+#  captcha.module,v 1.65 2008/03/08 04:27:12 soxofaan
+#  captcha.pages.inc,v 1.2 2008/03/08 04:27:12 soxofaan
+#  captcha.info,v 1.7 2008/02/17 12:49:24 soxofaan
+#  image_captcha.user.inc,v 1.5 2008/02/17 12:49:24 soxofaan
+#  image_captcha.module,v 1.10 2008/02/17 12:49:24 soxofaan
+#  captcha.install,v 1.6 2008/02/17 18:35:25 soxofaan
+#  image_captcha.info,v 1.5 2008/02/17 12:49:24 soxofaan
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2008-03-22 19:10+0100\n"
+"POT-Creation-Date: 2008-03-08 06:39+0100\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -39,10 +36,6 @@ msgstr ""
 
 #: captcha.admin.inc:34
 msgid "This option is very helpful to enable/disable challenges on forms. When enabled, users with the \"%admincaptcha\" permission will see CAPTCHA administration links on all forms (except on administrative pages, which shouldn't be accessible to untrusted users in the first place). These links make it possible to enable a challenge of the desired type or disable it."
-msgstr ""
-
-#: captcha.admin.inc:34 captcha.module:96
-msgid "administer CAPTCHA settings"
 msgstr ""
 
 #: captcha.admin.inc:39
@@ -177,6 +170,34 @@ msgstr ""
 msgid "10 more examples of this challenge."
 msgstr ""
 
+#: (duplicate) captcha.pages.inc:66;53;161 captcha.module:202;115  captcha.info:0 image_captcha/image_captcha.user.inc:28 image_captcha/image_captcha.module:91
+msgid "CAPTCHA"
+msgstr ""
+
+#: captcha.pages.inc:108
+msgid "Another challenge"
+msgstr ""
+
+#: captcha.pages.inc:109
+msgid "Get another challenge"
+msgstr ""
+
+#: captcha.pages.inc:144
+msgid "CAPTCHA test failed (unknown challenge_id)."
+msgstr ""
+
+#: captcha.pages.inc:156
+msgid "The answer you entered for the CAPTCHA was not correct."
+msgstr ""
+
+#: captcha.pages.inc:53
+msgid "CAPTCHA problem: hook_captcha() of module %module returned nothing when trying to retrieve challenge type %type for form %form_id."
+msgstr ""
+
+#: captcha.pages.inc:161
+msgid "%form_id post blocked by CAPTCHA module: challenge \"%challenge\" (by module \"%module\"), user answered \"%response\", but the solution was \"%solution\"."
+msgstr ""
+
 #: captcha.module:24
 msgid "\"CAPTCHA\" is an acronym for \"Completely Automated Public Turing test to tell Computers and Humans Apart\". It is typically a challenge-response test to determine whether the user is human. The CAPTCHA module is a tool to fight automated submission by malicious users (spamming) of for example comments forms, user registration forms, guestbook forms, etc. You can extend the desired forms with an additional challenge, which should be easy for a human to solve correctly, but hard enough to keep automated scripts and spam bots out."
 msgstr ""
@@ -205,107 +226,91 @@ msgstr ""
 msgid "Users with the \"%skipcaptcha\" <a href=\"@perm\">permission</a> won't be offered a challenge. Be sure to grant this permission to the trusted users (e.g. site administrators). If you want to test a protected form, be sure to do it as a user without the \"%skipcaptcha\" permission (e.g. as anonymous user)."
 msgstr ""
 
-#: captcha.module:41;96
-msgid "skip CAPTCHA"
-msgstr ""
-
-#: captcha.module:132
+#: captcha.module:149
 msgid "This question is for testing whether you are a human visitor and to prevent automated spam submissions."
 msgstr ""
 
-#: (duplicate) captcha.module:211;279;108 ;198;340;53;64 captcha.info:0 image_captcha/image_captcha.user.inc:28 image_captcha/image_captcha.module:91
-msgid "CAPTCHA"
-msgstr ""
-
-#: captcha.module:284
+#: captcha.module:207
 msgid "Untrusted users will see a CAPTCHA here (!settings)."
 msgstr ""
 
-#: captcha.module:285
+#: captcha.module:208
 msgid "general CAPTCHA settings"
 msgstr ""
 
-#: captcha.module:289
+#: captcha.module:212
 msgid "Enabled challenge"
 msgstr ""
 
-#: captcha.module:290
+#: captcha.module:213
 msgid "\"@type\" by module \"@module\" (!change, !disable)"
 msgstr ""
 
-#: captcha.module:293
+#: captcha.module:216
 msgid "change"
 msgstr ""
 
-#: captcha.module:294
+#: captcha.module:217
 msgid "disable"
 msgstr ""
 
-#: captcha.module:300
+#: captcha.module:223
 msgid "Place a CAPTCHA here for untrusted users."
 msgstr ""
 
-#: captcha.module:326
-msgid "Invalid CAPTCHA token."
-msgstr ""
-
-#: captcha.module:335
-msgid "The answer you entered for the CAPTCHA was not correct."
-msgstr ""
-
-#: captcha.module:448
+#: captcha.module:247
 msgid "Math Question"
 msgstr ""
 
-#: captcha.module:449
+#: captcha.module:248
 msgid "Solve this simple math problem and enter the result. E.g. for 1+3, enter 4."
 msgstr ""
 
-#: captcha.module:450
+#: captcha.module:249
 msgid "@x + @y = "
 msgstr ""
 
-#: (duplicate) captcha.module:109 
+#: (duplicate) captcha.module:116
 msgid "Already @counter blocked form submissions"
 msgstr ""
 
-#: captcha.module:198
-msgid "CAPTCHA problem: hook_captcha() of module %module returned nothing when trying to retrieve challenge type %type for form %form_id."
+#: captcha.install:9
+msgid "This table describes which challenges should be added to which forms."
 msgstr ""
 
-#: captcha.module:340
-msgid "%form_id post blocked by CAPTCHA module: challenge \"%challenge\" (by module \"%module\"), user answered \"%response\", but the solution was \"%solution\"."
+#: captcha.install:12
+msgid "The form_id of the form to add a CAPTCHA to."
 msgstr ""
 
-#: captcha.module:54
-msgid "Administer how and where CAPTCHAs are used."
+#: captcha.install:18
+msgid "The module that provides the challenge."
 msgstr ""
 
-#: captcha.module:69
-msgid "General settings"
+#: captcha.install:23
+msgid "The challenge type to use."
 msgstr ""
 
-#: captcha.module:74
-msgid "Examples"
+#: captcha.install:31;154
+msgid "Stores the solutions of the generated challenges."
 msgstr ""
 
-#: captcha.module:75
-msgid "An overview of the available challenge types with examples."
+#: captcha.install:34;157
+msgid "Primary Key: Unique challenge ID."
 msgstr ""
 
-#: captcha.module:83
-msgid "CAPTCHA point adminstration"
+#: captcha.install:39;162
+msgid "Solution of the challenge."
 msgstr ""
 
-#: captcha.module:0
-msgid "captcha"
+#: captcha.install:46;169
+msgid "Session ID of the user."
 msgstr ""
 
-#: captcha.install:41
-msgid "You can now <a href=\"!captcha_admin\">configure the CAPTCHA module</a> for your site."
+#: captcha.install:53;176
+msgid "A Unix timestamp indicating when the challenge was generated."
 msgstr ""
 
-#: captcha.install:82
+#: captcha.install:119
 msgid "Unsupported database."
 msgstr ""
 
@@ -313,7 +318,7 @@ msgstr ""
 msgid "Base CAPTCHA module for adding challenges to arbitrary forms."
 msgstr ""
 
-#: captcha.info:0 image_captcha/image_captcha.info:0 text_captcha/text_captcha.info:0
+#: captcha.info:0 image_captcha/image_captcha.info:0
 msgid "Spam control"
 msgstr ""
 
@@ -422,7 +427,7 @@ msgid "Smooth distortion"
 msgstr ""
 
 #: image_captcha/image_captcha.admin.inc:115
-msgid "This option enables bilineair interpolation of the distortion which makes the image look smoother, but it is more CPU intensive."
+msgid "This option enables bilinear interpolation of the distortion which makes the image look smoother, but it is more CPU intensive."
 msgstr ""
 
 #: image_captcha/image_captcha.admin.inc:120
@@ -430,11 +435,11 @@ msgid "Double vision"
 msgstr ""
 
 #: image_captcha/image_captcha.admin.inc:122
-msgid "When enabled, characters appear twice in the image, overlayed onto each other."
+msgid "When enabled, characters appear twice in the image, overlaid onto each other."
 msgstr ""
 
 #: image_captcha/image_captcha.admin.inc:127
-msgid "Add salt and peper noise"
+msgid "Add salt and pepper noise"
 msgstr ""
 
 #: image_captcha/image_captcha.admin.inc:129
@@ -478,15 +483,11 @@ msgid "Generation of image CAPTCHA failed. Check your image CAPTCHA configuratio
 msgstr ""
 
 #: image_captcha/image_captcha.module:16
-msgid "The image CAPTCHA is a popular challenge where a random textual code is obfuscated in an image. The image is generated on the fly for each request, which is rather CPU intensive for the server. Be carefull with the size and computation related settings."
+msgid "The image CAPTCHA is a popular challenge where a random textual code is obfuscated in an image. The image is generated on the fly for each request, which is rather CPU intensive for the server. Be careful with the size and computation related settings."
 msgstr ""
 
 #: image_captcha/image_captcha.module:20
 msgid "<p>Example image, generated with the current settings:</p>!img"
-msgstr ""
-
-#: image_captcha/image_captcha.module:139;139;33 image_captcha/image_captcha.info:0
-msgid "Image CAPTCHA"
 msgstr ""
 
 #: image_captcha/image_captcha.module:144
@@ -501,103 +502,10 @@ msgstr ""
 msgid "Encountered an illegal byte while splitting an utf8 string in characters."
 msgstr ""
 
-#: image_captcha/image_captcha.module:0
-msgid "image_captcha"
+#: image_captcha/image_captcha.info:0
+msgid "Image CAPTCHA"
 msgstr ""
 
 #: image_captcha/image_captcha.info:0
 msgid "Provides an image based CAPTCHA."
 msgstr ""
-
-#: text_captcha/text_captcha.admin.inc:13
-msgid "Kind of words to use in the phrase"
-msgstr ""
-
-#: text_captcha/text_captcha.admin.inc:15
-msgid "Generate nonsense random words."
-msgstr ""
-
-#: text_captcha/text_captcha.admin.inc:16
-msgid "Use user defined words."
-msgstr ""
-
-#: text_captcha/text_captcha.admin.inc:23
-msgid "User defined words"
-msgstr ""
-
-#: text_captcha/text_captcha.admin.inc:25
-msgid "Enter a bunch of space separated words (at least @min)."
-msgstr ""
-
-#: text_captcha/text_captcha.admin.inc:30
-msgid "Number of words in the phrase"
-msgstr ""
-
-#: text_captcha/text_captcha.admin.inc:48
-msgid "You need to enter at least @min words if you want to use user defined words."
-msgstr ""
-
-#: text_captcha/text_captcha.admin.inc:57
-msgid "Number of words in the phrase should be between 4 and 10."
-msgstr ""
-
-#: text_captcha/text_captcha.user.inc:51
-msgid "first"
-msgstr ""
-
-#: text_captcha/text_captcha.user.inc:51
-msgid "second"
-msgstr ""
-
-#: text_captcha/text_captcha.user.inc:51
-msgid "third"
-msgstr ""
-
-#: text_captcha/text_captcha.user.inc:52
-msgid "fourth"
-msgstr ""
-
-#: text_captcha/text_captcha.user.inc:52
-msgid "fifth"
-msgstr ""
-
-#: text_captcha/text_captcha.user.inc:52
-msgid "sixth"
-msgstr ""
-
-#: text_captcha/text_captcha.user.inc:52
-msgid "seventh"
-msgstr ""
-
-#: text_captcha/text_captcha.user.inc:53
-msgid "eighth"
-msgstr ""
-
-#: text_captcha/text_captcha.user.inc:53
-msgid "ninth"
-msgstr ""
-
-#: text_captcha/text_captcha.user.inc:53
-msgid "tenth"
-msgstr ""
-
-#: text_captcha/text_captcha.module:18
-msgid "In this challenge the visitor is asked for the n<sup>th</sup> word of a given phrase."
-msgstr ""
-
-#: text_captcha/text_captcha.module:58
-msgid "What is the @nth word in the phrase \"@words\"?"
-msgstr ""
-
-#: text_captcha/text_captcha.module:28 text_captcha/text_captcha.info:0
-msgid "Text CAPTCHA"
-msgstr ""
-
-#: text_captcha/text_captcha.module:0
-msgid "text_captcha"
-msgstr ""
-
-#: text_captcha/text_captcha.info:0
-msgid "Provides a simple text based CAPTCHA."
-msgstr ""
-

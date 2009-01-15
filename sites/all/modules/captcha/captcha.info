@@ -1,12 +1,12 @@
-; $Id: captcha.info,v 1.5 2007/10/27 18:24:50 robloach Exp $
+; $Id: captcha.info,v 1.7 2008/02/17 12:49:24 soxofaan Exp $
 name = CAPTCHA
 description = Base CAPTCHA module for adding challenges to arbitrary forms.
 package = "Spam control"
 core = 6.x
 
-; Information added by drupal.org packaging script on 2008-04-11
-version = "6.x-1.0-rc2"
+; Information added by drupal.org packaging script on 2009-01-03
+version = "6.x-2.0-beta1"
 core = "6.x"
 project = "captcha"
-datestamp = "1207904704"
+datestamp = "1231021814"
 

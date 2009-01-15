@@ -1,5 +1,5 @@
 <?php
-// $Id: image_captcha.install,v 1.2 2007/10/27 14:44:16 robloach Exp $
+// $Id: image_captcha.install,v 1.6 2008/03/20 10:37:09 soxofaan Exp $
 
 /**
  * On uninstall: remove module variables and clear variable cache

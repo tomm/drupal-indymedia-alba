@@ -1,5 +1,5 @@
 <?php
-// $Id: captcha.admin.inc,v 1.5.2.6 2008/03/29 17:20:25 soxofaan Exp $
+// $Id: captcha.admin.inc,v 1.12 2009/01/03 22:14:44 soxofaan Exp $
 
 /**
  * Return an array with the available CAPTCHA types, for use as options array
@@ -297,7 +297,19 @@ function captcha_point_disable_confirm_submit($form, &$form_state) {
 }
 
 /**
- * Funtion for generating a page with CAPTCHA examples
+ * Helper function for generating an example challenge.
+ */
+function _captcha_generate_example_challenge($module, $type) {
+  $captcha_sid = _captcha_generate_captcha_session(CAPTCHA_STATUS_EXAMPLE);
+  $captcha = call_user_func_array($module .'_captcha', array('generate', $type, $captcha_sid));
+  _captcha_update_captcha_session($captcha_sid, $captcha['solution']);
+  $captcha['form']['captcha_response']['#default_value'] = $captcha['solution'];
+  return $captcha['form'];
+}
+
+/**
+ * Funtion for generating a page with CAPTCHA examples.
+ *
  * If the arguments $module and $challenge are not set, generate a list with
  * examples of the available CAPTCHA types.
  * If $module and $challenge are set, generate 10 examples of the concerning
@@ -306,12 +318,9 @@ function captcha_point_disable_confirm_submit($form, &$form_state) {
 function captcha_examples($form_state, $module, $challenge) {
   $form = array();
   if ($module && $challenge) {
-    // generate 10 examples
+    // Generate 10 example challenges.
     for ($i=0; $i<10; $i++) {
-      // generate CAPTCHA
-      $captcha = call_user_func_array($module .'_captcha', array('generate', $challenge));
-      // add form elements
-      $form["challenge_{$i}"] = $captcha['form'];
+      $form["challenge_{$i}"] = _captcha_generate_example_challenge($module, $challenge);
     }
   }
   else {
@@ -323,13 +332,10 @@ function captcha_examples($form_state, $module, $challenge) {
       $challenges = call_user_func_array($module .'_captcha', 'list');
       if ($challenges) {
         foreach ($challenges as $ckey => $challenge) {
-          // generate CAPTCHA
-          $captcha = call_user_func_array($module .'_captcha', array('generate', $challenge));
-          // build form
           $form["captcha_{$mkey}_{$ckey}"] = array(
             '#type' => 'fieldset',
             '#title' => t('Challenge "%challenge" by module "%module"', array('%challenge' => $challenge, '%module' => $module)),
-            'challenge' => $captcha['form'],
+            'challenge' => _captcha_generate_example_challenge($module, $challenge),
             'more_examples' => array(
               '#value' => l(t('10 more examples of this challenge.'), "admin/user/captcha/captcha/examples/$module/$challenge"),
             ),

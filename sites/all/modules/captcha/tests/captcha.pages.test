@@ -1,0 +1,109 @@
+<?php
+// $Id: captcha.pages.test,v 1.2 2008/06/04 08:24:38 soxofaan Exp $
+
+/**
+* @file Tests for the CAPTCHA functionality.
+*/
+class CaptchaPagesTest extends DrupalTestCase {
+
+  /**
+   * User with CAPTCHA administration permission
+   */
+  var $admin_user;
+
+  /**
+   * Untrusted (but authenticated) user
+   */
+  var $untrusted_user;
+
+  /**
+   * Drupal SimpleTest method: return metadata about the test.
+   */
+  function get_info() {
+    return array(
+      'name'  => t('CAPTCHA functionality'),
+      'desc'  => t('Test the CAPTCHA functionality.'),
+      'group' => t('CAPTCHA module'),
+    );
+  }
+
+  /**
+   * SimpleTest core method: code run before each and every test method.
+   *
+   * Optional. You only need this if you have setup tasks.
+   */
+  function setUp() {
+    // Always call the setUp() function from the parent class.
+    parent::setUp();
+
+    // Make sure that CAPTCHA module is enabled.
+    $this->drupalModuleEnable('captcha');
+
+    // Create a filter admin user
+    $permissions = array('administer CAPTCHA settings');
+    $this->admin_user = $this->drupalCreateUserRolePerm($permissions);
+
+    // Create a normal user for page creation
+    $permissions = array();
+    $this->untrusted_user = $this->drupalCreateUserRolePerm($permissions);
+  }
+
+  /**
+   * SimpleTest core method: code run after each and every test method.
+   *
+   * Optional. You only need this if you have setup tasks.
+   */
+  function tearDown() {
+    // Always call the tearDown() function from the parent class.
+    parent::tearDown();
+  }
+
+
+  /**
+   * Helper function to set a CAPTCHA on a form
+   */
+  function _set_captcha_point($form_id, $captcha_type = 'captcha/Math') {
+    // log in as admin, but first disable the CAPTCHA module to avoid that
+    // it would protect the login form
+    $this->drupalModuleDisable('image_captcha');
+    $this->drupalModuleDisable('captcha');
+    $this->drupalLoginUser($this->admin_user);
+    $this->drupalModuleEnable('captcha');
+    // set CAPTCHA on login form
+    $form_values = array(
+      'captcha_point_form_id' => $form_id,
+      'captcha_type' => $captcha_type,
+    );
+    $this->drupalPost('admin/user/captcha/captcha/captcha_point', $form_values, t('Save'));
+    $this->assertText(t('Saved CAPTCHA point settings.'), t('Set CAPTCHA on form %form_id', array('%form_id' => $form_id)));
+    // log out as admin
+    $this->drupalGet('logout');
+  }
+
+  /**
+   * Test CAPTCHA on user login form
+   */
+  function test_captcha_on_login_form() {
+    // set a CAPTCHA on the login form
+    $this->_set_captcha_point('user_login', 'captcha/Math');
+
+    // log in untrusted_user with wront captcha_response
+    // (based on DrupalTestCase->drupalLoginUser())
+    $user = $this->untrusted_user;
+    $this->drupalGet('user');
+    $form_values = array(
+      'name' => $user->name,
+      'pass' => $user->pass_raw,
+      'captcha_response' => '_',
+    );
+    $this->drupalPost('user', $form_values, t('Log in'));
+    // check that the login failed
+    $this->drupalGet('user');
+    $this->assertNoText($user->name, t('CAPTCHA can prevent logging in'));
+
+    // remove the CAPTCHA again from the login form
+    /// @todo: restore to original CAPTCHA type instead of setting it to none
+    $this->_set_captcha_point('user_login', 'none');
+  }
+
+}

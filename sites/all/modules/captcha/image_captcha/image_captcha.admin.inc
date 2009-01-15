@@ -1,5 +1,5 @@
 <?php
-// $Id: image_captcha.admin.inc,v 1.3.2.1 2008/04/06 15:27:27 soxofaan Exp $
+// $Id: image_captcha.admin.inc,v 1.12 2009/01/03 22:14:45 soxofaan Exp $
 
 /**
  * function to get a list of available fonts
@@ -41,6 +41,13 @@ function image_captcha_settings_form() {
     '#options' => array(2 => 2, 3, 4, 5, 6, 7, 8, 9, 10),
     '#default_value' => (int) variable_get('image_captcha_code_length', 5),
     '#description' => t('The code length influences the size of the image. Note that larger values make the image generation more CPU intensive.'),
+  );
+  // Option fo case insensitive validation
+  $form['image_captcha_code_settings']['image_captcha_case_insensitive'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Case insensitive validation'),
+    '#description' => t('Enable this option to ignore uppercase/lowercase errors in the response. This can be usefull for certain target audiences or fonts.'),
+    '#default_value' => variable_get('image_captcha_case_insensitive', FALSE),
   );
 
   // font related stuff
@@ -149,19 +156,19 @@ function image_captcha_settings_form() {
     '#type' => 'checkbox',
     '#title' => t('Smooth distortion'),
     '#default_value' => variable_get('image_captcha_bilinair_interpolation', FALSE),
-    '#description' => t('This option enables bilineair interpolation of the distortion which makes the image look smoother, but it is more CPU intensive.'),
+    '#description' => t('This option enables bilinear interpolation of the distortion which makes the image look smoother, but it is more CPU intensive.'),
   );
   //double vision
   $form['image_captcha_distortion_and_noise']['image_captcha_double_vision'] = array(
     '#type' => 'checkbox',
     '#title' => t('Double vision'),
     '#default_value' => variable_get('image_captcha_double_vision', 0),
-    '#description' => t('When enabled, characters appear twice in the image, overlayed onto each other.'),
+    '#description' => t('When enabled, characters appear twice in the image, overlaid onto each other.'),
   );
   // noise
   $form['image_captcha_distortion_and_noise']['image_captcha_dot_noise'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Add salt and peper noise'),
+    '#title' => t('Add salt and pepper noise'),
     '#default_value' => variable_get('image_captcha_dot_noise', 0),
     '#description' => t('This option adds randomly colored point noise.'),
   );
@@ -191,7 +198,7 @@ function image_captcha_settings_form() {
  */
 function image_captcha_settings_form_pre_render($form) {
   if (count($form['image_captcha_font_settings']['image_captcha_font']['#options']) == 1) {
-    drupal_set_message(t('The image captcha module works best with a TrueType font file (TTF) for generating the images, but because of licencing issues it is not allowed to package fonts with the module. A simple built-in bitmap font is provided as default instead. You can install TrueType fonts yourself by putting them in the fonts directory of the image captcha module (directory "%fontsdir") or by uploading them to your Drupal file system (directory "%filesdir") with for example the upload module.', array('%fontsdir' => drupal_get_path('module', 'image_captcha') .'/fonts', '%filesdir' => file_directory_path())), 'warning');
+    drupal_set_message(t('The image CAPTCHA module works best with a TrueType font file (TTF) for generating the images, but because of licencing issues it is not allowed to package fonts with the module. A simple built-in bitmap font is provided as default instead. You can install TrueType fonts yourself by putting them in the fonts directory of the image CAPTCHA module (directory "%fontsdir") or by uploading them to your Drupal file system (directory "%filesdir") with for example the upload module.', array('%fontsdir' => drupal_get_path('module', 'image_captcha') .'/fonts', '%filesdir' => file_directory_path())), 'warning');
   }
   if ($form['image_captcha_font_settings']['image_captcha_font']['#default_value'] == 'BUILTIN') {
     drupal_set_message(t('The usage of the built-in bitmap font it is not recommended because of its small size and missing UTF-8 support.'), 'warning');

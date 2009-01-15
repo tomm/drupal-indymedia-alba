@@ -1,5 +1,5 @@
 <?php
-// $Id: captcha.module,v 1.58.2.6 2008/04/07 22:25:45 soxofaan Exp $
+// $Id: captcha.module,v 1.74 2009/01/03 22:14:45 soxofaan Exp $
 
 /**
  * @file
@@ -10,10 +10,14 @@
  *
  */
 
-define('CAPTCHA_UNSOLVED_CHALLENGES_MAX', 20);
+define('CAPTCHA_UNSOLVED_CHALLENGES_MAX', 20); //TODO: remove this?
 define('CAPTCHA_PERSISTENCE_SHOW_ALWAYS', 1);
 define('CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL_PER_FORM', 2);
 define('CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL', 3);
+
+define('CAPTCHA_STATUS_UNSOLVED', 0);
+define('CAPTCHA_STATUS_SOLVED', 1);
+define('CAPTCHA_STATUS_EXAMPLE', 2);
 
 /**
  * Implementation of hook_help().
@@ -83,7 +87,7 @@ function captcha_menu() {
     'weight' => 5,
   );
   $items['admin/user/captcha/captcha/captcha_point'] = array(
-    'title' => 'CAPTCHA point adminstration',
+    'title' => 'CAPTCHA point administration',
     'file' => 'captcha.admin.inc',
     'page callback' => 'captcha_point_admin',
     'page arguments' => array(5, 6),
@@ -129,6 +133,16 @@ function captcha_theme() {
 }
 
 /**
+ * Implementation of hook_cron().
+ *
+ * Remove old entries from captcha_sessions table.
+ */
+function captcha_cron() {
+  // remove challenges older than 1 day
+  db_query('DELETE FROM {captcha_sessions} WHERE timestamp < %d', time() - 60*60*24);
+}
+
+/**
  * Get the description which appears above the CAPTCHA in forms.
  * If the locale module is enabled, an optional language code can be given
  */
@@ -148,21 +162,6 @@ function _captcha_get_description($lang_code=NULL) {
 }
 
 /**
- * Helper function for checking if the CAPTCHA for the given form_id should
- * be skipped because of CAPTCHA persistence.
- */
-function _captcha_persistence_skip($form_id) {
-  switch (variable_get('captcha_persistence', CAPTCHA_PERSISTENCE_SHOW_ALWAYS)) {
-    case CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL:
-      return isset($_SESSION['captcha']['success']) && ($_SESSION['captcha']['success'] === TRUE);
-    case CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL_PER_FORM:
-      return isset($_SESSION['captcha'][$form_id]['success']) && ($_SESSION['captcha'][$form_id]['success'] === TRUE);
-    default:
-      return FALSE;
-  }
-}
-
-/**
  * Implementation of hook_form_alter().
  *
  * This function adds a CAPTCHA to forms for untrusted users if needed and adds
@@ -172,104 +171,8 @@ function captcha_form_alter(&$form, $form_state, $form_id) {
 
   if (!user_access('skip CAPTCHA')) {
     // Visitor does not have permission to skip the CAPTCHA
-
-    // Get CAPTCHA type and module for this form. Return if no CAPTCHA was set.
-    $result = db_query("SELECT module, type FROM {captcha_points} WHERE form_id = '%s'", $form_id);
-    if (!$result) {
-      return;
-    }
-    $captcha_point = db_fetch_object($result);
-    if (!$captcha_point || !$captcha_point->type) {
-      return;
-    }
-
-    // Prevent caching of the page with this CAPTCHA enabled form.
-    // This needs to be done even if the CAPTCHA will be skipped (because of
-    // persistence): other untrusted users should not get a cached page when
-    // the current untrusted user can skip the current CAPTCHA.
-    global $conf;
-    $conf['cache'] = FALSE;
-
-    // Do not present CAPTCHA if not CAPTCHA-persistent and user has already solved a CAPTCHA for this form
-    if (_captcha_persistence_skip($form_id)) {
-      return;
-    }
-
-    // Generate a CAPTCHA and its solution
-    $captcha = module_invoke($captcha_point->module, 'captcha', 'generate', $captcha_point->type);
-    if (!$captcha) {
-      //The selected module returned nothing, maybe it is disabled or it's wrong, we should watchdog that and then quit.
-      watchdog('CAPTCHA',
-        'CAPTCHA problem: hook_captcha() of module %module returned nothing when trying to retrieve challenge type %type for form %form_id.',
-        array('%type' => $captcha_point->type, '%module' => $captcha_point->module, '%form_id' => $form_id),
-        WATCHDOG_ERROR);
-      return;
-    }
-
-    // Add a CAPTCHA part to the form (depends on value of captcha_description)
-    $captcha_description = _captcha_get_description();
-    if ($captcha_description) {
-      // $captcha_description is not empty: CAPTCHA part is a fieldset with description
-      $form['captcha'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('CAPTCHA'),
-        '#description' => $captcha_description,
-        '#attributes' => array('class' => 'captcha'),
-      );
-    }
-    else {
-      // $captcha_description is empty: CAPTCHA part is an empty markup form element
-      $form['captcha'] = array(
-        '#type' => 'markup',
-        '#prefix' => '<div class="captcha">',
-        '#suffix' => '</div>',
-      );
-    }
-
-    // Add the form elements of the generated CAPTCHA to the form
-    $form['captcha'] = array_merge($form['captcha'], $captcha['form']);
-
-    // Store the solution of the generated CAPTCHA as an internal form value.
-    // This will be stored later in $_SESSION during the pre_render phase.
-    // It can't be saved at this point because hook_form_alter is not only run
-    // before form rendering, but also before form validation (which happens
-    // in a new (POST) request. Consequently the right CAPTCHA solution would be
-    // overwritten just before validation. The pre_render functions are not run
-    // before validation and are the right place to store the solution in $_SESSION.
-    $form['captcha']['captcha_solution'] = array(
-      '#type' => 'value',
-      '#value' => $captcha['solution'],
-    );
-
-    // The CAPTCHA token is used to differentiate between different instances
-    // of the same form. This makes it possible to request the same form a
-    // couple of times before submitting them. The solution of the CAPTCHA of
-    // each of these form instances will be stored at the pre_render phase in
-    // $_SESSION['captcha'][$form_id][$captcha_token]
-    $form['captcha']['captcha_token'] = array(
-      '#type' => 'hidden',
-      '#value' => md5(mt_rand()),
-    );
-
-    // other internal values needed for the validation phase
-    $form['captcha']['captcha_info'] = array(
-      '#type' => 'value',
-      '#value' => array(
-        'form_id' => $form_id,
-        'preprocess' => isset($captcha['preprocess'])? $captcha['preprocess'] : FALSE,
-        'module' => $captcha_point->module,
-        'type' => $captcha_point->type,
-      ),
-    );
-
-    // Add pre_render function for additional CAPTCHA processing.
-    $form['#pre_render'][] = 'captcha_pre_render';
-    // Add pre_render function for placement of CAPTCHA formt element (above submit buttons).
-    $form['#pre_render'][] = 'captcha_pre_render_place_captcha';
-
-    // Add a validation function for the CAPTCHA form element.
-    $form['captcha']['#element_validate'] =  array('captcha_validate');
-
+    require_once('./'. drupal_get_path('module', 'captcha') .'/captcha.pages.inc');
+    _captcha_form_alter_untrusted_user($form, $form_state, $form_id);
   }
   elseif (user_access('administer CAPTCHA settings') && variable_get('captcha_administration_mode', FALSE) && arg(0) != 'admin') {
     // For administrators: show CAPTCHA info and offer link to configure it
@@ -310,127 +213,20 @@ function captcha_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Implementation of form #validate.
+ * Helper function for generating a new CAPTCHA session ID
  */
-function captcha_validate($form, &$form_state) {
-  // Get answer and preprocess if needed
-  $captcha_response = $form_state['values']['captcha_response'];
-  $captcha_info = $form_state['values']['captcha_info'];
-  if ($captcha_info['preprocess']) {
-    $captcha_response = module_invoke($captcha_info['module'], 'captcha', 'preprocess', $captcha_info['type'], $captcha_response);
-  }
-  $form_id = $captcha_info['form_id'];
-  // not that we use $form_state['clicked_button']['#post']['captcha_token']
-  // here instead of $form_state['values']['captcha_token'], because the latter
-  // contains the captcha_token of the new form, while the former contains
-  // not the captcha token of the posted form.
-  $captcha_token = $form_state['clicked_button']['#post']['captcha_token'];
-  // Check if captcha_token exists
-  if (!isset($_SESSION['captcha'][$form_id][$captcha_token])) {
-    form_set_error('captcha_token', t('Invalid CAPTCHA token.'));
-  }
-  // Check answer
-  elseif ($captcha_response === $_SESSION['captcha'][$form_id][$captcha_token]) {
-    $_SESSION['captcha'][$form_id]['success'] = TRUE;
-    $_SESSION['captcha']['success'] = TRUE;
-  }
-  else {
-    // set form error
-    form_set_error('captcha_response', t('The answer you entered for the CAPTCHA was not correct.'));
-    // update wrong response counter
-    variable_set('captcha_wrong_response_counter', variable_get('captcha_wrong_response_counter', 0) + 1);
-    // log to watchdog if needed
-    if (variable_get('captcha_log_wrong_responses', FALSE)) {
-      watchdog('CAPTCHA',
-        '%form_id post blocked by CAPTCHA module: challenge "%challenge" (by module "%module"), user answered "%response", but the solution was "%solution".',
-        array('%form_id' => $form_id,
-          '%response' => $captcha_response, '%solution' => $_SESSION['captcha'][$form_id][$captcha_token],
-          '%challenge' => $captcha_info['type'], '%module' => $captcha_info['module'],
-        ),
-        WATCHDOG_NOTICE);
-    }
-    // If CAPTCHA was on a login form: stop validating, quit the current request
-    // and forward to the current page (like a reload) to prevent loging in.
-    // We do that because the log in procedure, which happens after
-    // captcha_validate(), does not check error conditions of extra form
-    // elements like the CAPTCHA.
-    if ($form_id == 'user_login' || $form_id == 'user_login_block') {
-      drupal_goto($_GET['q']);
-    }
-  }
-
-  // Unset the solution to prevent reuse of the same CAPTCHA solution
-  // by a spammer that repeats posting a form without requesting
-  // (and thus rendering) a new form. Note that a new CAPTCHA solution is only
-  // set at the pre_render phase.
-  unset($_SESSION['captcha'][$form_id][$captcha_token]);
+function _captcha_generate_captcha_session($status=CAPTCHA_STATUS_UNSOLVED) {
+  global $user;
+  db_query("INSERT into {captcha_sessions} (uid, sid, ip_address, timestamp, form_id, solution, status, attempts) VALUES (%d, '%s', '%s', %d, '%s', '%s', %d, %d)", $user->uid, session_id(), ip_address(), time(), $form_id, '', $status, 0);
+  $captcha_sid = db_last_insert_id('captcha_sessions', 'csid');
+  return $captcha_sid;
 }
 
 /**
- * Implementation of form #pre_render.
- *
- * The main purpose of this function is to store the solution of the CAPTCHA
- * in the $_SESSION variable.
+ * Helper function for updating the solution in the CAPTCHA session table.
  */
-function captcha_pre_render($form) {
-  $form_id = $form['captcha']['captcha_info']['#value']['form_id'];
-  // Unset the CAPTCHA if non-CAPTCHA persistent and the CAPTCHA has
-  // already been successfully solved for this form.
-  // This needs to be done in this pre_render phase when previewing for example
-  // nodes and comments before submission.
-  // On submission of such a forms for preview, captcha_form_alter() is called
-  // *before* the CAPTCHA validation function (which sets
-  // $_SESSION['captcha'][$form_id]['success'] to TRUE on a correctly answered
-  // CAPTCHA). After this the form_values are entered in the generated form
-  // and this form is presented with the preview.
-  // This means that captcha_form_alter() can't know if the CAPTCHA was
-  // correctly answered and consequently adds a CAPTCHA to the form.
-  // The pre_render phase happens after the validation phase and makes it
-  // possible to remove the CAPTCHA from the form after all.
-  if (_captcha_persistence_skip($form_id)) {
-    unset($form['captcha']);
-    return $form;
-  }
-
-  // count the number of unsolved CAPTCHAs and unset the oldest if too many
-  // minus 1 is needed because 'success' is also an item of $_SESSION['captcha'][$form_id]
-  if (isset($_SESSION['captcha'][$form_id]) && count($_SESSION['captcha'][$form_id]) - 1 > CAPTCHA_UNSOLVED_CHALLENGES_MAX) {
-    foreach (array_keys($_SESSION['captcha'][$form_id]) as $captcha_token) {
-      if ($captcha_token != 'success') {
-        unset($_SESSION['captcha'][$form_id][$captcha_token]);
-        break;
-      }
-    }
-  }
-  // store the current CAPTCHA solution in $_SESSION
-  $captcha_token = $form['captcha']['captcha_token']['#value'];
-  $_SESSION['captcha'][$form_id][$captcha_token] = $form['captcha']['captcha_solution']['#value'];
-  $_SESSION['captcha'][$form_id]['success'] = FALSE;
-  // empty the value of the captcha_response form item before rendering
-  $form['captcha']['captcha_response']['#value'] = '';
-  return $form;
-}
-
-/**
- * Pre_render function to place the CAPTCHA form element just above the last submit button
- */
-function captcha_pre_render_place_captcha($form) {
-  // search the weights of the buttons in the form
-  $button_weights = array();
-  foreach (element_children($form) as $key) {
-    if ($key == 'buttons' || isset($form[$key]['#type']) && ($form[$key]['#type'] == 'submit' || $form[$key]['#type'] == 'button')) {
-      $button_weights[] = $form[$key]['#weight'];
-    }
-  }
-  if ($button_weights) {
-    // set the weight of the CAPTCHA element a tiny bit smaller than the lightest button weight
-    // (note that the default resolution of #weight values is 1/1000 (see drupal/includes/form.inc))
-    $first_button_weight = min($button_weights);
-    $form['captcha']['#weight'] = $first_button_weight - 0.5/1000.0;
-    // make sure the form gets sorted before rendering
-    unset($form['#sorted']);
-  }
-  return $form;
+function _captcha_update_captcha_session($captcha_sid, $solution) {
+  db_query("UPDATE {captcha_sessions} SET timestamp=%d, solution='%s' WHERE csid=%d", time(), $solution, $captcha_sid);
 }
 
 /**
