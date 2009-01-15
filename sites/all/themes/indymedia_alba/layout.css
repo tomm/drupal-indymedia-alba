@@ -1,0 +1,42 @@
+#wrapper {
+  margin: 0 auto 0 auto;
+  min-width: 780px;
+  max-width: 1000px;
+}
+#header #logo, #branding, #main, .sidebar {
+  float: left;
+}
+#header-additional {
+  float: right;
+}
+#search {
+	padding: 5px;
+	margin: 0px;
+}
+#menu, #content, #footer {
+  clear: both;
+}
+#footer {
+  width: 100%;
+}
+td#col-center {
+  width: auto;
+  vertical-align: top;
+  padding: 0 12px 100px 12px;
+}
+td#col-left {
+  width: 25%;
+  padding: 0 1em 0 1em;
+  vertical-align: top;
+}
+td#col-right {
+  width: 25%;
+  padding: 0 1em 0 1em;
+  vertical-align: top;
+  margin-right: 0.5em;
+  overflow: hidden;
+}
+table#content {
+  padding: 0px;
+  margin: 0px;
+}

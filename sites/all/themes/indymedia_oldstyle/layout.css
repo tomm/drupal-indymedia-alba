@@ -1,0 +1,62 @@
+#wrapper {
+  margin: 0 auto 0 auto;
+  min-width: 720px;
+  max-width: 100%;
+}
+.one-sidebar #wrapper {
+  width: 100%;
+}
+.two-sidebars #wrapper {
+  width: 100%;
+}
+#header #logo, #branding, #main, .sidebar {
+  float: left;
+}
+#header-additional {
+  float: right;
+}
+#search {
+  position: absolute;
+  top: 10px;
+  right: 0px;
+}
+#menu, #content, #footer {
+  clear: both;
+}
+#main {
+  float: left;
+  margin-left: -110px;
+  margin-right: -110px;
+}
+.sidebar {
+  width: 100px;
+}
+#sidebar-left {
+  float: left;
+}
+#sidebar-right {
+  float: right;
+}
+#footer {
+  width: 100%;
+}
+td#col-center {
+  vertical-align: top;
+  padding: 0 12px 100px 12px;
+}
+td#col-left {
+  width: 10em;
+  padding: 0 1em 0 1em;
+  vertical-align: top;
+}
+td#col-right {
+  width: 12em;
+  padding: 0 1em 0 1em;
+  vertical-align: top;
+  margin-right: 0.5em;
+  overflow: hidden;
+}
+table#content {
+  padding: 0px;
+  margin: 0px;
+}

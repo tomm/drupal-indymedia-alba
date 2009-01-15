@@ -1,0 +1,17 @@
+name = Indymedia Alba
+description = A theme for Indymedia sites
+core = 6.x
+engine = phptemplate
+stylesheets[all][] = typography.css
+stylesheets[all][] = layout.css
+stylesheets[all][] = style.css
+
+regions[left] = Left sidebar
+regions[right] = Right sidebar
+regions[before_content] = Before content
+regions[content] = Content
+regions[left_after_content] = Left column after content
+regions[right_after_content] = Right column after content
+regions[header] = Header
+regions[footer] = Footer
+
