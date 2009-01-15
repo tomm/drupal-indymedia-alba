@@ -1,0 +1,358 @@
+# translation of el.po to Greek
+# $Id: el.po,v 1.1.2.1 2008/03/06 23:01:04 soxofaan Exp $
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  captcha.module,v 1.42.2.13 2007/07/26 15:40:33 robloach
+#  captcha.info,v 1.3.2.2 2007/07/10 22:02:33 robloach
+#  captcha.install,v 1.1.4.4 2007/07/24 00:45:39 robloach
+#  image_captcha.info,v 1.1.4.2 2007/07/10 22:02:34 robloach
+#  text_captcha.info,v 1.1.4.2 2007/07/10 22:02:35 robloach
+#
+# Vasileios Lourdas <lourdas_v@yahoo.gr>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: el\n"
+"POT-Creation-Date: 2007-08-15 01:34+0300\n"
+"PO-Revision-Date: 2007-08-15 01:38+0300\n"
+"Last-Translator: Vasileios Lourdas <lourdas_v@yahoo.gr>\n"
+"Language-Team: Greek <el@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms:  nplurals=2; plural=(n != 1);\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: captcha.module:41
+msgid "A captcha is a tool to fight automated spam submission of forms (e.g. user registration forms, comment forms, guestbook forms, etc.) by malicious users. A captcha is an extra field (or several fields) on a form presented to the user. It embodies a challenge, which should be easy for a normal human to solve (e.g. a simple math problem), but hard enough to keep automated scripts and spam bots out. Users with the 'skip captcha' <a href=\"@perm\">permission</a> won't be offered a captcha. Be sure to grant this permission to the trusted users (e.g. site administrators)."
+msgstr "Το captcha είναι ένα εργαλείο για την καταπολέμηση της ανεπιθύμητης αυτόματης υποβολής των φορμών (π.χ. φόρμες εγγραφών, φόρμες σχολίων, φόρμες επισκεπτών, κτλ.) από κακόβουλους χρήστες. Το captcha είναι ένα επιπλέον πεδίο (ή διάφορα πεδία) μιας φόρμας που παρουσιάζεται στο χρήστη. Περιλαμβάνει μια πρόκληση, που είναι εύκολο να λύσει ένας κανονικός άνθρωπος (π.χ. ένα απλό πρόβλημα μαθηματικών), αλλά αρκετά δύσκολο για να αποτρέπει αυτοματοποιημένα προγραμματάκια ή bot. Στους χρήστες με την <a href=\"@perm\">άδεια</a> 'αγνόηση του captcha' δε θα τους εμφανίζεται το captcha. Σιγουρευτείτε να δώσετε αυτή την άδεια σε έμπιστους χρήστες (π.χ. διαχειριστές του ιστοτόπου)."
+
+#: captcha.module:55;65;295 captcha.info:0
+msgid "Captcha"
+msgstr "Captcha"
+
+#: captcha.module:56
+msgid "Administer how and where Captchas are used."
+msgstr "Διαχείριση του πως και που θα χρησιμοποιείται το Captcha."
+
+#: captcha.module:104
+msgid "This question is used to make sure you are a human visitor and to prevent spam submissions."
+msgstr "Η ερώτηση αυτή χρησιμοποιείται για να επιβεβαιωθεί ότι είστε άνθρωπος και για την αποτροπή ανεπιθύμητων υποβολών."
+
+#: captcha.module:122
+msgid "Disabled captcha for form %form_id."
+msgstr "Απενεργοποιήθηκε το captcha για τη φόρμα %form_id."
+
+#: captcha.module:128
+msgid "Deleted captcha for form %form_id."
+msgstr "Διαγράφηκε το captcha για τη φόρμα %form_id."
+
+#: captcha.module:154
+msgid "Add captcha administration links to forms."
+msgstr "Προσθήκη των παραπομπών διαχείρισης του captcha στις φόρμες."
+
+#: captcha.module:156
+msgid "This option is very helpful to enable/disable captchas on forms. When enabled, users with the 'administer site configuration' permission will see captcha administration links on all forms (except on administrative pages, which shouldn't be accessible to untrusted users in the first place)."
+msgstr "Η επιλογή αυτή είναι χρήσιμη για την ενεργοποίηση/απενεργοποίηση των captcha στις φόρμες. Όταν είναι ενεργοποιημένη, χρήστες με την άδεια 'διαχείριση διευθέτησης ιστοτόπου' θα βλέπουν τις παραπομπές προς τη διαχείριση του captcha σε όλες τις φόρμες (εκτός από τις σελίδες διαχείρισης, που δεν είναι εξαρχής προσβάσιμες σε μη έμπιστους χρήστες)."
+
+#: captcha.module:161
+msgid "Select captcha types"
+msgstr "Επιλογή των τύπων captcha"
+
+#: captcha.module:162
+msgid "Select what kind of captcha challenge you want for each form."
+msgstr "Επιλέξτε τα είδη των προκλήσεων captcha που επιθυμείτε για κάθε φόρμα."
+
+#: captcha.module:188
+msgid "delete"
+msgstr "διαγραφή"
+
+#: captcha.module:195
+msgid "Captcha description"
+msgstr "Περιγραφή captcha"
+
+#: captcha.module:196
+msgid "With this description you can explain to the user why the captcha needs to be solved."
+msgstr "Με αυτή την περιγραφή μπορείτε να εξηγήσετε στο χρήστη γιατί πρέπει να επιλυθεί η πρόκληση του captcha."
+
+#: captcha.module:202
+msgid "Persistent captchas"
+msgstr "Εξακολουθητικά captcha"
+
+#: captcha.module:203
+msgid "If checked, the user will always have to solve a captcha. If not checked, the captcha check for a form will be omitted during the rest of the session once the user has successfully solved a captcha for that form."
+msgstr "Αν είναι επιλεγμένο, ο χρήστης θα πρέπει πάντα να επιλύει ένα captcha. Αν δεν είναι επιλεγμένο, ο έλεγχος captcha για μια φόρμα θα παραλείπεται καθόλη τη διάρκεια της συνόδου και αφού ο χρήστης έχει επιλύσει το captcha για αυτή τη φόρμα."
+
+#: captcha.module:209
+msgid "Submit"
+msgstr "Υποβολή"
+
+#: captcha.module:225
+msgid "Captcha type (module)"
+msgstr "Τύπος captcha (μονάδα)"
+
+#: captcha.module:225
+msgid "Operations"
+msgstr "Λειτουργίες"
+
+#: captcha.module:247
+msgid "Your captcha settings were saved."
+msgstr "Οι ρυθμίσεις captcha αποθηκεύθηκαν."
+
+#: captcha.module:283
+msgid "Captcha problem: hook_captcha() of module %module returned nothing when trying to retrieve captcha type %type for form %form_id."
+msgstr "Σφάλμα captcha: Η συνάρτηση hook_captcha() της μονάδας %module δεν επέστρεψε κάτι κατά τη διάρκεια επιστροφής του τύπου captcha %type για τη φόρμα %form_id."
+
+#: captcha.module:361;373
+msgid "Captcha administration"
+msgstr "Διαχείριση captcha"
+
+#: captcha.module:362
+msgid "The captcha challenge \"@type\" (by module \"@module\") is enabled here for untrusted users: !edit or !disable."
+msgstr "Η πρόκληση captcha \"@type\" (από τη μονάδα \"@module\") είναι ενεργοποιημένη για τους μη έμπιστους χρήστες: !edit ή !disable."
+
+#: captcha.module:365
+msgid "edit captcha type"
+msgstr "επεξεργασία του τύπου captcha"
+
+#: captcha.module:366
+msgid "disable captcha"
+msgstr "απενεργοποίηση του captcha"
+
+#: captcha.module:374
+msgid "Place a captcha challenge here for untrusted users."
+msgstr "Τοποθετείστε εδώ μια πρόκληση captcha για τους μη έμπιστους χρήστες."
+
+#: captcha.module:396
+msgid "Invalid captcha token."
+msgstr "Μη έγκυρο σύμβολο captcha."
+
+#: captcha.module:403
+msgid "The answer you entered to the captcha challenge is not correct."
+msgstr "Η απάντηση που δώσατε για την πρόκληση captcha δεν είναι σωστή."
+
+#: captcha.module:423
+msgid "You can't request more than @num captcha challenges without solving them. Your previous captcha challenges were flushed."
+msgstr "Δεν μπορείτε να ζητήσετε παραπάνω από @num προκλήσεις captcha προτού τις επιλύσετε. Οι προηγούμενες προκλήσεις σας captcha έχουν διαγραφεί."
+
+#: captcha.module:470
+msgid "Math Question: What is %problem?"
+msgstr "Μαθηματικό πρόβλημα: Πόσο κάνει το %problem;"
+
+#: captcha.module:471
+msgid "Solve this simple math problem and enter the result. E.g. for 1+3, enter 4."
+msgstr "Επιλύστε αυτό το απλό μαθηματικό πρόβλημα και εισάγετε το αποτέλεσμα. Π.χ. για το 1+3, εισάγετε 4."
+
+#: captcha.module:282;0
+msgid "captcha"
+msgstr "captcha"
+
+#: captcha.module:76
+msgid "administer captcha"
+msgstr "διαχείριση captcha"
+
+#: captcha.module:76
+msgid "skip captcha challenges"
+msgstr "αγνόηση των προκλήσεων captcha"
+
+#: captcha.install:31;75
+msgid "Unsupported database."
+msgstr "Μη υποστηριζόμενη βάση δεδομένων."
+
+#: captcha.install:41
+msgid "The installation of the captcha_points table and some default entries was successful"
+msgstr "Η εγκατάσταση του πίνακα captcha_points και ορισμένων εξ' ορισμού εγγραφών έγινε με επιτυχία"
+
+#: captcha.install:43
+msgid "The installation of the captcha module failed"
+msgstr "Η εγκατάσταση της μονάδας captcha απέτυχε"
+
+#: captcha.info:0
+msgid "Base captcha module for adding captcha challenges to registration, comment and contact forms for example."
+msgstr "Βασική μονάδα captcha για την προσθήκη προκλήσεων captcha για παράδειγμα στις φόρμες εγγραφής, σχολίου και επικοινωνίας."
+
+#: captcha.info:0 image_captcha/image_captcha.info:0
+#: text_captcha/text_captcha.info:0
+msgid "Spam control"
+msgstr "Έλεγχος ανεπιθύμητων μηνυμάτων"
+
+#: image_captcha/image_captcha.module:19
+msgid "The image captcha is the popular captcha type where a random text code is obfuscated in an image."
+msgstr "Το captcha εικόνας είναι ένας δημοφιλής τύπος captcha όπου ένας τυχαίος κωδικός κειμένου κρύβεται μέσα σε μια εικόνα."
+
+#: image_captcha/image_captcha.module:33 image_captcha/image_captcha.info:0
+msgid "Image captcha"
+msgstr "Εικόνα captcha"
+
+#: image_captcha/image_captcha.module:63
+msgid "Image captchas cannot be generated, because your PHP installation's GD library has no JPEG support."
+msgstr "Οι εικόνες captcha δεν μπορούν να δημιουργηθούν, γιατί η βιβλιοθήκη GD της εγκατάστασής σας PHP δεν έχει υποστήριξη για JPEG."
+
+#: image_captcha/image_captcha.module:69
+msgid "Characters to appear in the image"
+msgstr "Χαρακτήρες που θα εμφανίζονται στην εικόνα"
+
+#: image_captcha/image_captcha.module:74
+msgid "Font"
+msgstr "Γραμματοσειρά"
+
+#: image_captcha/image_captcha.module:76
+msgid "Path to a TrueType font file (.ttf), relative to the drupal root directory."
+msgstr "Η διαδρομή σε ένα αρχείο γραμματοσειράς τύπου TrueType (.ttf), σχετική με τον ριζικό κατάλογο του drupal."
+
+#: image_captcha/image_captcha.module:80
+msgid "Minimum captcha code length"
+msgstr "Ελάχιστο μήκος του κωδικού captcha"
+
+#: image_captcha/image_captcha.module:87
+msgid "Maximum captcha code length"
+msgstr "Μέγιστο μήκος του κωδικού captcha"
+
+#: image_captcha/image_captcha.module:94
+msgid "Double vision"
+msgstr "Διπλή εμφάνιση"
+
+#: image_captcha/image_captcha.module:96
+msgid "Characters appear twice in the image, overlayed onto each other."
+msgstr "Οι χαρακτήρες εμφανίζονται δύο φορές στην εικόνα, η μία επικαλυπτόμενη πάνω στην άλλη."
+
+#: image_captcha/image_captcha.module:100
+msgid "Add dots as noise"
+msgstr "Προσθήκη κουκκίδων ως θόρυβος"
+
+#: image_captcha/image_captcha.module:102
+msgid "Caution: Countless dots make the image harder to read."
+msgstr "Προσοχή: Οι πάρα πολλές κουκκίδες θα μετατρέψουν την εικόνα σας δυσκολότερη στην ανάγνωση."
+
+#: image_captcha/image_captcha.module:106
+msgid "Add lines as noise"
+msgstr "Προσθήκη γραμμών ως θόρυβος"
+
+#: image_captcha/image_captcha.module:108
+msgid "Caution: Lines have a large effect on readability."
+msgstr "Προσοχή: Οι γραμμές έχουν μεγάλη επίπτωση στην αναγνωσιμότητα."
+
+#: image_captcha/image_captcha.module:122
+msgid "Path to font does not exist."
+msgstr "Η διαδρομή προς τη γραμματοσειρά δεν υπάρχει."
+
+#: image_captcha/image_captcha.module:126
+msgid "Font is not TrueType (no .ttf extension)."
+msgstr "Η γραμματοσειρά δεν είναι τύπου TrueType (δεν έχει επέκταση .ttf)."
+
+#: image_captcha/image_captcha.module:131
+msgid "Minimum captcha code length should be an integer between 2 and 10 (and smaller than the maximum captcha code length)."
+msgstr "Το ελάχιστο μήκος του κωδικού captcha πρέπει να είναι ακέραιος αριθμός μεταξύ 2 και 10 (και μικρότερος από το μέγιστο μήκος του κωδικού captcha)."
+
+#: image_captcha/image_captcha.module:135
+msgid "Maximum captcha code length should be an integer between 2 and 10 (and larger than the minimum captcha code length)."
+msgstr "Το μέγιστο μήκος του κωδικού captcha πρέπει να είναι ακέραιος αριθμός μεταξύ 2 και 10 (και μεγαλύτερος από το ελάχιστο μήκος του κωδικού captcha)."
+
+#: image_captcha/image_captcha.module:176
+msgid "What code is in the image?"
+msgstr "Ποιος είναι ο κωδικός που εμφανίζεται στην εικόνα;"
+
+#: image_captcha/image_captcha.module:177
+msgid "Copy the characters (respecting upper/lower case) from the image."
+msgstr "Αντιγράψτε τους χαρακτήρες (διατηρώντας τα κεφαλαία/πεζά) από την εικόνα."
+
+#: image_captcha/image_captcha.module:0
+msgid "image_captcha"
+msgstr "image_captcha"
+
+#: image_captcha/image_captcha.info:0
+msgid "Captcha module that implements image based captchas."
+msgstr "Μονάδα captcha που υλοποιεί captcha που βασίζονται σε εικόνες."
+
+#: text_captcha/text_captcha.module:17
+msgid "This text based captcha presents a captcha phrase of a given number of words and the visitor is asked to enter the n'th word."
+msgstr "Αυτό το βασισμένο σε κείμενο captcha παρουσιάζει μια πρόταση captcha από ένα αριθμό λέξεων και ζητείται από τον επισκέπτη να εισάγει την ν-οστή λέξη."
+
+#: text_captcha/text_captcha.module:31 text_captcha/text_captcha.info:0
+msgid "Text captcha"
+msgstr "Κείμενο captcha"
+
+#: text_captcha/text_captcha.module:49
+msgid "Kind of words to use in the captcha phrase"
+msgstr "Είδος λέξεων που θα χρησιμοποιούνται στη φράση captcha"
+
+#: text_captcha/text_captcha.module:51
+msgid "Generate nonsense random words."
+msgstr "Δημιουργία χωρίς νόημα τυχαίων λέξεων."
+
+#: text_captcha/text_captcha.module:52
+msgid "Use user defined words."
+msgstr "Χρησιμοποίηση καθορισμένων από το χρήστη λέξεων."
+
+#: text_captcha/text_captcha.module:59
+msgid "User defined words"
+msgstr "Καθορισμένες από το χρήστη λέξεις"
+
+#: text_captcha/text_captcha.module:61
+msgid "Enter a bunch of space separated words (at least @min)."
+msgstr "Εισάγετε μια σειρά από λέξεις χωρισμένες με το κενό (τουλάχιστον @min)."
+
+#: text_captcha/text_captcha.module:66
+msgid "Number of words in the captcha phrase"
+msgstr "Αριθμός λέξεων στη φράση captcha"
+
+#: text_captcha/text_captcha.module:83
+msgid "You need to enter at least @min words if you want to use user defined words."
+msgstr "Πρέπει να εισάγετε τουλάχιστον @min λέξεις αν θέλετε να χρησιμοποιείτε καθορισμένες από το χρήστη λέξεις."
+
+#: text_captcha/text_captcha.module:92
+msgid "Number of words in the captcha phrase should be between 4 and 10."
+msgstr "Ο αριθμός των λέξεων στη φράση captcha πρέπει να είναι μεταξύ 4 και 10."
+
+#: text_captcha/text_captcha.module:144
+msgid "first"
+msgstr "πρώτη"
+
+#: text_captcha/text_captcha.module:144
+msgid "second"
+msgstr "δεύτερη"
+
+#: text_captcha/text_captcha.module:144
+msgid "third"
+msgstr "τρίτη"
+
+#: text_captcha/text_captcha.module:145
+msgid "fourth"
+msgstr "τέταρτη"
+
+#: text_captcha/text_captcha.module:145
+msgid "fifth"
+msgstr "πέμπτη"
+
+#: text_captcha/text_captcha.module:145
+msgid "sixth"
+msgstr "έκτη"
+
+#: text_captcha/text_captcha.module:145
+msgid "seventh"
+msgstr "έβδομη"
+
+#: text_captcha/text_captcha.module:146
+msgid "eighth"
+msgstr "όγδοη"
+
+#: text_captcha/text_captcha.module:146
+msgid "ninth"
+msgstr "ένατη"
+
+#: text_captcha/text_captcha.module:146
+msgid "tenth"
+msgstr "δέκατη"
+
+#: text_captcha/text_captcha.module:174
+msgid "What is the @nth word in the captcha phrase \"@words\"?"
+msgstr "Ποια είναι η @nth λέξη στη φράση captcha \"@words\";"
+
+#: text_captcha/text_captcha.module:0
+msgid "text_captcha"
+msgstr "text_captcha"
+
+#: text_captcha/text_captcha.info:0
+msgid "Captcha module that implements a simple text based captcha."
+msgstr "Μονάδα captcha που υλοποιεί captcha που βασίζονται σε απλό κείμενο."
+

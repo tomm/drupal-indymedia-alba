@@ -1,0 +1,77 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>FCKeditor</title>
+	<!-- $id$ -->
+	<script type="text/javascript">
+
+// #### URLParams: holds all URL passed parameters (like ?Param1=Value1&Param2=Value2)
+var FCKURLParams = new Object() ;
+
+var aParams = document.location.search.substr(1).split('&') ;
+for ( var i = 0 ; i < aParams.length ; i++ )
+{
+	var aParam = aParams[i].split('=') ;
+	var sParamName  = aParam[0] ;
+	var sParamValue = aParam[1] ;
+
+	FCKURLParams[ sParamName ] = sParamValue ;
+}
+
+// It is preferable to have the oFCKeditor object defined in the opener window,
+// so all the configurations will be there. In this way the popup doesn't need
+// to take care of the configurations "clonning".
+var oFCKeditor = window.opener[ FCKURLParams[ 'var' ] ] ;
+oFCKeditor.Width	= '100%' ;
+oFCKeditor.Height	= '100%' ;
+oFCKeditor.Value	= window.opener.document.getElementById( FCKURLParams[ 'el' ] ).value ;
+
+function Ok()
+{
+	var oEditor = FCKeditorAPI.GetInstance( oFCKeditor.InstanceName ) ;
+
+	window.opener.document.getElementById( FCKURLParams[ 'el' ] ).value = oEditor.GetXHTML( true ) ;		// "true" means you want it formatted.
+
+	window.opener.focus() ;
+	window.close() ;
+}
+
+function Cancel()
+{
+	var oEditor = FCKeditorAPI.GetInstance( oFCKeditor.InstanceName ) ;
+	
+	if ( oEditor.IsDirty() )
+	{
+		if ( !confirm( 'Are you sure you want to cancel? Your changes will be lost.' ) )
+			return ;
+	}
+
+	window.close() ;
+}
+
+	</script>
+</head>
+<body>
+	<table width="100%" height="100%">
+		<tr>
+			<td height="100%">
+				<script type="text/javascript">
+
+// For now, it is not possible to retrieve the output HTML, so we must do it by
+// hand. Future implementations of FCKeditor could bring a
+// oFCKeditor.CreateHtml() function.
+document.write( '<input type="hidden" id="' + oFCKeditor.InstanceName + '" name="' + oFCKeditor.InstanceName + '" value="' + oFCKeditor._HTMLEncode( oFCKeditor.Value ) + '" style="display:none" />' ) ;
+document.write( oFCKeditor._GetConfigHtml() ) ;
+document.write( oFCKeditor._GetIFrameHtml() ) ;
+
+				</script>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<input type="button" value="Ok" onclick="Ok();" style="width:120px" />
+				<input type="button" value="Cancel" onclick="Cancel();" />
+			</td>
+		</tr>
+	</table>
+</body>
+</html>

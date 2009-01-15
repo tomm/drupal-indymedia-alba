@@ -1,0 +1,12 @@
+; $Id: fckeditor.info,v 1.2.2.2 2008/03/18 13:50:45 wwalc Exp $
+name = FCKeditor
+description = "Enables the usage of FCKeditor (WYSIWYG) instead of plain text fields."
+core = 6.x
+
+
+; Information added by drupal.org packaging script on 2008-08-14
+version = "6.x-1.3-rc1"
+core = "6.x"
+project = "fckeditor"
+datestamp = "1218694812"
+

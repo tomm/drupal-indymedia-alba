@@ -1,0 +1,123 @@
+# translation of cs.po to Czech
+# Czech translation of Drupal (captcha.module)
+# Copyright 2007 Jakub Suchy <jakub.suchy@drupal.cz>
+# Generated from file: captcha.module,v 1.30 2007/01/13 17:48:05 wundo
+#
+# Jakub Suchy <jakub.suchy@drupal.cz>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: cs\n"
+"POT-Creation-Date: 2007-03-16 22:01-0400\n"
+"PO-Revision-Date: 2007-05-29 23:38+0200\n"
+"Last-Translator: Jakub Suchy <redakce@drupal.cz>\n"
+"Language-Team: Czech <redakce@drupal.cz>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;X-Generator: KBabel 1.11.4\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: captcha.module:12
+msgid "Adds a Captcha to various forms to help prevent spam submissions."
+msgstr "Přidává do ruzných formulářů Captchu pro zabránění spamu."
+
+#: captcha.module:27 captcha.info:0
+msgid "Captcha"
+msgstr "Captcha"
+
+#: captcha.module:28
+msgid "Administer how and where Captchas are used."
+msgstr "Nastavit kde a jak je Captcha zobrazována."
+
+#: captcha.module:45
+msgid "Comment form"
+msgstr "Komentářový formulář"
+
+#: captcha.module:46
+msgid "User login form"
+msgstr "Přihlášení uživatele"
+
+#: captcha.module:47
+msgid "User login form block"
+msgstr "Přihlášení uživatele z bloku"
+
+#: captcha.module:48
+msgid "User edit form"
+msgstr "Úprava nastavení účtu uživatele"
+
+#: captcha.module:49
+msgid "User registration form"
+msgstr "Registrační formulář"
+
+#: captcha.module:50
+msgid "User forgot password form"
+msgstr "Formulář pro zaslání hesla"
+
+#: captcha.module:51
+msgid "User contact form"
+msgstr "Kontaktní formulář uživatele"
+
+#: captcha.module:52
+msgid "Sitewide contact form"
+msgstr "Kontaktní formulář celého webu"
+
+#: captcha.module:53
+msgid "Create a node"
+msgstr "Vytvořit obsah"
+
+#: captcha.module:62
+msgid "Captcha points for the role @role"
+msgstr "Captcha body pro roli @role"
+
+#: captcha.module:83
+msgid "Type of captcha to use"
+msgstr "Typ captchy"
+
+#: captcha.module:86
+msgid "Select what kind of challenge you want to pose to the user."
+msgstr "Vyberte, jaký typ úkolu bude zobrazen uživateli."
+
+#: captcha.module:91
+msgid "Additional response description text"
+msgstr "Dodatečný text popisující odpověď"
+
+#: captcha.module:93
+msgid "This text will be added below the captcha response field."
+msgstr "Tento text bude přidán pod políčko s místem pro odpověď uživatele."
+
+#: captcha.module:98
+msgid "Override module's form item description"
+msgstr "Přepsat popis políčka z modulu"
+
+#: captcha.module:100
+msgid "Override the captcha module's form item description to the one set above."
+msgstr "Zde můžete přepsat popis políčka, který je nastaven originálním modulem."
+
+#: captcha.module:200
+msgid "Math Question: What is %problem?"
+msgstr "Matematická otázka: Kolik je %problem?"
+
+#: captcha.module:201
+msgid "Please solve the math problem above and type in the result. e.g. for 1+1, type 2."
+msgstr "Prosím vyřešte výše uvedenou otázku a napište odpověď. Např. pro 1+1 napište 2."
+
+#: captcha.module:218
+msgid "The answer you entered to the math problem is incorrect."
+msgstr "Odpověď na zadaný matematický problém je nesprávná."
+
+#: captcha.module:0 captcha.info:0
+msgid "captcha"
+msgstr "captcha"
+
+#: captcha.info:0
+msgid "5.x-1.x-dev"
+msgstr "5.x-1.x-dev"
+
+#: captcha.info:0
+msgid "Implements a captcha to registration, comment, contact and node entry forms."
+msgstr "Umožňuje zobrazovat captchu pro registrační, komentářový, kontaktní a obsahový formulář."
+
+#: captcha.info:0
+msgid "SPAM Control"
+msgstr "Obrana proti SPAMu"
+

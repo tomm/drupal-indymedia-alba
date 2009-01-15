@@ -1,0 +1,116 @@
+<?php
+// $Id: indymedia_cities.module,v 1.1.4.8 2008/05/27 20:01:00 mfb Exp $
+
+/**
+ * @file
+ * Makes and updates cities list block.
+ */
+
+/**
+ * Implementation of hook_init.
+ */
+function indymedia_cities_init() {
+  if (variable_get('indymedia_cities_collapsible', 0) == 2 && function_exists('jquery_ui_add')) {
+    jquery_ui_add(array('ui.accordion'));
+    drupal_add_js(array('indymediaCities' => array('accordionEvent' => variable_get('indymedia_cities_accordion_event', 'click'))), 'setting');
+    drupal_add_js('$(function() { $("ul.indymedia_cities-accordion").accordion({ header: "a.indymedia_cities-header", event: Drupal.settings.indymediaCities.accordionEvent, autoHeight: false, alwaysOpen: false, active: false }); });', 'inline');
+  }
+  elseif (variable_get('indymedia_cities_collapsible', 0) == 1) {
+    drupal_add_js('misc/collapse.js');
+  }
+}
+
+/**
+ * Implementation of hook_menu.
+ */
+function indymedia_cities_menu() {
+  $items = array();
+  $items['admin/settings/indymedia/cities'] = array(
+    'path' => 'admin/settings/indymedia/cities',
+    'title' => 'Indymedia cities list',
+    'description' => 'Makes and updates cities list block.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('indymedia_cities_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'indymedia_cities.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_block.
+ */
+function indymedia_cities_block($op = 'list', $delta = 'en') {
+  switch ($op) {
+    case 'list':
+      foreach (variable_get('indymedia_cities_languages', array('en' => 1)) as $language => $status) {
+        if ($status) {
+          $blocks[$language]['info'] = t('Cities list (@language)', array('@language' => $language));
+          $blocks[$language]['cache'] = BLOCK_CACHE_GLOBAL;
+        }
+      }
+      return $blocks;
+      break;
+    case 'view':
+      $block['subject'] = t('Global IMC Network');
+      $block['content'] = indymedia_cities_list($delta);
+      return $block;
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_cron.
+ * Checks for updates.
+ */
+function indymedia_cities_cron() {
+  module_load_include('cron.inc', 'indymedia_cities');
+  indymedia_cities_refresh();
+}
+
+/**
+ * Returns the available versions of the cities list.
+ */
+function indymedia_cities_languages() {
+  return array(
+    'de' => 'http://www.indymedia.org/cities.de.',
+    'en' => 'http://www.indymedia.org/cities.',
+    'es' => 'http://www.indymedia.org/cities.es.',
+    'fr' => 'http://www.indymedia.org/cities.fr.',
+    'it' => 'http://www.indymedia.org/cities.it.',
+    'nl' => 'http://www.indymedia.org/cities.nl.',
+  );
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function indymedia_cities_theme() {
+  return array(
+    'indymedia_cities' => array(
+      'arguments' => array('xml' => NULL),
+      'file' => 'indymedia_cities.theme.inc',
+    ),
+    'treeview' => array(
+      'arguments' => array('items' => array(), 'title' => NULL, 'type' => 'ul', 'attributes' => NULL),
+      'file' => 'indymedia_cities.theme.inc',
+    ),
+  );
+}
+
+/**
+ * Return the cities list in HTML format.
+ */
+function indymedia_cities_list($language) {
+  if (function_exists('simplexml_load_string')) {
+    if ($xml = simplexml_load_string(variable_get('indymedia_cities_list_'. $language, NULL))) {
+      return theme('indymedia_cities', $xml);
+    }
+    else {
+      return t('To be downloaded');
+    }
+  }
+  else {
+    return variable_get('indymedia_cities_list_'. $language, t('To be downloaded'));
+  }
+}

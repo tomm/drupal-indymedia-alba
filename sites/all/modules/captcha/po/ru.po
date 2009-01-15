@@ -1,0 +1,120 @@
+# Russian translation of Drupal (captcha.module)
+# Copyright 2007 vadbars <vadbars@mail.ru>
+# Generated from file: captcha.module,v 1.32 2007/01/30 19:44:46 wundo
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Drupal 5.0\n"
+"POT-Creation-Date: 2007-02-24 21:31+0500\n"
+"PO-Revision-Date: 2007-02-24 22:29+0500\n"
+"Last-Translator: Вадим Барсуков <vadbars@mail.ru>\n"
+"Language-Team: Russian Drupal Translation Team (RDTT) <translators@drupal.ru>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=((($n%10==1) && ($n%100!=11))?(0):((((($n%10)>=2)&&(($n%10)<=4))&&((($n%100)<10)||(($n%100)>=20)))?(1):2))\n"
+"X-Poedit-Language: Russian\n"
+"X-Poedit-Country: RUSSIAN FEDERATION\n"
+
+#: captcha.module:12
+msgid "Adds a Captcha to various forms to help prevent spam submissions."
+msgstr "Добавляет captcha в различные формы ввода информации для предотвращения спама."
+
+#: captcha.module:28
+msgid "Administer how and where Captchas are used."
+msgstr "Определяет, как и где использовать captcha (проверку на \"человечность\" при вводе информации)."
+
+#: captcha.module:45
+msgid "Comment form"
+msgstr "Форма комментариев"
+
+#: captcha.module:46
+msgid "User login form"
+msgstr "Форма входа на сайт"
+
+#: captcha.module:47
+msgid "User login form block"
+msgstr "Блок формы входа на сайт"
+
+#: captcha.module:48
+msgid "User edit form"
+msgstr "Форма редактирования пользователя"
+
+#: captcha.module:49
+msgid "User registration form"
+msgstr "Форма регистрации пользователя"
+
+#: captcha.module:50
+msgid "User forgot password form"
+msgstr "Форма \"забыл пароль\""
+
+#: captcha.module:51
+msgid "User contact form"
+msgstr "Форма контактной информации о пользователе"
+
+#: captcha.module:52
+msgid "Sitewide contact form"
+msgstr "Форма контактной информации для всего сайта"
+
+#: captcha.module:53
+msgid "Create a node"
+msgstr "Создание материала"
+
+#: captcha.module:62
+msgid "Captcha points for the role @role"
+msgstr "Где применять captcha для роли @role"
+
+#: captcha.module:83
+msgid "Type of captcha to use"
+msgstr "Использовать тип captcha"
+
+#: captcha.module:86
+msgid "Select what kind of challenge you want to pose to the user."
+msgstr "Выберите, какого типа проверку вы хотите устроить пользователю."
+
+#: captcha.module:91
+msgid "Additional response description text"
+msgstr "Дополнительный текст"
+
+#: captcha.module:93
+msgid "This text will be added below the captcha response field."
+msgstr "Это текст будет добавлен ниже поля запроса captcha."
+
+#: captcha.module:98
+msgid "Override module's form item description"
+msgstr "Заменить стандартное описание."
+
+#: captcha.module:100
+msgid "Override the captcha module's form item description to the one set above."
+msgstr "Заменить стандартное для модуля описание поля ввода информации на вышеуказанное."
+
+#: captcha.module:197
+msgid "Math Question: What is %problem?"
+msgstr "Задача: Сколько будет %problem?"
+
+#: captcha.module:198
+msgid "Please solve the math problem above and type in the result. e.g. for 1+1, type 2."
+msgstr "Пожалуйста, решите математическую задачку и напишите ответ."
+
+#: captcha.module:216
+msgid "The answer you entered to the math problem is incorrect."
+msgstr "Ваш ответ неверен."
+
+#: captcha.module:27
+#: captcha.info:0
+msgid "Captcha"
+msgstr "Captcha"
+
+#: captcha.module:0
+#: captcha.info:0
+msgid "captcha"
+msgstr "captcha"
+
+#: captcha.info:0
+msgid "Implements a captcha to registration, comment, contact and node entry forms."
+msgstr "Добавляет captcha (проверку на \"человечность\") при регистрации, комментировании, добавлении материалов и контактной информации."
+
+#: captcha.info:0
+msgid "SPAM Control"
+msgstr "Контроль СПАМа"
+

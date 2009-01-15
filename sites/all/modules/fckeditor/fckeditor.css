@@ -1,0 +1,38 @@
+.rteindent1 {
+  margin-left: 40px;
+}
+.rteindent2 {
+  margin-left: 80px;
+}
+.rteindent3 {
+  margin-left: 120px;
+}
+.rteindent4 {
+  margin-left: 160px;
+}
+.rteleft {
+  text-align: left;
+}
+.rteright {
+  text-align: right;
+}
+.rtecenter {
+  text-align: center;
+}
+.rtejustify {
+  text-align: justify;
+}
+.FCK__DrupalBreak {
+	background-position: center center;
+	background-image: url(fck__drupalbreak.gif);
+	background-repeat: no-repeat;
+	clear: both;
+	display: block;
+	float: none;
+	width: 100%;
+	border-top: #999999 1px	dotted;
+	border-bottom: #999999 1px dotted;
+	border-right: 0px;
+	border-left: 0px;
+	height:	13px;
+}
