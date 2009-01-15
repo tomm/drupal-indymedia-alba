@@ -1,1 +1,2 @@
-FCKLang.DrupalBreakTitle			= 'Insert Teaser Break' ;
+FCKLang.DrupalBreakTooltip = 'Insert Teaser Break' ;
+FCKLang.DrupalBreakTitle = 'Summary / body separator' ;

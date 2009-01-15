@@ -42,12 +42,12 @@ document.write( '<script src="' + FCKConfig.BasePath + 'dialog/common/fck_dialog
 
 // Get the selected flash embed (if available).
 var oFakeImage = FCK.Selection.GetSelectedElement() ;
-var oImgAssistText ;
+var oImgAssistNode ;
 
 if ( oFakeImage )
 {
-	if ( oFakeImage.tagName == 'IMG' && oFakeImage.getAttribute('_fckimgassist') )
-		oImgAssistText = FCK.GetRealElement( oFakeImage ) ;
+	if ( oFakeImage.tagName == 'IMG' && GetAttribute(oFakeImage, '_fckimgassist', false) )
+	if ( GetAttribute(oFakeImage, 'nid', false) ) oImgAssistNode = oFakeImage ;
 	else
 		oFakeImage = null ;
 }
@@ -67,37 +67,44 @@ window.onload = function()
 
 function LoadSelection()
 {
-	if ( !oImgAssistText ) return ;	
-
-	GetE('xTemplateRaw').value = FCKTools.HTMLDecode( oImgAssistText.nodeValue ).replace( /&quot;/g, '"' ) ;
+	if ( !oImgAssistNode ) return ;	
+  if ( oImgAssistNode.getAttribute('nid') ) {
+    var NodeContent = FCKTools.ImageAssistCode( oImgAssistNode );
+    if( NodeContent ) GetE('xTemplateRaw').value = NodeContent;
+  }
 }
 
 //#### The OK button was hit.
 function Ok()
 {
-    var templateData = FCKTools.HTMLEncode( GetE('xTemplateRaw').value ).Trim().replace( /"/g, '&quot;' ) ;
-
+	oEditor.FCKUndo.SaveUndoStep() ;
+  var templateData = FCKTools.HTMLEncode( GetE('xTemplateRaw').value ).Trim().replace( /"/g, '&quot;' ) ;
 	if ( !( /^\[img_assist[^\[\]]+\]$/.test( templateData ) ) )
 	{
 		alert( 'Image tag must start with [img_assist and end with ]. Please check it.' ) ;
 		return false ;
 	}
 	
-	if ( !oImgAssistText )
-		oImgAssistText = FCK.EditorDocument.createTextNode( '' ) ;
-	
-	oImgAssistText.nodeValue = templateData;
-	
+	//if ( !oImgAssistNode )
+    var oImgAssistNode1 = FCKTools.ImageAssistDecode( templateData );
+    oImgAssistNode.parentNode.insertBefore(oImgAssistNode1, oImgAssistNode);
+    oImgAssistNode.parentNode.removeChild(oImgAssistNode);
+    oEditor.FCKSelection.SelectNode( oImgAssistNode1 ) ;
+//alert(a)
+   // oImgAssistNode.appendNode(oImgAssistNode1);
+/*
+	FCKDragTableHandler
+  
 	if ( !oFakeImage )
 	{
-		oFakeImage	= oEditor.FCKDocumentProcessor_CreateFakeImage( 'FCK__ImgAssist', oImgAssistText ) ;
+		oFakeImage	= oEditor.FCKDocumentProcessor_CreateFakeImage( 'FCK__ImgAssist', oImgAssistNode ) ;
         oFakeImage.setAttribute( "_fckimgassist", "true" ) ;
         oFakeImage.style.background="url(" + FCKConfig.PluginsPath + "imgassist/imgassist.gif);";
         oFakeImage.style.width=72;
         oFakeImage.style.height=50;
 		oFakeImage	= FCK.InsertElement( oFakeImage ) ;
 	}
-
+*/
 	return true ;
 }
 

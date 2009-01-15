@@ -1,5 +1,23 @@
-$Id: README.txt,v 1.16.2.5 2008/06/19 11:10:09 wwalc Exp $
+$Id: README.txt,v 1.16.2.14 2008/12/12 19:45:25 wwalc Exp $
 
+CONTENTS OF THIS FILE
+---------------------
+
+ * Overview
+ * Required components
+ * More information and licence
+ * Requirements
+ * Configuration
+ * Installation troubleshooting
+ * Plugins: Teaser break and Pagebreak
+ * Uploading images and files
+ * How to enable the built-in file browser
+ * Modules: Image Assist
+ * Modules: Link to content (EXPERIMENTAL)
+ * Upgrading instructions
+ * Help & Contribution
+ * Credits 
+ 
 Overview
 --------
 This module allows Drupal to replace textarea fields with the
@@ -56,13 +74,16 @@ Note: this instruction assumes that you install FCKeditor in
       <a> <p> <span> <div> <h1> <h2> <h3> <h4> <h5> <h6> <img> <map> <area> <hr> 
       <br> <br /> <ul> <ol> <li> <dl> <dt> <dd> <table> <tr> <td> <em> <b> <u> <i> <strong> 
       <font> <del> <ins> <sub> <sup> <quote> <blockquote> <pre> <address> <code> 
-      <cite> <embed> <object> <strike> <caption>.
+      <cite> <embed> <object> <param> <strike> <caption>.
    7. To have a better control over line breaks, you may disable Line break converter 
       in the chosen filter (recommended).
    8. Modify the fckeditor.config.js file to custom your needs (optional).
       You may copy the needed configuration lines from the default FCKeditor 
       configuration settings (sites/all/modules/fckeditor/fckeditor/fckconfig.js), 
       the lines in fckeditor.config.js will override most settings.
+      In fckeditor.config.js you may define your own toolbars with selected buttons. 
+      WARNING: clear browser's cache after you modify any of the javascript files.
+      If you don't do this, you may notice that browser is ignoring all your changes.
 
 Installation troubleshooting
 ----------------------------
@@ -116,11 +137,16 @@ You can enable any (or even both) of them.
 
       (remember about single quotes).
 
+    3. Note that the <!--pagebreak--> tag is not supported by default in Drupal.
+       You should install the Paging module: http://drupal.org/project/paging
+       to enable the <!--pagebreak--> tag support. Please refer to the Paging
+       module documentation for detailed installation instructions.
+      
 Uploading images and files
 --------------------------
 
 There are three ways of uploading files: By using the built-in file browser, 
-by using a module like IMCE or using the core upload module.
+by using modules like IMCE, Image Browser or by using the core upload module.
 
 How to enable the file browser
 ------------------------------
@@ -179,6 +205,65 @@ Modules: Image Assist
 ---------------------
 Image Assist can be integrated with FCKeditor. 
 To do this, simply copy the modules/fckeditor/img_assist_fckeditor.js file to modules/img_assist/img_assist_fckeditor.js.
+
+Modules: Link to content (EXPERIMENTAL)
+---------------------------------------
+Link to content module can be integrated with FCKeditor.
+ATTENTION: this module is not yet compatible with FCKeditor :(
+
+The unofficial version of Link to content module compatible with FCKeditor can be downloaded here:
+     http://drupal.fckeditor.net/download/linktocontent-fckeditor-6.x-2.x-dev.zip
+
+Installation:
+Follow the instruction from INSTALL.txt attached to the linktocontent module.
+Then do the following steps to add Linktocontent button to the FCKeditor toolbar:
+
+By default, FCKeditor module comes with two plugins that allows you to use linktocontent and linktonode features.
+You can enable any (or even both) of them.
+
+   1. Open /drupal/modules/fckeditor/fckeditor.config.js and uncomment these three lines:
+
+            FCKConfig.PluginsPath = '../../plugins/' ;
+            FCKConfig.Plugins.Add( 'linktonode', 'en,pl' ) ;
+            FCKConfig.Plugins.Add( 'linktomenu', 'en,pl' ) ;
+
+   2. The second step is to add buttons to the toolbar (in the same file).
+      The button names are: LinkToNode, LinkToMenu. 
+      For example if you have a toolbar with an array of buttons defined as follows:
+
+      ['Link','Unlink','Anchor']
+
+      simply add those two buttons at the end of array (or somewhere in the middle):
+
+      ['Link','Unlink','LinkToNode','LinkToMenu','Anchor']
+
+      (remember about single quotes).
+
+Upgrading instructions
+----------------------
+This instruction assumes that you are upgrading FCKeditor module [M] and FCKeditor (the editor)[E] at the same time. 
+Instructions specific for module upgrades are tagged with [M], steps that must be taken when upgrading FCKeditor (the editor) are marked with [E].
+
+   1. [M] Download the latest version of FCKeditor module from http://drupal.org/project/fckeditor (it is advised to read release notes before going further).
+   2. [E] Download the latest version of FCKeditor from http://www.fckeditor.net/download (it is advised to read "what's new" before going further: http://www.fckeditor.net/whatsnew).
+   3. [M] Back up your database.
+   4. [EM] Place the site in "Off-line" mode, to let the database updates run without interruption and avoid displaying errors to end users of the site.
+   5. [E] If you have used the FCKeditor built-in file browser, make a backup of sites/all/modules/fckeditor/fckeditor/editor/filemanager/connectors/php/config.php
+   6. [E] If you have configured spellchecker, make a backup of sites/all/modules/fckeditor/fckeditor/editor/dialog/fck_spellerpages/spellerpages/server-scripts/spellchecker.php
+   7. [E] If you have made any changes inside of sites/all/modules/fckeditor/fckeditor.config.js (or sites/all/modules/fckeditor/fckeditor/fckconfig.js), write down your changes and add them again after uploading new files (e.g. own toolbar definitions, re-enable a plugin etc.). Try to not make any changes to fckconfig.js and add everything to fckeditor.config.js.
+   8. Delete old files:
+      [EM]* Simply remove modules/fckeditor directory if upgrading both, the editor and the module. 
+      [M] If you are upgrading module only, remember to leave the modules/fckeditor/fckeditor directory. 
+      [E] When upgrading the editor, remove contents of modules/fckeditor/fckeditor directory only.
+      WARNING: if you don't remove old files and just rename fckeditor directory instead e.g. to fckeditor_old, Drupal may use module from the fckeditor_old directory.
+   9. [M] Upload FCKeditor module (extracted files and folders) to sites/all/modules directory.
+   10. [E] Upload FCKeditor (extracted files and folders from the fckeditor directory) to sites/modules/fckeditor/fckeditor (i.e. where COPY HERE.txt file exists)
+   11. [E] Replace the new config.php (see step 5) file with the old one (or RECOMMENDED way: perform again step with adding require_once '../../../../../filemanager.config.php'; to config.php)
+   12. [E] Replace the new spellchecker.php with the old one (see step 6) (or RECOMMENDED way: configure new spellchecker.php following the settings from the old file).
+   13. [E] Apply your modifications to default configuration in fckeditor.config.js file (see step 7).
+   14. [M] If you're using Image Assist module, copy the new img_assist_fckeditor.js to modules/img_assist folder.
+   15. [M] Run update.php.
+   16. [EM] Put the site back online.
    
 Help & Contribution
 -------------------

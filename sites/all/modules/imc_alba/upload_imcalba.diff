@@ -1,6 +1,6 @@
-diff -ruN ../../../modules/upload/CHANGELOG upload/CHANGELOG
---- ../../../modules/upload/CHANGELOG	1970-01-01 01:00:00.000000000 +0100
-+++ upload/CHANGELOG	2008-08-29 22:53:09.000000000 +0100
+diff -r -u -N upload.orig/CHANGELOG upload/CHANGELOG
+--- upload.orig/CHANGELOG	1970-01-01 01:00:00.000000000 +0100
++++ upload/CHANGELOG	2009-01-15 11:39:13.000000000 +0000
 @@ -0,0 +1,18 @@
 +This is a wee changelog of indymedia alba hacks on the core drupal upload
 +module, made to facilitate better integration between drupal's file upload
@@ -20,9 +20,9 @@ diff -ruN ../../../modules/upload/CHANGELOG upload/CHANGELOG
 +~~~~~~~~~~
 +
 +Rebase to drupal-6.4 upload module.
-diff -ruN ../../../modules/upload/insertotherpopup.html upload/insertotherpopup.html
---- ../../../modules/upload/insertotherpopup.html	1970-01-01 01:00:00.000000000 +0100
-+++ upload/insertotherpopup.html	2008-08-27 18:22:18.000000000 +0100
+diff -r -u -N upload.orig/insertotherpopup.html upload/insertotherpopup.html
+--- upload.orig/insertotherpopup.html	1970-01-01 01:00:00.000000000 +0100
++++ upload/insertotherpopup.html	2009-01-15 11:39:13.000000000 +0000
 @@ -0,0 +1,143 @@
 +<html xmlns="http://www.w3.org/1999/xhtml">
 +<head>
@@ -167,9 +167,9 @@ diff -ruN ../../../modules/upload/insertotherpopup.html upload/insertotherpopup.
 +</div>
 +</body>
 +</html>
-diff -ruN ../../../modules/upload/upload.admin.inc upload/upload.admin.inc
---- ../../../modules/upload/upload.admin.inc	2008-01-10 20:22:57.000000000 +0000
-+++ upload/upload.admin.inc	2008-08-27 18:22:18.000000000 +0100
+diff -r -u -N upload.orig/upload.admin.inc upload/upload.admin.inc
+--- upload.orig/upload.admin.inc	2009-01-15 12:49:53.000000000 +0000
++++ upload/upload.admin.inc	2009-01-15 11:39:13.000000000 +0000
 @@ -10,13 +10,17 @@
        form_set_error('upload_max_resolution', t('The maximum allowed image size expressed as WIDTHxHEIGHT (e.g. 640x480). Set to 0 for no restriction.'));
      }
@@ -220,9 +220,90 @@ diff -ruN ../../../modules/upload/upload.admin.inc upload/upload.admin.inc
    $form['settings_general']['upload_uploadsize_default'] = array(
      '#type' => 'textfield',
      '#title' => t('Default maximum file size per upload'),
-diff -ruN ../../../modules/upload/upload.install upload/upload.install
---- ../../../modules/upload/upload.install	2008-02-08 18:01:14.000000000 +0000
-+++ upload/upload.install	2008-08-27 18:22:18.000000000 +0100
+diff -r -u -N upload.orig/upload-fckeditor-insert.js upload/upload-fckeditor-insert.js
+--- upload.orig/upload-fckeditor-insert.js	1970-01-01 01:00:00.000000000 +0100
++++ upload/upload-fckeditor-insert.js	2009-01-15 12:42:17.000000000 +0000
+@@ -0,0 +1,77 @@
++
++
++$.fn.insertAtCaret = function (myValue) {
++        return this.each(function(){
++                //IE support
++                if (document.selection) {
++                        this.focus();
++                        sel = document.selection.createRange();
++                        sel.text = myValue;
++                        this.focus();
++                }
++                //MOZILLA/NETSCAPE support
++                else if (this.selectionStart || this.selectionStart == "0") {
++                        var startPos = this.selectionStart;
++                        var endPos = this.selectionEnd;
++                        var scrollTop = this.scrollTop;
++                        this.value = this.value.substring(0, startPos)
++                                      + myValue
++                              + this.value.substring(endPos,
++this.value.length);
++                        this.focus();
++                        this.selectionStart = startPos + myValue.length;
++                        this.selectionEnd = startPos + myValue.length;
++                        this.scrollTop = scrollTop;
++                } else {
++                        this.value += myValue;
++                        this.focus();
++                }
++        });
++
++};
++
++function update_click_inserts() {
++	$("button.insertimg").click(function() {
++			//var caption = prompt("If you would like an image caption enter it here, otherwise leave it blank","");
++			var imgtag = "<img src=\""+this.id+"\" alt=\"\" />";
++			//if (caption) {
++			//  imgtag = "<span class=\"imgbox\">"+imgtag+"<div class=\"imgcaption\">"+caption+"</div></span>";
++			//}
++			try {
++			$("#edit-body").insertAtCaret(imgtag);
++			} catch (error) {}
++			try {
++			var oEditor = FCKeditorAPI.GetInstance(fckLaunchedJsId[0]) ;
++			oEditor.InsertHtml(imgtag);
++			} catch (error) {}
++			});
++	$("button.insertthumb").click(function() {
++			var imgtag = "<img src=\""+this.id+"\" alt=\"\" />";
++			try {
++			$("#edit-body").insertAtCaret(imgtag);
++			} catch (error) {}
++			try {
++			var oEditor = FCKeditorAPI.GetInstance(fckLaunchedJsId[0]) ;
++			oEditor.InsertHtml(imgtag);
++			} catch (error) {}
++			});
++}
++
++jQuery.fn["replaceAndUpdateHandlers"] = function(value) {
++	this.empty().append(value);
++	update_click_inserts();
++}
++
++function setup_insert_other_img() {
++	$("#insert-other-img").html("poo");
++}
++
++$(document).ready(function() {
++	update_click_inserts();
++	setup_insert_other_img();
++});
++
++function open_image_picking_window() {
++	var win = window.open("/sites/all/modules/upload/insertotherpopup.html?var=oFCK_1", null, "toolbar=no, location=no, menubar=no, status=no, scrollbars=yes, width=400, height=500");
++}
++
+diff -r -u -N upload.orig/upload.install upload/upload.install
+--- upload.orig/upload.install	2009-01-15 12:49:53.000000000 +0000
++++ upload/upload.install	2009-01-15 11:39:13.000000000 +0000
 @@ -8,7 +8,8 @@
    // Create table. The upload table might have been created in the Drupal 5
    // to Drupal 6 upgrade, and was migrated from the file_revisions table. So
@@ -269,14 +350,14 @@ diff -ruN ../../../modules/upload/upload.install upload/upload.install
 +    ),
 +  );
    $schema['upload'] = array(
-     'description' => t('Stores uploaded file information and table associations.'),
+     'description' => 'Stores uploaded file information and table associations.',
      'fields' => array(
-diff -ruN ../../../modules/upload/upload.module upload/upload.module
---- ../../../modules/upload/upload.module	2008-08-14 00:59:14.000000000 +0100
-+++ upload/upload.module	2008-08-29 22:46:15.000000000 +0100
+diff -r -u -N upload.orig/upload.module upload/upload.module
+--- upload.orig/upload.module	2009-01-15 12:49:53.000000000 +0000
++++ upload/upload.module	2009-01-15 12:41:44.000000000 +0000
 @@ -1,6 +1,8 @@
  <?php
- // $Id: upload_imcalba.diff,v 1.1.2.2 2008/08/29 23:12:53 tomm Exp $
+ // $Id: upload.module,v 1.197.2.4 2009/01/12 15:30:23 goba Exp $
  
 +define('UPLOAD_DEFAULT_THUMBNAIL_WIDTH', 100);
 +
@@ -386,94 +467,19 @@ diff -ruN ../../../modules/upload/upload.module upload/upload.module
      $form['#node']->files[$file->fid] = $file;
      $form_state['values']['files'][$file->fid] = (array)$file;
    }
-@@ -218,18 +290,103 @@
+@@ -207,6 +279,8 @@
+ }
+ 
+ function upload_form_alter(&$form, $form_state, $form_id) {
++  drupal_add_js(drupal_get_path('module', 'upload') . '/' . 'upload-fckeditor-insert.js');
++  
+   if ($form_id == 'node_type_form' && isset($form['identity']['type'])) {
+     $form['workflow']['upload'] = array(
+       '#type' => 'radios',
+@@ -218,18 +292,19 @@
  
    if (isset($form['type']) && isset($form['#node'])) {
      $node = $form['#node'];
-+
-+    drupal_add_js('
-+
-+$.fn.insertAtCaret = function (myValue) {
-+        return this.each(function(){
-+                //IE support
-+                if (document.selection) {
-+                        this.focus();
-+                        sel = document.selection.createRange();
-+                        sel.text = myValue;
-+                        this.focus();
-+                }
-+                //MOZILLA/NETSCAPE support
-+                else if (this.selectionStart || this.selectionStart == "0") {
-+                        var startPos = this.selectionStart;
-+                        var endPos = this.selectionEnd;
-+                        var scrollTop = this.scrollTop;
-+                        this.value = this.value.substring(0, startPos)
-+                                      + myValue
-+                              + this.value.substring(endPos,
-+this.value.length);
-+                        this.focus();
-+                        this.selectionStart = startPos + myValue.length;
-+                        this.selectionEnd = startPos + myValue.length;
-+                        this.scrollTop = scrollTop;
-+                } else {
-+                        this.value += myValue;
-+                        this.focus();
-+                }
-+        });
-+
-+};
-+
-+function update_click_inserts() {
-+	$("button.insertimg").click(function() {
-+			//var caption = prompt("If you would like an image caption enter it here, otherwise leave it blank","");
-+			var imgtag = "<img src=\""+this.id+"\" alt=\"\" />";
-+			//if (caption) {
-+			//  imgtag = "<span class=\"imgbox\">"+imgtag+"<div class=\"imgcaption\">"+caption+"</div></span>";
-+			//}
-+			try {
-+			$("#edit-body").insertAtCaret(imgtag);
-+			} catch (error) {}
-+			try {
-+			var oEditor = FCKeditorAPI.GetInstance(fckLaunchedJsId[0]) ;
-+			oEditor.InsertHtml(imgtag);
-+			} catch (error) {}
-+			});
-+	$("button.insertthumb").click(function() {
-+			var imgtag = "<img src=\""+this.id+"\" alt=\"\" />";
-+			try {
-+			$("#edit-body").insertAtCaret(imgtag);
-+			} catch (error) {}
-+			try {
-+			var oEditor = FCKeditorAPI.GetInstance(fckLaunchedJsId[0]) ;
-+			oEditor.InsertHtml(imgtag);
-+			} catch (error) {}
-+			});
-+}
-+    jQuery.fn["replaceAndUpdateHandlers"] = function(value) {
-+		    this.empty().append(value);
-+				update_click_inserts();
-+    }
-+    $(document).ready(function() {
-+            update_click_inserts();
-+	    setup_insert_other_img();
-+    });
-+
-+    function setup_insert_other_img() {
-+      $("#insert-other-img").html("poo");
-+    }
-+
-+    function FCKeditor_OnComplete( editorInstance )
-+    {
-+      FCKeditor_OnCompleteOld(editorInstance);
-+      window.oooFckName = editorInstance.Name;
-+      window.oooFCKeditorAPI = FCKeditorAPI;
-+    }
-+
-+    function open_fucking_window() {
-+	var win = window.open("/sites/all/modules/upload/insertotherpopup.html?var=oFCK_1", null, "toolbar=no, location=no, menubar=no, status=no, scrollbars=yes, width=400, height=500");
-+    }
-+    
-+    ','inline');
 +
      if ($form['type']['#value'] .'_node_form' == $form_id && variable_get("upload_$node->type", TRUE)) {
        // Attachments fieldset
@@ -494,18 +500,18 @@ diff -ruN ../../../modules/upload/upload.module upload/upload.module
        );
  
        // Wrapper for fieldset contents (used by ahah.js).
-@@ -237,6 +394,10 @@
+@@ -237,6 +312,10 @@
          '#prefix' => '<div id="attach-wrapper">',
          '#suffix' => '</div>',
        );
 +      
 +      $form['attachments']['insert_other'] = array(
-+	'#value' => '<a style="cursor: pointer;" onclick="open_fucking_window();">Insert an image from another article</a>',
++	'#value' => '<a style="cursor: pointer;" onclick="open_image_picking_window();">Insert an image from another article</a>',
 +      );
  
        // Make sure necessary directories for upload.module exist and are
        // writable before displaying the attachment form.
-@@ -384,6 +545,8 @@
+@@ -384,6 +463,8 @@
    }
  
    foreach ($node->files as $fid => $file) {
@@ -514,7 +520,7 @@ diff -ruN ../../../modules/upload/upload.module upload/upload.module
      // Convert file to object for compatibility
      $file = (object)$file;
  
-@@ -419,6 +582,17 @@
+@@ -419,6 +500,17 @@
    }
  }
  
@@ -532,7 +538,7 @@ diff -ruN ../../../modules/upload/upload.module upload/upload.module
  function upload_delete($node) {
    $files = array();
    $result = db_query('SELECT DISTINCT f.* FROM {upload} u INNER JOIN {files} f ON u.fid = f.fid WHERE u.nid = %d', $node->nid);
-@@ -428,6 +602,7 @@
+@@ -428,6 +520,7 @@
  
    foreach ($files as $fid => $file) {
      // Delete all files associated with the node
@@ -540,7 +546,7 @@ diff -ruN ../../../modules/upload/upload.module upload/upload.module
      db_query('DELETE FROM {files} WHERE fid = %d', $fid);
      file_delete($file->filepath);
    }
-@@ -444,6 +619,7 @@
+@@ -444,6 +537,7 @@
  
        // if the file won't be used, delete it
        if ($count < 2) {
@@ -548,7 +554,7 @@ diff -ruN ../../../modules/upload/upload.module upload/upload.module
          db_query('DELETE FROM {files} WHERE fid = %d', $file->fid);
          file_delete($file->filepath);
        }
-@@ -480,7 +656,16 @@
+@@ -480,7 +574,16 @@
        $form['files'][$key]['filesize'] = array('#type' => 'value',  '#value' => $file->filesize);
        $form['files'][$key]['fid'] = array('#type' => 'value',  '#value' => $file->fid);
        $form['files'][$key]['new'] = array('#type' => 'value', '#value' => FALSE);
@@ -566,7 +572,7 @@ diff -ruN ../../../modules/upload/upload.module upload/upload.module
    }
  
    if (user_access('upload files')) {
-@@ -490,7 +675,7 @@
+@@ -490,7 +593,7 @@
        '#type' => 'file',
        '#title' => t('Attach new file'),
        '#size' => 40,
@@ -575,7 +581,7 @@ diff -ruN ../../../modules/upload/upload.module upload/upload.module
      );
      $form['new']['attach'] = array(
        '#type' => 'submit',
-@@ -500,6 +685,7 @@
+@@ -500,6 +603,7 @@
          'path' => 'upload/js',
          'wrapper' => 'attach-wrapper',
          'progress' => array('type' => 'bar', 'message' => t('Please wait...')),
@@ -583,7 +589,7 @@ diff -ruN ../../../modules/upload/upload.module upload/upload.module
        ),
        '#submit' => array('node_form_submit_build_node'),
      );
-@@ -514,7 +700,7 @@
+@@ -514,7 +618,7 @@
   * @ingroup themeable
   */
  function theme_upload_form_current(&$form) {
@@ -592,7 +598,7 @@ diff -ruN ../../../modules/upload/upload.module upload/upload.module
    drupal_add_tabledrag('upload-attachments', 'order', 'sibling', 'upload-weight');
  
    foreach (element_children($form) as $key) {
-@@ -526,6 +712,7 @@
+@@ -526,6 +630,7 @@
      $row[] = drupal_render($form[$key]['list']);
      $row[] = drupal_render($form[$key]['description']);
      $row[] = drupal_render($form[$key]['weight']);

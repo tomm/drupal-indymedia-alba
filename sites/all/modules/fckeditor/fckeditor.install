@@ -1,5 +1,5 @@
 <?php
-// $Id: fckeditor.install,v 1.2.2.13 2008/08/14 05:41:02 wwalc Exp $
+// $Id: fckeditor.install,v 1.2.2.23 2008/12/04 16:39:08 wwalc Exp $
 
 /*
  * FCKeditor - The text editor for Internet - http://www.fckeditor.net
@@ -48,6 +48,8 @@ function fckeditor_install() {
   $arr['allow_user_conf'] = "f";
   $arr['min_rows'] = variable_get('fckeditor_minimum_rows', 1);
   $arr['excl_mode'] = variable_get('fckeditor_exclude_toggle', 0);
+  $arr['filebrowser'] = 'none';
+  $arr['quickupload'] = 'f';
 
   //appearance
   $arr['default'] = "t";
@@ -67,6 +69,10 @@ function fckeditor_install() {
   $arr['format_source'] = "t";
   $arr['format_output'] = "t";
 
+  //security
+  $arr['ss'] = "2";
+  $arr['filters']['filter/0'] = 1;
+  
   //css
   $arr['css_mode'] = "theme";
   $arr['css_path'] = variable_get("fckeditor_stylesheet", "");
@@ -113,9 +119,21 @@ function fckeditor_install() {
   "edit-img-assist-textareas\n".
   "edit-img-assist-paths\n".
   "edit-nodewords-description\n".
+  "edit-relatedlinks-fieldset-relatedlinks\n".
   "edit-allowed-values-php\n".
-  "edit-allowed-values\n"
+  "edit-allowed-values\n".
+  "edit-update-notify-emails\n".
+  "edit-googleanalytics-pages\n".
+  "edit-googleanalytics-codesnippet-before\n".
+  "edit-googleanalytics-codesnippet-after\n".
+  "edit-piwik-pages\n".
+  "edit-piwik-codesnippet\n".
+  "edit-feedburner-useragents\n".
+  "edit-webform-*\n".
+  "edit-target\n"
   );
+  
+  $arr['excl_paths'] = "admin/*/logintoboggan\n";
 
   //force by default simple toolbar on selected textareas
   $arr['simple_incl_mode'] = 1;

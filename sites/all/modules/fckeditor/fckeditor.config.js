@@ -1,4 +1,9 @@
-// $Id: fckeditor.config.js,v 1.5.2.5 2008/06/20 12:24:14 wwalc Exp $
+// $Id: fckeditor.config.js,v 1.5.2.13 2008/12/12 19:45:25 wwalc Exp $
+
+/*
+ WARNING: clear browser's cache after you modify this file.
+ If you don't do this, you may notice that browser is ignoring all your changes.
+*/
 
 /*
  Define as many toolbars as you need, you can change toolbar names
@@ -10,9 +15,13 @@
 //uncomment these three lines to enable teaser break and page break plugins
 //remember to add 'DrupalBreak' and 'DrupalPageBreak' buttons to the toolbar
 FCKConfig.PluginsPath = '../../plugins/' ;
-FCKConfig.Plugins.Add( 'drupalbreak' ) ;
+FCKConfig.Plugins.Add( 'drupalbreak', 'en,pl,ru' ) ;
 FCKConfig.Plugins.Add( 'imgassist' ) ;
-//FCKConfig.Plugins.Add( 'drupalpagebreak' ) ;
+//To enable plugins below you should install additional Drupal modules.
+//Please refer to the README.txt for more instructions.
+//FCKConfig.Plugins.Add( 'drupalpagebreak', 'en,pl,ru' ) ;
+//FCKConfig.Plugins.Add( 'linktonode', 'en,pl' ) ;
+//FCKConfig.Plugins.Add( 'linktomenu', 'en,pl' ) ;
 
 /*
  This toolbar is dedicated to users with "Full HTML" access 
@@ -28,10 +37,17 @@ FCKConfig.ToolbarSets["DrupalFull"] = [
 //as of FCKeditor 2.5 you can use also 'Blockquote' button
 //['OrderedList','UnorderedList','-','Outdent','Indent','Blockquote'],
 ['JustifyLeft','JustifyCenter','JustifyRight'],
+/* 
+ * EXPERIMENTAL
+ * Uncomment the line below to enable linktonode and linktomenu buttons
+ * ATTENTION: Link to Content module must be installed first!
+ * Remember to load appropriate plugins with FCKConfig.Plugins.Add command a couple of lines above
+ */
+//['Link','Unlink','LinkToNode','LinkToMenu','Anchor'],
 ['Link','Unlink','Anchor'],
 ['Image','Flash','Table','Rule','SpecialChar','DrupalBreak'],
-//uncomment this line to enable teaser break and page break buttons
-//remember to load appropriate plugins with FCKConfig.Plugins.Add command a couple of lines below
+//uncomment this line to enable the page break button
+//remember to load appropriate plugin with FCKConfig.Plugins.Add command a couple of lines above
 //['Image','Flash','Table','Rule','SpecialChar','DrupalBreak','DrupalPageBreak'],
 '/',
 ['FontFormat','FontName','FontSize'],
@@ -39,7 +55,7 @@ FCKConfig.ToolbarSets["DrupalFull"] = [
 ] ;
 
 FCKConfig.ToolbarSets["DrupalBasic"] = [
-['Bold','Italic','-','OrderedList','UnorderedList','-','Link','Unlink', 'Image','DrupalBreak']
+['Bold','Italic','-','RemoveFormat','Undo','Redo','-','OrderedList','UnorderedList','-','Link','Unlink', 'Image','DrupalBreak']
 ] ;
 
 //This toolbar should work fine with "Filtered HTML" filter
@@ -47,37 +63,47 @@ FCKConfig.ToolbarSets["DrupalFiltered"] = [
 ['Source'],
 ['Cut','Copy','Paste','PasteText','PasteWord'],
 ['Undo','Redo','-','Find','Replace','-','SelectAll','RemoveFormat'],
-//as of FCKeditor 2.5 you can use also 'Blockquote' button
-//['OrderedList','UnorderedList','-','Outdent','Indent','Blockquote'],
+/* 
+ * EXPERIMENTAL
+ * Uncomment the line below to enable linktonode and linktomenu buttons
+ * ATTENTION: Link to Content module must be installed first!
+ * Remember to load appropriate plugins with FCKConfig.Plugins.Add command a couple of lines above
+ */
+//['Link','Unlink','LinkToNode','LinkToMenu','Anchor'],
 ['Link','Unlink','Anchor'],
 ['Image','Flash','Table','Rule','Smiley','SpecialChar'],
 '/',
 ['FontFormat'],
 ['Bold','Italic','Underline','StrikeThrough','-','Subscript','Superscript'],
 ['OrderedList','UnorderedList','-','Outdent','Indent'],
+//as of FCKeditor 2.5 you can use also 'Blockquote' button
+//['OrderedList','UnorderedList','-','Outdent','Indent','Blockquote'],
 ['JustifyLeft','JustifyCenter','JustifyRight','DrupalBreak'],
+//uncomment this line to enable the page break button
+//remember to load appropriate plugin with FCKConfig.Plugins.Add command a couple of lines above
+//['JustifyLeft','JustifyCenter','JustifyRight','DrupalBreak','DrupalPageBreak'],
 ] ;
+
+//helper function to add button at the end of the toolbar
+function addToolbarElement(element, toolbar, pos){
+  var ts = FCKConfig.ToolbarSets ;
+  if (ts[toolbar]) {
+    var len=ts[toolbar].length;
+    if (pos>=len) pos=len-1;
+    if (ts[toolbar][(len -pos -1)] == '/') pos++;
+    if (pos>=len) pos=len-1;
+    if (!ts[toolbar][(len -pos -1)]) pos++;
+    FCKConfig.ToolbarSets[toolbar][(len -pos -1)].push(element);
+  }
+}
 
 //as of FCKeditor 2.5 ShowBlocks command is available
 //remove this code if you don't need ShowBlocks buttons
 if ( FCK.GetData ) {
-  var len ;
-  var ts = FCKConfig.ToolbarSets ;
-  if (ts["DrupalFull"]) {
-    len = ts["DrupalFull"].length ;
-    if (!ts["DrupalFull"][len-1] && ts["DrupalFull"][len-2])
-      len--;
-    if (ts["DrupalFull"][len-1])
-      FCKConfig.ToolbarSets["DrupalFull"][len-1].push('ShowBlocks') ;
-  }
-  if (ts["DrupalFiltered"]) {
-    len = ts["DrupalFiltered"].length ;
-    if (!ts["DrupalFiltered"][len-1] && ts["DrupalFiltered"][len-2])
-      len--;
-    if (ts["DrupalFiltered"][len-1])
-      FCKConfig.ToolbarSets["DrupalFiltered"][len-1].push('ShowBlocks') ;
-  }
+  addToolbarElement('ShowBlocks', 'DrupalFiltered', 0);
+  addToolbarElement('ShowBlocks', 'DrupalFull', 0);
 }
+
 // Protect PHP code tags (<?...?>) so FCKeditor will not break them when
 // switching from Source to WYSIWYG.
 // Uncommenting this line doesn't mean the user will not be able to type PHP
@@ -93,3 +119,5 @@ FCKConfig.IndentClasses = ['rteindent1','rteindent2','rteindent3','rteindent4'] 
 
 // [ Left, Center, Right, Justified ]
 FCKConfig.JustifyClasses = ['rteleft','rtecenter','rteright','rtejustify'] ;
+//Set to 'encode' if you want to obfuscate emails with javascript
+FCKConfig.EMailProtection = 'none' ;

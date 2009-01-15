@@ -22,6 +22,13 @@
 .rtejustify {
   text-align: justify;
 }
+.image_assist{
+  background-color: #eeeeee;
+  background-repeat: no-repeat;
+  background-image: url(plugins/imgassist/imgassist.gif);
+  background-position: 50% 50%;
+  border: 1px dashed #dddddd;
+}
 .FCK__DrupalBreak {
 	background-position: center center;
 	background-image: url(fck__drupalbreak.gif);

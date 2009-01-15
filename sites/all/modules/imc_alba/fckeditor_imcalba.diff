@@ -1,22 +1,30 @@
-diff -r -u -N fckeditor/fckeditor.config.js fckeditor.cool/fckeditor.config.js
---- fckeditor/fckeditor.config.js	2008-06-20 13:24:14.000000000 +0100
-+++ fckeditor.cool/fckeditor.config.js	2008-08-27 18:25:23.000000000 +0100
-@@ -39,7 +39,7 @@
+Only in fckeditor.patched/: fck__drupalbreak.gif
+diff -r -u fckeditor/fckeditor.config.js fckeditor.patched/fckeditor.config.js
+--- fckeditor/fckeditor.config.js	2008-12-12 19:45:25.000000000 +0000
++++ fckeditor.patched/fckeditor.config.js	2009-01-15 12:46:15.000000000 +0000
+@@ -55,7 +55,7 @@
  ] ;
  
  FCKConfig.ToolbarSets["DrupalBasic"] = [
 -['FontFormat','-','Bold','Italic','-','OrderedList','UnorderedList','-','Link','Unlink', 'Image']
-+['Bold','Italic','-','OrderedList','UnorderedList','-','Link','Unlink', 'Image','DrupalBreak']
++['Bold','Italic','-','RemoveFormat','Undo','Redo','-','OrderedList','UnorderedList','-','Link','Unlink', 'Image','DrupalBreak']
  ] ;
  
  //This toolbar should work fine with "Filtered HTML" filter
-diff -r -u -N fckeditor/fckeditor.css fckeditor.cool/fckeditor.css
---- fckeditor/fckeditor.css	2007-11-15 16:15:47.000000000 +0000
-+++ fckeditor.cool/fckeditor.css	2008-08-27 18:25:23.000000000 +0100
-@@ -21,4 +21,18 @@
- }
- .rtejustify {
-   text-align: justify;
+@@ -120,4 +120,4 @@
+ // [ Left, Center, Right, Justified ]
+ FCKConfig.JustifyClasses = ['rteleft','rtecenter','rteright','rtejustify'] ;
+ //Set to 'encode' if you want to obfuscate emails with javascript
+-FCKConfig.EMailProtection = 'none' ;
+\ No newline at end of file
++FCKConfig.EMailProtection = 'none' ;
+diff -r -u fckeditor/fckeditor.css fckeditor.patched/fckeditor.css
+--- fckeditor/fckeditor.css	2008-09-16 10:44:46.000000000 +0100
++++ fckeditor.patched/fckeditor.css	2009-01-15 12:13:07.000000000 +0000
+@@ -28,4 +28,18 @@
+   background-image: url(plugins/imgassist/imgassist.gif);
+   background-position: 50% 50%;
+   border: 1px dashed #dddddd;
 -}
 \ No newline at end of file
 +}
@@ -34,28 +42,24 @@ diff -r -u -N fckeditor/fckeditor.css fckeditor.cool/fckeditor.css
 +	border-left: 0px;
 +	height:	13px;
 +}
-diff -r -u -N fckeditor/fckeditor.utils.js fckeditor.cool/fckeditor.utils.js
---- fckeditor/fckeditor.utils.js	2008-08-14 07:17:19.000000000 +0100
-+++ fckeditor.cool/fckeditor.utils.js	2008-08-27 18:27:06.000000000 +0100
-@@ -206,6 +206,8 @@
+diff -r -u fckeditor/fckeditor.utils.js fckeditor.patched/fckeditor.utils.js
+--- fckeditor/fckeditor.utils.js	2008-12-12 20:27:03.000000000 +0000
++++ fckeditor.patched/fckeditor.utils.js	2009-01-15 12:42:29.000000000 +0000
+@@ -238,6 +238,10 @@
+ 
+   //Img_Assist integration
    IntegrateWithImgAssist();
++
++  // Upload module image insert into fckeditor wants this
++  window.oooFckName = editorInstance.Name;
++  window.oooFCKeditorAPI = FCKeditorAPI;
  }
  
-+var FCKeditor_OnCompleteOld = FCKeditor_OnComplete;
-+
- function IntegrateWithImgAssist()
- {
-   var link = document.getElementsByTagName("a");
-@@ -215,4 +217,4 @@
-       link[i].href = link[i].href.replace("/load/textarea", "/load/fckeditor");
-     }
-   }
--}
-\ No newline at end of file
-+}
-diff -r -u -N fckeditor/plugins/drupalbreak/fckplugin.js fckeditor.cool/plugins/drupalbreak/fckplugin.js
---- fckeditor/plugins/drupalbreak/fckplugin.js	2007-11-15 16:15:48.000000000 +0000
-+++ fckeditor.cool/plugins/drupalbreak/fckplugin.js	2008-08-27 18:25:23.000000000 +0100
+ function FCKeditorReplaceTextarea(textarea_id, oFCKeditor, xss_check)
+Only in fckeditor.patched/: .fckeditor.utils.js.swp
+diff -r -u fckeditor/plugins/drupalbreak/fckplugin.js fckeditor.patched/plugins/drupalbreak/fckplugin.js
+--- fckeditor/plugins/drupalbreak/fckplugin.js	2008-11-19 12:00:07.000000000 +0000
++++ fckeditor.patched/plugins/drupalbreak/fckplugin.js	2009-01-15 12:16:18.000000000 +0000
 @@ -44,7 +44,7 @@
  		case 'Break' :
  			this.RemoveOldBreaks();
@@ -65,15 +69,6 @@ diff -r -u -N fckeditor/plugins/drupalbreak/fckplugin.js fckeditor.cool/plugins/
  			oFakeImage.setAttribute( "_drupalbreak", "true" ) ;
  			oFakeImage.style.borderTop = oFakeImage.style.borderBottom = pBreakBorderStyle ;
  			this.MoveBreakOutsideElement();
-@@ -139,7 +139,7 @@
- // Register the Drupal tag commands.
- FCKCommands.RegisterCommand( 'DrupalBreak', new FCKDrupalBreak( 'Break' ) ) ;
- // Create the Drupal tag buttons.
--var oDrupalItem = new FCKToolbarButton( 'DrupalBreak', 'Break', null, FCK_TOOLBARITEM_ICONTEXT, true, true ) ;
-+var oDrupalItem = new FCKToolbarButton( 'DrupalBreak', 'Summary / body separator', null, FCK_TOOLBARITEM_ICONTEXT, true, true ) ;
- oDrupalItem.IconPath = FCKConfig.PluginsPath + 'drupalbreak/drupalbreak.gif';
- FCKToolbarItems.RegisterItem( 'DrupalBreak', oDrupalItem ) ;
- 
 @@ -166,7 +166,7 @@
  				if (re.test(node.nodeValue))
  					PContent = FCKConfig.ProtectedSource.Revert('<!--' + node.nodeValue + '-->', false);
@@ -90,3 +85,10 @@ diff -r -u -N fckeditor/plugins/drupalbreak/fckplugin.js fckeditor.cool/plugins/
 -}
 \ No newline at end of file
 +}
+diff -r -u fckeditor/plugins/drupalbreak/lang/en.js fckeditor.patched/plugins/drupalbreak/lang/en.js
+--- fckeditor/plugins/drupalbreak/lang/en.js	2008-11-19 12:00:08.000000000 +0000
++++ fckeditor.patched/plugins/drupalbreak/lang/en.js	2009-01-15 12:16:29.000000000 +0000
+@@ -1,2 +1,2 @@
+ FCKLang.DrupalBreakTooltip = 'Insert Teaser Break' ;
+-FCKLang.DrupalBreakTitle = 'Teaser' ;
++FCKLang.DrupalBreakTitle = 'Summary / body separator' ;

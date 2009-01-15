@@ -1,4 +1,85 @@
-$Id: CHANGELOG.txt,v 1.2.2.34 2008/08/14 05:20:17 wwalc Exp $
+$Id: CHANGELOG.txt,v 1.2.2.78 2008/12/12 23:21:29 wwalc Exp $
+
+-- 2008-12-12 version 6.x-1.x-dev
+* #338923 Improved description of security setting
+* #336915 Gracefully degrade when not finding a textbox
+FCKeditor module now doesn to require "." in the include_path to work
+* #321844 Fixed: FCKeditor and Image Assist not working together
+
+-- 2008-12-05 version 6.x-1.x-dev
+* #331329 Added expermimental support for Link to content/node integration
+
+-- 2008-12-04 version 6.x-1.x-dev
+* #341806 Fixed: Random problems with teaser break
+* #342155 Added webform fields to the default exclusion list
+
+-- 2008-12-01 version 6.x-1.x-dev
+* #321818 Fixed: FCKeditor not displaying on any posts except initial ones
+
+-- 2008-11-25 version 6.x-1.x-dev
+* #336753 Fixed: All text disappears
+
+-- 2008-11-19 version 6.x-1.x-dev
+* #334947 Added LoginToboggan administration pages to the default exclusion list
+* #322939 Fixed: Distinguish between Teaser and page break
+
+-- 2008-11-14 version 6.x-1.x-dev
+* #332727 Fixed: Fatal error in PHP4
+* #327615 Added Image Browser (http://drupal.org/project/imagebrowser) to the list of supported file browsers
+
+-- 2008-10-21 version 6.x-1.x-dev
+* #314319 Added protection against XSS attacks when editing
+
+-- 2008-10-17 version 6.x-1.x-dev
+* #322245 Fixed: appended querystring caused warnings in drupal_get_js
+
+-- 2008-10-16 version 6.x-1.x-dev
+* #273300 Improved Image Assist support
+* Fixed: FCKeditor din't load it's own stylesheet when theme without style.css was enabled
+
+-- 2008-10-15 version 6.x-1.x-dev
+* EMailProtection has been set to "none" by default
+* #302435 Fixed: Apache reports Forbidden Error on File Browse
+* #313524 Fixed: "notice: Undefined index" messages in hook_user
+* Added user profile validation
+* #318540 Fixed: formatting output doesn't format properly (part 2)
+* #311357 Added finnish translation
+
+-- 2008-10-09 version 6.x-1.x-dev
+* #310988 Extended default exclusion list, added hack for module developers allowing to disable fckeditor on specific textareas
+* #318540 Fixed: formatting output doesn't format properly
+* #240230 Another attempt to fix issues with teaser brake
+* #316029 File_download adds text/plain content type to a pdf
+
+-- 2008-10-08 version 6.x-1.x-dev
+* Added upgrading instructions
+
+-- 2008-09-17 version 6.x-1.x-dev
+* Improved Image Assist 6.x-1.x support when FCKeditor is running in a popup mode
+
+-- 2008-09-16 version 6.x-1.x-dev
+* Improved Image Assist 6.x-1.x support
+* #308360 added field IDs from google_analytics and piwik modules to the default exclusion list
+
+-- 2008-09-12 version 6.x-1.x-dev
+* #307130 edit-update-notify-emails field added to default exclusion list
+
+-- 2008-09-11 version 6.x-1.x-dev
+* Added <param> tag to the list of suggested allowed tags in Filtered HTML input format.
+
+-- 2008-09-04 version 6.x-1.x-dev
+* #303863 Fixed: "Show disable/enable rich text editor toggle" value was ignored from user settings.
+* #299404 Improved protection against browsers caching fckeditor.config.js
+* #290831 (comment #7) preview doesn't work
+* #296382 Fixed: save button and teaser break problem in FCKeditor
+* #301051 Fixed: incomatibility with l10n_client (added edit-target to the default exclude list)
+
+
+-- 2008-08-27 version 6.x-1.x-dev
+* #270430 Fixed: Compatibility with themes that put all javascript at the bottom
+
+-- 2008-08-18 version 6.x-1.x-dev
+* #295306 Added edit-relatedlinks-fieldset-relatedlinks to the exclusion list. (Conflict with Related Links Module).
 
 -- 2008-08-14 version 6.x-1.x-dev
 * #273752 FCKeditor malfunctions when multiple fields are present and one of them has a teaser

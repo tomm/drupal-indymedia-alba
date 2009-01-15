@@ -1,1 +1,2 @@
-FCKLang.DrupalBreakTitle			= 'Insert Teaser Break' ;
+FCKLang.DrupalPageBreakTooltip = 'Insert Page Break' ;
+FCKLang.DrupalPageBreakTitle = 'Page' ;

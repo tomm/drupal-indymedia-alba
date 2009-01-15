@@ -1,4 +1,4 @@
-// $Id: fckplugin.js,v 1.2 2007/11/15 16:15:48 wwalc Exp $
+// $Id: fckplugin.js,v 1.2.2.2 2008/11/19 12:00:07 wwalc Exp $
 /*
  * FCKeditor - The text editor for Internet - http://www.fckeditor.net
  * Copyright (C) 2003-2007 Frederico Caldeira Knabben
@@ -139,7 +139,7 @@ FCKDrupalBreak.prototype.GetState = function()
 // Register the Drupal tag commands.
 FCKCommands.RegisterCommand( 'DrupalBreak', new FCKDrupalBreak( 'Break' ) ) ;
 // Create the Drupal tag buttons.
-var oDrupalItem = new FCKToolbarButton( 'DrupalBreak', 'Summary / body separator', null, FCK_TOOLBARITEM_ICONTEXT, true, true ) ;
+var oDrupalItem = new FCKToolbarButton( 'DrupalBreak', FCKLang.DrupalBreakTitle, FCKLang.DrupalBreakTooltip, FCK_TOOLBARITEM_ICONTEXT, true, true ) ;
 oDrupalItem.IconPath = FCKConfig.PluginsPath + 'drupalbreak/drupalbreak.gif';
 FCKToolbarItems.RegisterItem( 'DrupalBreak', oDrupalItem ) ;
 
