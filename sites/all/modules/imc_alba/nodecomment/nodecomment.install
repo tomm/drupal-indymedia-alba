@@ -1,0 +1,30 @@
+<?php
+
+function nodecomment_schema() {
+	$schema['nodecomment'] = array(
+		'fields' => array(
+			'comment_nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'parent_nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+		),
+		'primary key' => array('comment_nid'),
+		'indexes' => array(
+			'parent_nid' => array('parent_nid'),
+		),
+	);
+	return $schema;
+}
+
+function nodecomment_install() {
+	drupal_install_schema('nodecomment');
+	variable_set('node_options_nodecomment', array('status','revision'));
+}
+
+function nodecomment_uninstall() {
+	drupal_uninstall_schema('nodecomment');
+}

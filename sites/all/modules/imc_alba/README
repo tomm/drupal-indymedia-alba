@@ -1,0 +1,39 @@
+Hello!
+
+These are modules to make an indymedia site with drupal 6, as used
+first by Indymedia Scotland.
+
+There are also patches to the core upload module, and the fckeditor
+module which allow uploading images the drupal way and inserting them
+into the WYSIWYG editor control. It is all hosted here:
+
+http://drupal.org/project/imc_alba
+
+Steps to make things work:
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Put imc_alba into sites/all/modules/
+
+Applying imc-alba patch to upload module:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* cp -r modules/upload sites/all/modules/
+* cd sites/all/modules/upload
+* patch -p1 < ../imc_alba/upload_imcalba.diff
+
+Applying imc-alba patch to fckeditor module:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Extract fckeditor module to sites/all/modules/
+* Extract fckeditor 2.6.3 (or other version) to
+  sites/all/modules/fckeditor/fckeditor
+* cd sites/all/modules/fckeditor
+* patch -p1 < ../imc_alba/fckeditor_imcalba.diff
+* cp ../imc_alba/fck__drupalbreak.gif .
+
+
+The above steps are required by the Indymedia Alba drupal 6 install profile:
+
+http://drupal.org/project/indymedia_alba
+
+Ta

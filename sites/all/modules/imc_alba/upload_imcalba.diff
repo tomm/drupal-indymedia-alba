@@ -1,0 +1,602 @@
+diff -ruN ../../../modules/upload/CHANGELOG upload/CHANGELOG
+--- ../../../modules/upload/CHANGELOG	1970-01-01 01:00:00.000000000 +0100
++++ upload/CHANGELOG	2008-08-29 22:53:09.000000000 +0100
+@@ -0,0 +1,18 @@
++This is a wee changelog of indymedia alba hacks on the core drupal upload
++module, made to facilitate better integration between drupal's file upload
++and fckeditor image insertion. We generate thumbnails and provide a way
++of inserting attached images into the fckeditor WYSIWYG control.
++
++2008/08/29
++~~~~~~~~~~
++
++Made 'Insert an image from another article' only show images for current
++revision id (vid) of nodes, so as not to duplicate results when an article
++has a number of revisions.
++
++Made 'Insert an image from another article' link have nice pointy-hand cursor.
++
++2008/08/27
++~~~~~~~~~~
++
++Rebase to drupal-6.4 upload module.
+diff -ruN ../../../modules/upload/insertotherpopup.html upload/insertotherpopup.html
+--- ../../../modules/upload/insertotherpopup.html	1970-01-01 01:00:00.000000000 +0100
++++ upload/insertotherpopup.html	2008-08-27 18:22:18.000000000 +0100
+@@ -0,0 +1,143 @@
++<html xmlns="http://www.w3.org/1999/xhtml">
++<head>
++  <title>Insert an image</title>
++  <script type="text/javascript" src="/misc/jquery.js"></script>
++  <script type="text/javascript" src="/misc/drupal.js"></script>
++  <style type="text/css">
++a { color: #700; cursor: pointer; }
++a:hover { color: #f00; }
++body { 
++  font-size: 90%;
++  font: 13px/1.5 "Arial", sans-serif;
++}
++td { padding: 0.5em; margin: 0px; }
++td.date { font-size: 80%; color: #555; }
++td.node-title { font-size: 80%; }
++td.filename { font-size: 80%; }
++td.insert { font-size: 80%; }
++tr.zebra1 { background-color: #ddf; }
++tr.zebra0 { background-color: #eef; }
++table { width: 100%; border-collapse: collapse; }
++div.pager { text-align: center; }
++.imgpreview { font-size: 80%; }
++th { font-size: 80%; font-weight: bold; }
++h2 { color: #700; }
++#breadcrumb { color: #700; font-size: 120%; }
++
++  </style>
++  <script type="text/javascript">
++
++var gPage = 0;
++
++function clickedNode(nid) {
++  $.getJSON("/upload/ajax_get_article_files?nid="+nid, function(data) {
++    updateContent(data['status'], data['files']);
++    drawPager(0);
++  });
++}
++
++function clickedImgFile(filepath) {
++  var oEditor = window.opener.oooFCKeditorAPI.GetInstance( window.opener.oooFckName ) ;
++  var imgtag = "<img src=\""+filepath+"\" alt=\"\" />";
++  oEditor.InsertHtml(imgtag);
++}
++
++function clickedFile(filepath, basename) {
++  var oEditor = window.opener.oooFCKeditorAPI.GetInstance( window.opener.oooFckName ) ;
++  var imgtag = "<a href=\""+filepath+"\">"+basename+"</a>";
++  oEditor.InsertHtml(imgtag);
++}
++
++function makeNodeLink(info) {
++  return '<td class="date">'+info['created']+'</td><td class="node-title"><a onclick="clickedNode('+info['nid']+');">'+info['title']+'</a></td>';
++}
++
++function min(a,b) {
++  return a<b?a:b;
++}
++
++function max(a,b) {
++  return a>b?a:b;
++}
++
++function drawPager(numPages) {
++  if ((!numPages) || numPages==1) {
++	  $('#pager-wrapper-top').html('');
++	  $('#pager-wrapper-bottom').html('');
++  } else {
++    var out = '';
++    if (gPage > 1) out += '<a onclick="gPage=0; goToRoot();">first</a> ';
++    if (gPage > 0) out += '<a onclick="gPage--; goToRoot();">previous</a> ';
++    var _min = max(gPage-4,0);
++    var _max = min(_min+9,numPages);
++    for (var x=_min; x<_max; x++) {
++      if (gPage == x) out += ' '+(x+1)+' ';
++      else out += ' <a onclick="gPage='+x+'; goToRoot();">'+(x+1)+'</a> ';
++    }
++    if (gPage < numPages-1) {
++      out += '<a onclick="gPage++; goToRoot();">next</a> ';
++    }
++    $('#pager-wrapper-top').html(out);
++    $('#pager-wrapper-bottom').html(out);
++  }
++}
++
++function goToRoot() {
++  if (gPage < 0) gPage = 0;
++  $.getJSON("/upload/ajax_get_article_files?page="+gPage, function(data) {
++    //alert(data['status']);
++    updateContent(data['status'], data['articles']);
++    drawPager(data['pages']);
++  });
++}
++
++function makeFileLink(info) {
++  var out = '';
++  if (info['thumbpath']) {
++    out += '<td class="imgpreview"><img src="'+info['thumbpath']+'" />';
++    out += '<div class="imgpreview">'+info['filename']+'</div></td>';
++    out += '<td class="insert">';
++    out += '<p><a onclick="clickedImgFile(\''+info['thumbpath']+'\');">(thumbnail)</a></p>';
++    out += '<p><a onclick="clickedImgFile(\''+info['filepath']+'\');">(full-sized)</a></p>';
++    out += '</td>';
++  } else {
++    out += '<td class="filename"><a onclick="clickedFile(\''+info['filepath']+'\',\''+info['basename']+'\');">'+info['filename']+'</a></td>';
++  }
++  return out;
++}
++
++function updateContent(state, data) {
++  var out = '<table>';
++  if (state == 'nodes') {
++    $('#breadcrumb').html('');
++    for (var i=0; i<data.length; i++) {
++      out += '<tr class="zebra'+(i&1)+'">'+makeNodeLink(data[i])+'</tr>';
++    }
++  } else if (state == 'files') {
++    $('#breadcrumb').html('<a onclick="goToRoot();">.. go back</a></td></tr>');
++    out += '<tr><th>&nbsp;</th><th>Insert</th></tr>';
++    for (var i=0; i<data.length; i++) {
++      out += '<tr class="zebra'+(i&1)+'">'+makeFileLink(data[i])+'</tr>';
++    }
++  }
++  out += '</table>';
++  $('#list-wrapper').html(out);
++}
++
++$(document).ready(function() {
++  goToRoot();
++});
++
++  </script>
++<body>
++<div id="wrapper">
++  <h2>Insert images from an article</h2>
++  <div class="content">
++  <div class="pager" id="pager-wrapper-top"></div>
++  <div id="breadcrumb"></div>
++  <div id="list-wrapper"></div>
++  <div class="pager" id="pager-wrapper-bottom"></div>
++  </div>
++</div>
++</body>
++</html>
+diff -ruN ../../../modules/upload/upload.admin.inc upload/upload.admin.inc
+--- ../../../modules/upload/upload.admin.inc	2008-01-10 20:22:57.000000000 +0000
++++ upload/upload.admin.inc	2008-08-27 18:22:18.000000000 +0100
+@@ -10,13 +10,17 @@
+       form_set_error('upload_max_resolution', t('The maximum allowed image size expressed as WIDTHxHEIGHT (e.g. 640x480). Set to 0 for no restriction.'));
+     }
+   }
+-
++  
++  $thumbnail_size = $form_state['values']['upload_thumbnail_width'];
+   $default_uploadsize = $form_state['values']['upload_uploadsize_default'];
+   $default_usersize = $form_state['values']['upload_usersize_default'];
+ 
+   $exceed_max_msg = t('Your PHP settings limit the maximum file size per upload to %size.', array('%size' => format_size(file_upload_max_size()))) .'<br/>';
+   $more_info = t("Depending on your server environment, these settings may be changed in the system-wide php.ini file, a php.ini file in your Drupal root directory, in your Drupal site's settings.php file, or in the .htaccess file in your Drupal root directory.");
+ 
++  if (!is_numeric($thumbnail_size) || ($thumbnail_size <= 0)) {
++    form_set_error('upload_thumbnail_width', t('The thumbnail width must be a number and greater than zero.'));
++  }
+   if (!is_numeric($default_uploadsize) || ($default_uploadsize <= 0)) {
+     form_set_error('upload_uploadsize_default', t('The %role file size limit must be a number and greater than zero.', array('%role' => t('default'))));
+   }
+@@ -73,6 +77,14 @@
+     '#description' => t('The maximum allowed image size (e.g. 640x480). Set to 0 for no restriction. If an <a href="!image-toolkit-link">image toolkit</a> is installed, files exceeding this value will be scaled down to fit.', array('!image-toolkit-link' => url('admin/settings/image-toolkit'))),
+     '#field_suffix' => '<kbd>'. t('WIDTHxHEIGHT') .'</kbd>'
+   );
++  $form['settings_general']['upload_thumbnail_width'] = array(
++    '#type' => 'textfield',
++    '#title' => t('Width of generated thumbnails'),
++    '#default_value' => variable_get('upload_thumbnail_width', UPLOAD_DEFAULT_THUMBNAIL_WIDTH),
++    '#size' => 15,
++    '#maxlength' => 4,
++    '#description' => t('When images are attached thumbnails will be generated with this width'),
++  );
+   $form['settings_general']['upload_list_default'] = array(
+     '#type' => 'select',
+     '#title' => t('List files by default'),
+@@ -81,13 +93,13 @@
+     '#description' => t('Display attached files when viewing a post.'),
+   );
+ 
+-  $form['settings_general']['upload_extensions_default'] = array(
++/*  $form['settings_general']['upload_extensions_default'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Default permitted file extensions'),
+     '#default_value' => $upload_extensions_default,
+     '#maxlength' => 255,
+     '#description' => t('Default extensions that users can upload. Separate extensions with a space and do not include the leading dot.'),
+-  );
++  );*/
+   $form['settings_general']['upload_uploadsize_default'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Default maximum file size per upload'),
+diff -ruN ../../../modules/upload/upload.install upload/upload.install
+--- ../../../modules/upload/upload.install	2008-02-08 18:01:14.000000000 +0000
++++ upload/upload.install	2008-08-27 18:22:18.000000000 +0100
+@@ -8,7 +8,8 @@
+   // Create table. The upload table might have been created in the Drupal 5
+   // to Drupal 6 upgrade, and was migrated from the file_revisions table. So
+   // in this case, there is no need to create the table, it is already there.
+-  if (!db_table_exists('upload')) {
++  if (!db_table_exists('upload') ||
++	    !db_table_exists('upload_derivative')) {
+     drupal_install_schema('upload');
+   }
+ }
+@@ -25,6 +26,37 @@
+  * Implementation of hook_schema().
+  */
+ function upload_schema() {
++  $schema['upload_derivative'] = array(
++    'description' => t('Stores uploaded image file information and table associations.'),
++    'fields' => array(
++      'fid' => array(
++        'type' => 'int',
++        'unsigned' => TRUE,
++        'not null' => TRUE,
++        'default' => 0,
++        'description' => t('Primary Key: The {files}.fid of the derived image (thumbnail or other resizing probably).'),
++      ),
++      'fid_parent' => array(
++        'type' => 'int',
++        'unsigned' => TRUE,
++        'not null' => TRUE,
++        'default' => 0,
++        'description' => t('The {files}.fid of the original image.'),
++      ),
++      'type' => array(
++        'type' => 'varchar',
++        'length' => 64,
++        'not null' => TRUE,
++        'default' => '',
++        'description' => t('Type of derived file. eg \'thumbnail\'.'),
++      ),
++    ),
++    'primary key' => array('fid'),
++    'indexes' => array(
++      'fid' => array('fid'),
++      'fid_parent' => array('fid_parent'),
++    ),
++  );
+   $schema['upload'] = array(
+     'description' => t('Stores uploaded file information and table associations.'),
+     'fields' => array(
+diff -ruN ../../../modules/upload/upload.module upload/upload.module
+--- ../../../modules/upload/upload.module	2008-08-14 00:59:14.000000000 +0100
++++ upload/upload.module	2008-08-29 22:46:15.000000000 +0100
+@@ -1,6 +1,8 @@
+ <?php
+ // $Id: upload_imcalba.diff,v 1.1.2.2 2008/08/29 23:12:53 tomm Exp $
+ 
++define('UPLOAD_DEFAULT_THUMBNAIL_WIDTH', 100);
++
+ /**
+  * @file
+  * File-handling and attaching files to nodes.
+@@ -91,9 +93,45 @@
+     'type' => MENU_NORMAL_ITEM,
+     'file' => 'upload.admin.inc',
+   );
++  $items['upload/ajax_get_article_files'] = array(
++    'page callback' => 'upload_ajax_get_article_files',
++    'access arguments' => array('upload files'),
++    'type' => MENU_CALLBACK
++  );
+   return $items;
+ }
+ 
++function upload_ajax_get_article_files() {
++  if (isset($_GET['nid'])) {
++    $nid = intval($_GET['nid']);
++    $vid = db_result(db_query("SELECT vid FROM {node} WHERE nid = %d", $nid));
++    $q = db_query("SELECT f.filename,f.filepath,tf.filepath AS thumbpath FROM {files} f
++		    INNER JOIN {upload} u ON u.fid = f.fid AND u.nid = %d AND u.vid = %d
++		    LEFT OUTER JOIN {upload_derivative} d ON d.fid_parent=f.fid AND d.type='img.thumb'
++		    LEFT OUTER JOIN {files} tf ON tf.fid=d.fid
++		    ", $nid, $vid);
++    $results = array();
++    while ($r = db_fetch_array($q)) {
++      $r['filepath'] = file_create_url($r['filepath']);
++      $r['thumbpath'] = $r['thumbpath'] ? file_create_url($r['thumbpath']) : '';
++      $r['basename'] = basename($r['filepath']);
++      $results[] = $r;
++    }
++    print drupal_to_js(array('status' => 'files', 'files' => $results));
++  } else {
++    global $pager_total;
++    $q = pager_query(db_rewrite_sql("SELECT DISTINCT n.nid,n.created,n.title FROM {node} n INNER JOIN {upload} u ON u.nid=n.nid WHERE n.status = 1 ORDER BY n.created DESC"), 20, 0,
++		    "SELECT COUNT(DISTINCT n.nid) FROM {node} n INNER JOIN {upload} u ON u.nid=n.nid WHERE n.status=1");
++
++    $results = array();
++    while ($r = db_fetch_array($q)) {
++      $r['created'] = format_date($r['created'], 'custom', 'j-M-y');
++      $results[] = $r;
++    }
++    print drupal_to_js(array('status' => "nodes", 'pages' => $pager_total, 'articles' => $results));
++  }
++}
++
+ function upload_menu_alter(&$items) {
+   $items['system/files']['access arguments'] = array('view uploaded files');
+ }
+@@ -160,6 +198,39 @@
+   }
+ }
+ 
++function upload_make_derivatives(&$file) {
++  global $user;
++  // make a thumbnail if it is an image
++  if ($info = image_get_info($file->filepath)) {
++    // don't list images by default, since they should probably be inserted
++    // into the body
++    $file->list = 0;
++    $aspect_ratio = $info['height'] / $info['width'];
++    $thumb_path = dirname($file->filepath).'/thumb.'.basename($file->filepath);
++    $thumb_path = file_destination($thumb_path, FILE_EXISTS_RENAME);
++    $thumb_width = variable_get('upload_thumbnail_width', UPLOAD_DEFAULT_THUMBNAIL_WIDTH);
++    image_scale($file->filepath, $thumb_path, $thumb_width, $thumb_width*$aspect_ratio);
++    $info = image_get_info($thumb_path);
++    $tb_file = array(
++      'uid' => $user->uid,
++      'filename' => '_thumbnail',
++      'filepath' => $thumb_path,
++      'filemime' => $info['mime_type'],
++      'filesize' => $info['file_size'],
++      'status' => FILE_STATUS_TEMPORARY,
++      'timestamp' => time(),
++    );
++    drupal_write_record('files', $tb_file);
++    $upload_deriv = array(
++      'fid' => $tb_file['fid'],
++      'fid_parent' => $file->fid,
++      'type' => 'img.thumb',
++    );
++    drupal_write_record('upload_derivative', $upload_deriv);
++    return $tb_file['fid'];
++  }
++}
++
+ /**
+  * Save new uploads and store them in the session to be associated to the node
+  * on upload_save.
+@@ -172,7 +243,7 @@
+ 
+   $limits = _upload_file_limits($user);
+   $validators = array(
+-    'file_validate_extensions' => array($limits['extensions']),
++  //  'file_validate_extensions' => array($limits['extensions']),
+     'file_validate_image_resolution' => array($limits['resolution']),
+     'file_validate_size' => array($limits['file_size'], $limits['user_size']),
+   );
+@@ -183,6 +254,7 @@
+     $file->description = $file->filename;
+     $file->weight = 0;
+     $file->new = TRUE;
++    upload_make_derivatives($file);
+     $form['#node']->files[$file->fid] = $file;
+     $form_state['values']['files'][$file->fid] = (array)$file;
+   }
+@@ -218,18 +290,103 @@
+ 
+   if (isset($form['type']) && isset($form['#node'])) {
+     $node = $form['#node'];
++
++    drupal_add_js('
++
++$.fn.insertAtCaret = function (myValue) {
++        return this.each(function(){
++                //IE support
++                if (document.selection) {
++                        this.focus();
++                        sel = document.selection.createRange();
++                        sel.text = myValue;
++                        this.focus();
++                }
++                //MOZILLA/NETSCAPE support
++                else if (this.selectionStart || this.selectionStart == "0") {
++                        var startPos = this.selectionStart;
++                        var endPos = this.selectionEnd;
++                        var scrollTop = this.scrollTop;
++                        this.value = this.value.substring(0, startPos)
++                                      + myValue
++                              + this.value.substring(endPos,
++this.value.length);
++                        this.focus();
++                        this.selectionStart = startPos + myValue.length;
++                        this.selectionEnd = startPos + myValue.length;
++                        this.scrollTop = scrollTop;
++                } else {
++                        this.value += myValue;
++                        this.focus();
++                }
++        });
++
++};
++
++function update_click_inserts() {
++	$("button.insertimg").click(function() {
++			//var caption = prompt("If you would like an image caption enter it here, otherwise leave it blank","");
++			var imgtag = "<img src=\""+this.id+"\" alt=\"\" />";
++			//if (caption) {
++			//  imgtag = "<span class=\"imgbox\">"+imgtag+"<div class=\"imgcaption\">"+caption+"</div></span>";
++			//}
++			try {
++			$("#edit-body").insertAtCaret(imgtag);
++			} catch (error) {}
++			try {
++			var oEditor = FCKeditorAPI.GetInstance(fckLaunchedJsId[0]) ;
++			oEditor.InsertHtml(imgtag);
++			} catch (error) {}
++			});
++	$("button.insertthumb").click(function() {
++			var imgtag = "<img src=\""+this.id+"\" alt=\"\" />";
++			try {
++			$("#edit-body").insertAtCaret(imgtag);
++			} catch (error) {}
++			try {
++			var oEditor = FCKeditorAPI.GetInstance(fckLaunchedJsId[0]) ;
++			oEditor.InsertHtml(imgtag);
++			} catch (error) {}
++			});
++}
++    jQuery.fn["replaceAndUpdateHandlers"] = function(value) {
++		    this.empty().append(value);
++				update_click_inserts();
++    }
++    $(document).ready(function() {
++            update_click_inserts();
++	    setup_insert_other_img();
++    });
++
++    function setup_insert_other_img() {
++      $("#insert-other-img").html("poo");
++    }
++
++    function FCKeditor_OnComplete( editorInstance )
++    {
++      FCKeditor_OnCompleteOld(editorInstance);
++      window.oooFckName = editorInstance.Name;
++      window.oooFCKeditorAPI = FCKeditorAPI;
++    }
++
++    function open_fucking_window() {
++	var win = window.open("/sites/all/modules/upload/insertotherpopup.html?var=oFCK_1", null, "toolbar=no, location=no, menubar=no, status=no, scrollbars=yes, width=400, height=500");
++    }
++    
++    ','inline');
++
+     if ($form['type']['#value'] .'_node_form' == $form_id && variable_get("upload_$node->type", TRUE)) {
+       // Attachments fieldset
+       $form['attachments'] = array(
+         '#type' => 'fieldset',
+         '#access' => user_access('upload files'),
+-        '#title' => t('File attachments'),
++        '#title' => t('Images and File attachments'),
+         '#collapsible' => TRUE,
+-        '#collapsed' => empty($node->files),
+-        '#description' => t('Changes made to the attachments are not permanent until you save this post. The first "listed" file will be included in RSS feeds.'),
++        '#collapsed' => FALSE,
++      //  '#description' => t('Changes made to the attachments are not permanent until you save this post. The first "listed" file will be included in RSS feeds.'),
+         '#prefix' => '<div class="attachments">',
+         '#suffix' => '</div>',
+-        '#weight' => 30,
++        '#weight' => 0,
+       );
+ 
+       // Wrapper for fieldset contents (used by ahah.js).
+@@ -237,6 +394,10 @@
+         '#prefix' => '<div id="attach-wrapper">',
+         '#suffix' => '</div>',
+       );
++      
++      $form['attachments']['insert_other'] = array(
++	'#value' => '<a style="cursor: pointer;" onclick="open_fucking_window();">Insert an image from another article</a>',
++      );
+ 
+       // Make sure necessary directories for upload.module exist and are
+       // writable before displaying the attachment form.
+@@ -384,6 +545,8 @@
+   }
+ 
+   foreach ($node->files as $fid => $file) {
++    // Make derivatives permanent
++    db_query("UPDATE {files} f INNER JOIN {upload_derivative} u ON u.fid_parent = %d and f.fid = u.fid SET f.status = 1", $fid);
+     // Convert file to object for compatibility
+     $file = (object)$file;
+ 
+@@ -419,6 +582,17 @@
+   }
+ }
+ 
++function _upload_delete_derivatives($fid) {
++  $q = db_query("SELECT fid,filepath FROM {files} f WHERE EXISTS (SELECT * FROM {upload_derivative} u WHERE u.fid = f.fid AND u.fid_parent = %d)", $fid);
++  while ($deriv_file = db_fetch_array($q)) {
++    drupal_set_message("Deleted ".$deriv_file['filepath']);
++    file_delete($deriv_file['filepath']);
++    db_query("DELETE FROM {files} WHERE fid = %d", $deriv_file['fid']);
++  }
++  db_query("DELETE FROM {upload_derivative} WHERE fid_parent = %d", $fid);
++  db_query('DELETE FROM {files} WHERE fid = %d', $fid);
++}
++
+ function upload_delete($node) {
+   $files = array();
+   $result = db_query('SELECT DISTINCT f.* FROM {upload} u INNER JOIN {files} f ON u.fid = f.fid WHERE u.nid = %d', $node->nid);
+@@ -428,6 +602,7 @@
+ 
+   foreach ($files as $fid => $file) {
+     // Delete all files associated with the node
++    _upload_delete_derivatives($fid);
+     db_query('DELETE FROM {files} WHERE fid = %d', $fid);
+     file_delete($file->filepath);
+   }
+@@ -444,6 +619,7 @@
+ 
+       // if the file won't be used, delete it
+       if ($count < 2) {
++	_upload_delete_derivatives($file->fid);
+         db_query('DELETE FROM {files} WHERE fid = %d', $file->fid);
+         file_delete($file->filepath);
+       }
+@@ -480,7 +656,16 @@
+       $form['files'][$key]['filesize'] = array('#type' => 'value',  '#value' => $file->filesize);
+       $form['files'][$key]['fid'] = array('#type' => 'value',  '#value' => $file->fid);
+       $form['files'][$key]['new'] = array('#type' => 'value', '#value' => FALSE);
+-    }
++      if (image_get_info($file->filepath)) {
++        $thumb_fid = db_result(db_query("SELECT fid FROM {upload_derivative} WHERE fid_parent = %d AND type = 'img.thumb'", $file->fid));
++        if (!$thumb_fid) $thumb_fid = upload_make_derivatives($file);
++        if ($thumb_fid) $thumb_url = db_result(db_query("SELECT filepath FROM {files} WHERE fid = %d", $thumb_fid));
++          $form['files'][$key]['insertbutton'] = array('#type' => 'markup', '#value' => 
++                '<button type="button" class="insertimg" id="'.file_create_url($file->filepath).'">Full sized</button>'.
++                '<button type="button" class="insertthumb" id="'.file_create_url($thumb_url).'">Thumbnail</button>'
++          );
++        }
++     }
+   }
+ 
+   if (user_access('upload files')) {
+@@ -490,7 +675,7 @@
+       '#type' => 'file',
+       '#title' => t('Attach new file'),
+       '#size' => 40,
+-      '#description' => ($limits['resolution'] ? t('Images are larger than %resolution will be resized. ', array('%resolution' => $limits['resolution'])) : '') . t('The maximum upload size is %filesize. Only files with the following extensions may be uploaded: %extensions. ', array('%extensions' => $limits['extensions'], '%filesize' => format_size($limits['file_size']))),
++      '#description' => ($limits['resolution'] ? t('Images are larger than %resolution will be resized. ', array('%resolution' => $limits['resolution'])) : '') . t('The maximum upload size is %filesize. ', array('%filesize' => format_size($limits['file_size']))),
+     );
+     $form['new']['attach'] = array(
+       '#type' => 'submit',
+@@ -500,6 +685,7 @@
+         'path' => 'upload/js',
+         'wrapper' => 'attach-wrapper',
+         'progress' => array('type' => 'bar', 'message' => t('Please wait...')),
++        'method' => 'replaceAndUpdateHandlers',
+       ),
+       '#submit' => array('node_form_submit_build_node'),
+     );
+@@ -514,7 +700,7 @@
+  * @ingroup themeable
+  */
+ function theme_upload_form_current(&$form) {
+-  $header = array('', t('Delete'), t('List'), t('Description'), t('Weight'), t('Size'));
++  $header = array('', t('Delete'), t('List'), t('Description'), t('Weight'), t('Insert into text'), t('Size'));
+   drupal_add_tabledrag('upload-attachments', 'order', 'sibling', 'upload-weight');
+ 
+   foreach (element_children($form) as $key) {
+@@ -526,6 +712,7 @@
+     $row[] = drupal_render($form[$key]['list']);
+     $row[] = drupal_render($form[$key]['description']);
+     $row[] = drupal_render($form[$key]['weight']);
++    $row[] = drupal_render($form[$key]['insertbutton']);
+     $row[] = drupal_render($form[$key]['size']);
+     $rows[] = array('data' => $row, 'class' => 'draggable');
+   }

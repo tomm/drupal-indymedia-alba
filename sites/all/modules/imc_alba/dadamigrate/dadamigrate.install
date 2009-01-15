@@ -1,0 +1,113 @@
+<?php
+
+function dadamigrate_update_1() {
+	// Put authors into nodextradata, instead of the silly old way.
+	// This shouldn't take too long, so be lazy instead of using a batch thing
+	set_time_limit(0);
+	$re = "/^(<!--break-->)?<p><em class=\"attribution\">BY ([^<]*)<\/em><\/p>/";
+	$q = db_query('SELECT nid,vid,body,teaser FROM {node_revisions}');
+	while ($x = db_fetch_array($q)) {
+		$regs = null;
+		preg_match($re, $x['body'], $regs);
+		if ($regs) {
+			//print '<p>NID '.$x['nid'].': '.$regs[1];
+			$x['body'] = preg_replace($re, '', $x['body']);
+			db_query('INSERT INTO {nodextradata} (nid, author) VALUES (%d,"%s")', $x['nid'], $regs[2]);
+			db_query('UPDATE {node_revisions} SET body="%s" WHERE nid=%d AND vid=%d', $x['body'], $x['nid'], $x['vid']);
+		}
+		preg_match($re, $x['teaser'], $regs);
+		if ($regs) {
+			$x['teaser'] = preg_replace($re, '', $x['teaser']);
+			db_query('UPDATE {node_revisions} SET teaser="%s" WHERE nid=%d AND vid=%d', $x['teaser'], $x['nid'], $x['vid']);
+		}
+	}
+	return array();
+}
+
+
+function dadamigrate_schema() {
+	$schema['dada_articles'] = array(
+		'fields' => array(
+			'objectid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+		),
+		'primary key' => array('objectid'),
+	);
+	$schema['dada_features'] = array(
+		'fields' => array(
+			'objectid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+		),
+		'primary key' => array('objectid'),
+	);
+	$schema['dada_media'] = array(
+		'fields' => array(
+			'objectid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+		),
+		'primary key' => array('objectid'),
+	);
+	$schema['dada_otherpress'] = array(
+		'fields' => array(
+			'objectid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+		),
+		'primary key' => array('objectid'),
+	);
+	$schema['dada_comments'] = array(
+		'fields' => array(
+			'objectid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+		),
+		'primary key' => array('objectid'),
+	);
+	return $schema;
+}
+
+function dadamigrate_install() {
+	drupal_install_schema('dadamigrate');
+}
+
+function dadamigrate_uninstall() {
+	drupal_uninstall_schema('dadamigrate');
+}

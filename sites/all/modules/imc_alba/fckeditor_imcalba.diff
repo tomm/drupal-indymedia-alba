@@ -1,0 +1,92 @@
+diff -r -u -N fckeditor/fckeditor.config.js fckeditor.cool/fckeditor.config.js
+--- fckeditor/fckeditor.config.js	2008-06-20 13:24:14.000000000 +0100
++++ fckeditor.cool/fckeditor.config.js	2008-08-27 18:25:23.000000000 +0100
+@@ -39,7 +39,7 @@
+ ] ;
+ 
+ FCKConfig.ToolbarSets["DrupalBasic"] = [
+-['FontFormat','-','Bold','Italic','-','OrderedList','UnorderedList','-','Link','Unlink', 'Image']
++['Bold','Italic','-','OrderedList','UnorderedList','-','Link','Unlink', 'Image','DrupalBreak']
+ ] ;
+ 
+ //This toolbar should work fine with "Filtered HTML" filter
+diff -r -u -N fckeditor/fckeditor.css fckeditor.cool/fckeditor.css
+--- fckeditor/fckeditor.css	2007-11-15 16:15:47.000000000 +0000
++++ fckeditor.cool/fckeditor.css	2008-08-27 18:25:23.000000000 +0100
+@@ -21,4 +21,18 @@
+ }
+ .rtejustify {
+   text-align: justify;
+-}
+\ No newline at end of file
++}
++.FCK__DrupalBreak {
++	background-position: center center;
++	background-image: url(fck__drupalbreak.gif);
++	background-repeat: no-repeat;
++	clear: both;
++	display: block;
++	float: none;
++	width: 100%;
++	border-top: #999999 1px	dotted;
++	border-bottom: #999999 1px dotted;
++	border-right: 0px;
++	border-left: 0px;
++	height:	13px;
++}
+diff -r -u -N fckeditor/fckeditor.utils.js fckeditor.cool/fckeditor.utils.js
+--- fckeditor/fckeditor.utils.js	2008-08-14 07:17:19.000000000 +0100
++++ fckeditor.cool/fckeditor.utils.js	2008-08-27 18:27:06.000000000 +0100
+@@ -206,6 +206,8 @@
+   IntegrateWithImgAssist();
+ }
+ 
++var FCKeditor_OnCompleteOld = FCKeditor_OnComplete;
++
+ function IntegrateWithImgAssist()
+ {
+   var link = document.getElementsByTagName("a");
+@@ -215,4 +217,4 @@
+       link[i].href = link[i].href.replace("/load/textarea", "/load/fckeditor");
+     }
+   }
+-}
+\ No newline at end of file
++}
+diff -r -u -N fckeditor/plugins/drupalbreak/fckplugin.js fckeditor.cool/plugins/drupalbreak/fckplugin.js
+--- fckeditor/plugins/drupalbreak/fckplugin.js	2007-11-15 16:15:48.000000000 +0000
++++ fckeditor.cool/plugins/drupalbreak/fckplugin.js	2008-08-27 18:25:23.000000000 +0100
+@@ -44,7 +44,7 @@
+ 		case 'Break' :
+ 			this.RemoveOldBreaks();
+ 			var e = FCK.EditorDocument.createComment( 'break' ) ;
+-			oFakeImage = FCK.InsertElement( FCKDocumentProcessor_CreateFakeImage( 'FCK__PageBreak', e ) ) ;
++			oFakeImage = FCK.InsertElement( FCKDocumentProcessor_CreateFakeImage( 'FCK__DrupalBreak', e ) ) ;
+ 			oFakeImage.setAttribute( "_drupalbreak", "true" ) ;
+ 			oFakeImage.style.borderTop = oFakeImage.style.borderBottom = pBreakBorderStyle ;
+ 			this.MoveBreakOutsideElement();
+@@ -139,7 +139,7 @@
+ // Register the Drupal tag commands.
+ FCKCommands.RegisterCommand( 'DrupalBreak', new FCKDrupalBreak( 'Break' ) ) ;
+ // Create the Drupal tag buttons.
+-var oDrupalItem = new FCKToolbarButton( 'DrupalBreak', 'Break', null, FCK_TOOLBARITEM_ICONTEXT, true, true ) ;
++var oDrupalItem = new FCKToolbarButton( 'DrupalBreak', 'Summary / body separator', null, FCK_TOOLBARITEM_ICONTEXT, true, true ) ;
+ oDrupalItem.IconPath = FCKConfig.PluginsPath + 'drupalbreak/drupalbreak.gif';
+ FCKToolbarItems.RegisterItem( 'DrupalBreak', oDrupalItem ) ;
+ 
+@@ -166,7 +166,7 @@
+ 				if (re.test(node.nodeValue))
+ 					PContent = FCKConfig.ProtectedSource.Revert('<!--' + node.nodeValue + '-->', false);
+ 				if (node.nodeValue == 'break' || PContent == '<!--break-->') {
+-					var oFakeImage = FCKDocumentProcessor_CreateFakeImage( 'FCK__PageBreak', node.cloneNode(true) ) ;
++					var oFakeImage = FCKDocumentProcessor_CreateFakeImage( 'FCK__DrupalBreak', node.cloneNode(true) ) ;
+ 					oFakeImage.setAttribute( "_drupalbreak", "true" ) ;
+ 					oFakeImage.style.borderTop = oFakeImage.style.borderBottom = pBreakBorderStyle ;
+ 					node.parentNode.insertBefore( oFakeImage, node ) ;
+@@ -195,4 +195,4 @@
+ 		
+ 	result = result.replace( re, '$2' );
+ 	return result ;
+-}
+\ No newline at end of file
++}

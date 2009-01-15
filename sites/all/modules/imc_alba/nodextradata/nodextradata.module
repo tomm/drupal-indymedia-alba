@@ -1,0 +1,68 @@
+<?php
+
+function _nodextradata_username($node) {
+	global $user;
+	if (!$node->uid) return variable_get('anonymous', 'Anonymous');
+	else if ($node->uid == $user->uid) return $user->name;
+	else {
+		$u = user_load($node->uid);
+		return $u->name;
+	}
+}
+
+function nodextradata_form_alter(&$form, $form_state, $form_id) {
+	if (isset($form['type']) && isset($form['#node']) && 
+			variable_get('nodextradata_author_'.$form['#node']->type, 0)) {
+		$node = &$form['#node'];
+		$form['xtradata'] = array('#weight' => -3);
+		$form['xtradata']['author'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Author'),
+			'#default_value' => isset($node->author) ? $node->author : _nodextradata_username($node),
+			'#size' => 32,
+			'#maxlength' => 128,
+			'#description' => t('Author of the article, if it is not the same as your username.'),
+		);
+		//drupal_set_message($form['type']['#value']);
+	
+	}
+	if ($form_id == 'node_type_form' && isset($form['identity']['type'])) {
+		$form['nodextradata'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Indymedia extra data fields'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+		);
+		$form['nodextradata']['nodextradata_author'] = array(
+			'#type' => 'radios',
+			'#title' => t('Author'),
+			'#default_value' => variable_get('nodextradata_author_'.$form['#node_type']->type, 0),
+			'#options' => array(t('Disabled'), t('Enabled')),
+		);
+	}
+}
+
+function nodextradata_nodeapi(&$node, $op, $a3=NULL, $a4=NULL) {
+	switch ($op) {
+		case 'insert':
+		case 'update':
+			if (!variable_get('nodextradata_author_'.$node->type, 0)) return;
+			db_query("DELETE FROM {nodextradata} WHERE nid=%d", $node->nid);
+			if (isset($node->author) && $node->author && ($node->author != _nodextradata_username($node))) {
+				db_query("INSERT INTO {nodextradata} (nid, author) VALUES(%d,'%s')", $node->nid, $node->author);
+			}
+			break;
+		case 'load':
+			if (!variable_get('nodextradata_author_'.$node->type, 0)) return;
+			return db_fetch_array(db_query("SELECT author FROM {nodextradata} WHERE nid=%d", $node->nid));
+		case 'delete':
+			db_query("DELETE FROM {nodextradata} WHERE nid=%d", $node->nid);
+			break;
+		case 'update index':
+			if (isset($node->author))
+				return '<h2>'.$node->author.'</h2>';
+			break;
+			
+	}
+}
+

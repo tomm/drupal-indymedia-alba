@@ -1,0 +1,9 @@
+; $Id: imcviews.info,v 1.3 2008/05/17 16:00:57 tomm Exp $
+name = Indymedia Views
+description = "Various Indymedia-specific views, including newswire and front page"
+package = Indymedia
+version = "6.x-1.1"
+core = 6.x
+dependencies[] = imceditor
+project = "imc_alba"
+

@@ -1,0 +1,7 @@
+; $Id: article.info,v 1.3 2008/05/17 16:00:57 tomm Exp $
+name = Indymedia Article
+description = "Content type of a news article."
+package = Indymedia
+version = "6.x-1.1"
+core = 6.x
+project = "imc_alba"

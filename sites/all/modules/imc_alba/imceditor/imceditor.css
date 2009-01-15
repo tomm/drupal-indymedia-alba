@@ -1,0 +1,56 @@
+
+div#editor_moderate {
+	border: 1px solid #666;
+	margin: 6px 2px;
+	padding: 0px;
+	float: right;
+	width: 200px;
+}
+
+div#editor_ctrls_section {
+	padding: 5px 5px 5px 5px;
+}
+
+div.editor_heading {
+	color: #66f;
+	background-color: #ddf;
+	padding: 2px 5px 2px 5px;
+	font-size: 80%;
+	text-align: center;
+	font-weight: bold;
+	cursor: pointer;
+}
+div.editor_heading:hover {
+	color: #f22;
+}
+
+div.editor_ctrls_subheading {
+	color: #333;
+	background-color: #ccf;
+	margin: 4px 0px 0px 0px;
+	padding: 2px 5px 2px 5px;
+	font-size: 80%;
+}
+
+.editor_ctrls_section * {
+	margin: 2px;
+	font-size: 90%;
+}
+
+.editor_ctrls_section input {
+	color: #000;
+	background: #fff;
+	border: 1px solid #333;
+}
+
+.editor_ctrls_section button {
+	font-size: 90%;
+	color: #000;  
+	background: #ddd;
+	border-width: 1px;
+	border-style: solid;
+	border-top-color: #999;
+	border-left-color: #999;
+	border-right-color: #333;
+	border-bottom-color: #333;
+}

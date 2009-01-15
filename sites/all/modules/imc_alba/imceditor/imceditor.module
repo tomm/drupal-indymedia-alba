@@ -1,0 +1,684 @@
+<?php
+
+define('IMCEDITOR_NODE_STATUS_VISIBLE', 0);
+define('IMCEDITOR_NODE_STATUS_HIDDEN', 1);
+define('IMCEDITOR_NODE_STATUS_DELETED', 2);
+define('IMCEDITOR_NODE_STATUS_HIDDEN_PENDING_PROMOTION', 3);
+
+define('IMCEDITOR_DEFAULT_VOTES_NEEDED', 2);
+define('IMCEDITOR_DEFAULT_CPANEL_WEIGHT', -9);
+define('IMCEDITOR_DEFAULT_HIDDEN_MSG_WEIGHT', -10);
+define('IMCEDITOR_DEFAULT_FEATURE_MSG_WEIGHT', -9);
+define('IMCEDITOR_DEFAULT_FEATURE_PROPOSAL_EMAIL',
+'Dear Editors,
+
+This message is to inform you of a feature proposal made by !username, that the following be made a feature:
+
+Title: !title
+!url
+
+!username left the following comment: !comment
+
+');
+define('IMCEDITOR_PROPOSALS_QUERY',
+	'SELECT nid FROM {node} n WHERE EXISTS (SELECT * FROM {imc_feature_proposal} p WHERE p.nid = n.nid AND p.active = 1) ORDER BY n.created DESC');
+
+function imceditor_block($op='list', $delta=0) {
+	// listing of blocks, eg admin page
+	if ($op == 'list') {
+		$block[0]["info"] = t('Editor notices');
+		//$block[0]['cache'] = BLOCK_CACHE_PER_ROLE; // default
+		return $block;
+	} else if ($op == 'view') {
+		if (!user_access('moderate content')) return;
+		$num = db_result(db_query("SELECT COUNT(*) FROM {imc_feature_proposal} WHERE active = 1"));
+
+		$out = '';
+
+		if ($num) {
+			$out .= l(sprintf(t("There are %d feature proposals"), $num), 'imceditor/proposals');
+		}
+
+		if ($out == '') $out = t('No notices');
+
+		$block['subject'] = t('Editor notices'); 
+		$block['content'] = '<div class="editor-notices">'.$out.'</div>';
+		return $block;
+	}
+}
+
+function imceditor_cron()
+{
+	// delete feature promotion proposals that have not been ratified
+	// after 30 days
+	db_query("DELETE FROM {imc_feature_proposal} WHERE active = 1 AND timestamp < %d", time() - 60*60*24*30);
+}
+
+function imceditor_view_proposals() {
+	// show visible but not front page articles
+	$q = pager_query(db_rewrite_sql(IMCEDITOR_PROPOSALS_QUERY), 10, 0);
+
+	$out = "";
+	while ($nid = db_fetch_array($q)) {
+		$node = node_load(array('nid'=>$nid['nid']));
+		$out .= node_view($node, TRUE, FALSE, TRUE);
+	}
+	$out .= theme('pager', NULL, 10);
+	
+	return $out;
+}
+
+function imceditor_theme() {
+	return array(
+		'imceditor_proposal' => array(
+			'arguments' => array('node' => NULL, 'prop' => NULL),
+			'template' => 'imceditor-proposal',
+		),
+		'imceditor_cpanel' => array(
+			'arguments' => array('node' => NULL, 'prop' => NULL),
+			'template' => 'imceditor-cpanel',
+		),
+		'imceditor_hidden_msg' => array(
+			'arguments' => array('message' => NULL),
+			'template' => 'imceditor-hidden-msg',
+		),
+		'imceditor_cpanel_feature_msg' => array(
+			'arguments' => array('node' => NULL, 'prop' => NULL),
+			'template' => 'imceditor-cpanel-feature-msg',
+		),
+		'imceditor_admin_overview' => array(
+			'arguments' => array('form' => NULL),
+		),
+	);
+}
+
+function imceditor_perm() {
+	return array('moderate content', 'administer imceditor');
+}
+
+
+function imceditor_mail($key, &$message, $params) {
+//	$language = $message['language'];
+//	$variables = user_mail_tokens($params['account'], $language);
+	switch ($key) {
+		case 'feature-proposal':
+			$message['subject'] = t('Feature proposal');
+			$message['body'] = t(variable_get("imceditor_feature_proposal_email_message", IMCEDITOR_DEFAULT_FEATURE_PROPOSAL_EMAIL),
+					array('!username' => $params['username'],
+					      '!title' => $params['title'],
+					      '!comment' => $params['comment'],
+					      '!url' => url("node/".$params['nid'], array('absolute'=>TRUE))));
+			break;
+	}
+}
+
+function template_preprocess_imceditor_proposal(&$variables) {
+	if ($variables['node']->title == "")
+		$variables['title'] = "<untitled>";
+	else $variables['title'] = check_plain($variables['node']->title);
+	$variables['created'] = $variables['node']->created;
+	
+	$variables['blocks'] = array();
+	$q = db_query('SELECT * FROM {imc_feature_vote} WHERE nid = %d AND block = 1', $variables['node']->nid);
+	while ($vote = db_fetch_array($q)) {
+		$variables['blocks'][] = $vote;
+	}
+}
+/**
+ * Implementation of hook_menu.
+ */
+function imceditor_menu() {
+	$items = array();
+	$items['admin/settings/imceditor'] = array(
+		'title' => 'Indymedia Editor settings',
+		'description' => 'Configuration of Indymedia Editor stuff',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('imceditor_admin'),
+		'access arguments' => array('administer imceditor'),
+	);
+	$items['admin/content/imceditor'] = array(
+		'title' => 'Editor moderation',
+		'description' => 'List, edit, moderate, hide and delete content.',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('imceditor_admin_overview'),
+		'access arguments' => array('moderate content'),
+		'file' => 'imceditor.admin.inc',
+	);
+	// Tabs:
+	$items['admin/content/imceditor/promoted/%'] = array(
+		'title' => t('Promoted'),
+		'type' => MENU_LOCAL_TASK,
+		'weight' => -15,
+		'access arguments' => array('moderate content'),
+		'file' => 'imceditor.admin.inc',
+	);
+	$items['admin/content/imceditor/visible/%'] = array(
+		'title' => t('Published'),
+		'type' => MENU_LOCAL_TASK,
+		'access arguments' => array('moderate content'),
+		'weight' => -10,
+	);
+	$items['admin/content/imceditor/hidden/%'] = array(
+		'title' => t('Hidden'),
+		'type' => MENU_LOCAL_TASK,
+		'weight' => -5,
+		'access arguments' => array('moderate content'),
+		'file' => 'imceditor.admin.inc',
+	);
+	$items['admin/content/imceditor/deleted/%'] = array(
+		'title' => t('Deleted'),
+		'type' => MENU_LOCAL_TASK,
+		'access arguments' => array('moderate content'),
+		'file' => 'imceditor.admin.inc',
+	);
+
+	$items['imceditor/hide'] = array(
+		'page callback' => 'imceditor_ajax_hide',
+		'access arguments' => array('moderate content'),
+		'type' => MENU_CALLBACK
+	);
+	$items['imceditor/unhide'] = array(
+		'page callback' => 'imceditor_ajax_unhide',
+		'access arguments' => array('moderate content'),
+		'type' => MENU_CALLBACK
+	);
+	$items['imceditor/propose_feature'] = array(
+		'page callback' => 'imceditor_ajax_propose_feature',
+		'access arguments' => array('moderate content'),
+		'type' => MENU_CALLBACK
+	);
+	$items['imceditor/unpropose_feature'] = array(
+		'page callback' => 'imceditor_unpropose_feature',
+		'access arguments' => array('moderate content'),
+		'type' => MENU_CALLBACK
+	);
+	$items['imceditor/vote_feature'] = array(
+		'page callback' => 'imceditor_ajax_vote_feature',
+		'access arguments' => array('moderate content'),
+		'type' => MENU_CALLBACK
+	);
+	$items['imceditor/retract_vote'] = array(
+		'page callback' => 'imceditor_retract_vote',
+		'access arguments' => array('moderate content'),
+		'type' => MENU_CALLBACK
+	);
+	$items['imceditor/proposals'] = array(
+		'title' => 'Editor Proposals',
+		'page callback' => 'imceditor_view_proposals',
+		'access arguments' => array('moderate content'),
+		'type' => MENU_CALLBACK
+	);
+
+	return $items;
+}
+
+function imceditor_admin() {
+	$form["imceditor_editors_email"] = array(
+		'#type' => 'textfield',
+		'#title' => t('Email address (mailing list) to send notifications of feature proposals to editors.'),
+		'#default_value' => variable_get("imceditor_editors_email", ''),
+		'#size' => 60,
+		'#maxlength' => 255,
+	);
+	$form["imceditor_feature_proposal_email_message"] = array(
+		'#type' => 'textarea',
+		'#title' => t('Template of the message to send editors when feature proposals are made.'),
+		'#default_value' => variable_get("imceditor_feature_proposal_email_message", IMCEDITOR_DEFAULT_FEATURE_PROPOSAL_EMAIL),
+		'#cols' => 60,
+		'#rows' => 5,
+	);
+	$form["imceditor_votes_needed"] = array(
+		'#type' => 'textfield',
+		'#title' => t('Number of votes required to make a feature'),
+		'#default_value' => variable_get("imceditor_votes_needed", IMCEDITOR_DEFAULT_VOTES_NEEDED),
+		'#size' => 2,
+		'#maxlength' => 2,
+		'#description' => t("The number of votes required to promote an article onto the front page"),
+	);
+	$form["imceditor_cpanel_weight"] = array(
+		'#type' => 'textfield',
+		'#title' => t('Layout weight of the editor control panel'),
+		'#default_value' => variable_get("imceditor_cpanel_weight", IMCEDITOR_DEFAULT_CPANEL_WEIGHT),
+		'#size' => 4,
+		'#maxlength' => 4,
+	);
+	$form["imceditor_hidden_msg_weight"] = array(
+		'#type' => 'textfield',
+		'#title' => t('Layout weight of the hidden article notification'),
+		'#default_value' => variable_get("imceditor_hidden_msg_weight", IMCEDITOR_DEFAULT_HIDDEN_MSG_WEIGHT),
+		'#size' => 4,
+		'#maxlength' => 4,
+	);
+	$form["imceditor_feature_msg_weight"] = array(
+		'#type' => 'textfield',
+		'#title' => t('Layout weight of the feature vote notification'),
+		'#default_value' => variable_get("imceditor_feature_msg_weight", IMCEDITOR_DEFAULT_FEATURE_MSG_WEIGHT),
+		'#size' => 4,
+		'#maxlength' => 4,
+	);
+
+	return system_settings_form($form);
+}
+
+function imceditor_form_alter(&$form, $form_state, $form_id) {
+	if ($form_id == 'node_type_form' && isset($form['identity']['type'])) {
+		$form['imceditor'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Indymedia moderation settings'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+		);
+		$form['imceditor']['imceditor_moderate_type'] = array(
+			'#type' => 'radios',
+			'#title' => t('Editor control panel'),
+			'#default_value' => variable_get('imceditor_moderate_type_'. $form['#node_type']->type, 0),
+			'#options' => array(t('No'), t('Yes')),
+			'#description' => t('Make the editor moderation control panel visible for this content type'),
+		);
+	}
+}
+
+function _imceditor_get_prop($nid) {
+	global $user;
+	$prop = db_fetch_array(db_query('SELECT * FROM {imc_feature_proposal} WHERE nid = %d AND active = 1', $nid));
+	if (!$prop) return NULL;
+	$prop['votes'] = db_result(db_query('SELECT COUNT(*) FROM {imc_feature_vote} WHERE nid = %d AND value = 1', $nid));
+	$prop['user_voted'] = db_result(db_query("SELECT COUNT(*) FROM {imc_feature_vote} WHERE nid = %d AND uid = %d", $nid, $user->uid));
+	$prop['user_voted_for'] = db_result(db_query("SELECT COUNT(*) FROM {imc_feature_vote} WHERE nid = %d AND uid = %d AND value = 1", $nid, $user->uid));
+	$prop['user_voted_block'] = db_result(db_query("SELECT COUNT(*) FROM {imc_feature_vote} WHERE nid = %d AND uid = %d AND block = 1", $nid, $user->uid));
+	
+	$votes_needed = variable_get("imceditor_votes_needed", IMCEDITOR_DEFAULT_VOTES_NEEDED);
+	$prop['votes_needed'] = $votes_needed - $prop['votes'];
+	return $prop;
+}
+		
+function _imceditor_update_msgs(&$out, $nid) {
+	$node = node_load($nid);
+	$prop = _imceditor_get_prop($nid);
+	$out['mod_msgs'] = theme('imceditor_proposal', $node, $prop);
+	$out['feature_msg'] = theme('imceditor_cpanel_feature_msg', $node, $prop);
+}
+
+function _imceditor_promote_article($nid) {
+	$node = node_load($nid);
+	$node->promote = 1;
+	node_save($node);
+
+	db_query("UPDATE {imc_feature_proposal} SET active=0 WHERE nid = %d", $nid);
+	if (db_result(db_query("SELECT COUNT(*) FROM {imc_node_moderation} WHERE nid=%d AND status != 0", $nid))) {
+		imceditor_unhide(array($nid), 'Promoted');
+	}
+}
+
+function imceditor_retract_vote() {
+	global $user;
+	$nid = $_GET['nid'];
+	$prop = _imceditor_get_prop($nid);
+	
+	if (!$prop) {
+		print drupal_to_js(array('stat' => 0, 'msg' => t("Voting error")));
+	} else if (!$prop['active']) {
+		print drupal_to_js(array('stat' => 0, 'msg' => t("Your vote cannot be
+			retracted because the polls are closed")));
+	} else {
+		db_query("DELETE FROM {imc_feature_vote} WHERE nid = %d AND uid = %d", $nid, $user->uid);
+		$out = array('stat' => 1, 'msg' => t("Your vote has been retracted"));
+		
+		// does removal of block cause feature  promotion?
+		$block = db_result(db_query("SELECT COUNT(*) FROM {imc_feature_vote} WHERE nid = %d AND block = 1", $nid));
+		if (!$block && !$prop['votes_needed']) {
+			_imceditor_promote_article($nid);
+			$out['feature_msg'] = t('This article is now a feature');
+			$out['mod_msgs'] = ' ';
+			$out['stat'] = 2;
+		} else {
+			_imceditor_update_msgs(&$out, $nid);
+		}
+		print drupal_to_js($out);
+	}
+}
+
+function imceditor_vote_feature($nid, $vote, $comment) {
+	global $user;
+	
+	$voted_before = db_result(db_query("SELECT COUNT(*) FROM {imc_feature_vote} WHERE nid = %d AND uid = %d", $nid, $user->uid));
+	$block = db_result(db_query("SELECT COUNT(*) FROM {imc_feature_vote} WHERE nid = %d AND block = 1", $nid));
+	$prop = _imceditor_get_prop($nid);
+
+	$out = array();
+
+	if ($voted_before) {
+		$out['can_vote'] = 0;
+		$out['stat'] = 0;
+		$out['msg'] = t('You have already voted');
+	} else if ((!$prop) || !$prop['active']) {
+		$out['can_vote'] = 0;
+		$out['stat'] = 0;
+		$out['msg'] = t('Voting error');
+	} else if ($vote == 'for') {
+		db_query("INSERT INTO {imc_feature_vote} (nid, value, comment,
+			uid, timestamp) VALUES (%d, %d, '%s', %d, %d)",
+			$nid, 1, $comment, $user->uid, time());
+		$out['can_vote'] = 0;
+
+		if ((!$block) && ($prop['votes_needed'] <= 1)) {
+			_imceditor_promote_article($nid);
+			$out['msg'] = t('Vote cast in favour, and story promoted to the front page');
+			$out['feature_msg'] = t('This article is now a feature');
+			$out['mod_msgs'] = ' ';
+			$out['stat'] = 2;
+		} else {
+			$out['stat'] = 1;
+			$out['msg'] = t('Vote cast in favour');
+			_imceditor_update_msgs(&$out, $nid);
+		}
+	} else if ($vote == 'block') {
+		db_query("INSERT INTO {imc_feature_vote} (nid, value, block, comment,
+			uid, timestamp) VALUES (%d, %d, %d, '%s', %d, %d)",
+			$nid, 0, 1, $comment, $user->uid, time());
+		$out['can_vote'] = 0;
+		$out['stat'] = 1;
+		$out['msg'] = t('You have blocked this feature proposal');
+		_imceditor_update_msgs(&$out, $nid);
+	}
+	return $out;
+}
+
+function imceditor_ajax_vote_feature() {
+	global $user;
+	$nid = $_GET['nid'];
+	$vote = $_GET['vote'];
+	$comment = check_plain($_GET['comment']);
+
+	print drupal_to_js(imceditor_vote_feature($nid, $vote, $comment));
+}
+
+function imceditor_unpropose_feature() {
+	global $user;
+	$nid = $_GET['nid'];
+
+	$prop = _imceditor_get_prop($nid);
+
+	if ((!$prop) || ($prop['uid'] != $user->uid)) {
+		print drupal_to_js(array('stat' => 0, 'msg' => t('No')));
+	} else if ($prop['votes']) {
+		print drupal_to_js(array('stat' => 0, 'msg' => t('You cannot withdraw your feature proposal because votes have been cast')));
+	} else {
+		db_query("DELETE FROM {imc_feature_proposal} WHERE nid = %d", $nid);
+		db_query("DELETE FROM {imc_feature_vote} WHERE nid = %d", $nid);
+		$out = array('stat' => 1, 'msg' => t('You have withdrawn your feature proposal'));
+		//_imceditor_update_msgs(&$out, $nid);
+		$out['mod_msgs'] = ' '; // XXX hack. why are the messages not being set correctly?
+		$out['feature_msg'] = ' ';
+		print drupal_to_js($out);
+	}
+}
+
+function imceditor_propose_feature($nid, $comment) {
+	global $user;
+
+	$do_propose = false;
+	$result = false;
+
+	if (!$nid) return false;
+	$node = node_load($nid);
+	if (!$node) {
+		// doesn't exist. this is used by article module to make front
+		// page summary features
+		$do_propose = true;
+		$result = array('stat' => 1);
+	} else {
+		$prop = db_fetch_array(db_query('SELECT * FROM {imc_feature_proposal} WHERE nid = %d AND active = 1', $nid));
+		if ($node->promote) {
+			$result = array('stat' => 0, 'msg' => t('This article has already been made a feature.'));
+		} else if ($prop && $prop['active']) {
+			$result = array('stat' => 0, 'msg' => t('This article has already been proposed as a feature.'));
+		} else {
+			$do_propose = true;
+			$result = array('stat' => 1, 'msg' => 'Article successfully proposed as a feature.');
+
+			$email = variable_get("imceditor_editors_email", '');
+			if ($email) drupal_mail('imceditor', 'feature-proposal', $email, "en",
+					array("nid"=>$nid, "title"=>$node->title, "username"=>$user->name, 'comment' => $comment));
+		}
+	}
+	if ($do_propose) {
+		db_query("DELETE FROM {imc_feature_proposal} WHERE nid = %d", $nid);
+		db_query("INSERT INTO {imc_feature_proposal} (nid, active, comment, uid, timestamp) VALUES (%d,%d,'%s',%d,%d)",
+			$nid, 1, $comment, $user->uid, time());
+	}
+	return $result;
+}
+
+function imceditor_ajax_propose_feature() {
+	global $user;
+	$nid = $_GET['nid'];
+	$comment = check_plain($_GET['comment']);
+	if (!$comment) $comment = "";
+
+	$result = imceditor_propose_feature($nid, $comment);
+	if ($result['stat'] == 1) _imceditor_update_msgs(&$result, $nid);
+	print drupal_to_js($result);
+}
+
+function imceditor_set_hidden_status($nids, $status, $reason) {
+	global $user;
+	foreach ($nids as $nid) {
+		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
+		db_query("INSERT INTO {imc_node_moderation} (nid, status, comment, uid, timestamp) VALUES (%d,%d,'%s',%d,%d)",
+			$nid, $status, $reason, $user->uid, time());
+		db_query("UPDATE {node} SET status = 0 WHERE nid = %d", $nid);
+		switch ($status) {
+			case IMCEDITOR_NODE_STATUS_HIDDEN:
+				$msg = 'Hidden article with message \'%reason\''; break;
+			case IMCEDITOR_NODE_STATUS_DELETED:
+				$msg = 'Article marked deleted with message \'%reason\''; break;
+			case IMCEDITOR_NODE_STATUS_HIDDEN:
+				$msg = 'Article marked hidden pending promotion message \'%reason\''; break;
+			default:
+				$msg = 'Article hidden status change with reason \'%reason\''; break;
+				
+		}
+		watchdog('imceditor', $msg, array('%reason' => $reason),
+			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
+	}
+	cache_clear_all();
+}
+/*
+ * Undeletes also.
+ */
+function imceditor_unhide($nids, $reason) {
+	global $user;
+	foreach ($nids as $nid) {
+		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
+		db_query("UPDATE {node} SET status = 1 WHERE nid = %d", $nid);
+		watchdog('imceditor', 'Hidden article unhidden with message \'%reason\'', 
+			array('%reason' => $reason),
+			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
+	}
+	cache_clear_all();
+}
+
+function imceditor_hide($nids, $reason) {
+	global $user;
+	foreach ($nids as $nid) {
+		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
+		db_query("INSERT INTO {imc_node_moderation} (nid, status, comment, uid, timestamp) VALUES (%d,%d,'%s',%d,%d)",
+			$nid, IMCEDITOR_NODE_STATUS_HIDDEN, $reason, $user->uid, time());
+		db_query("UPDATE {node} SET status = 0 WHERE nid = %d", $nid);
+		watchdog('imceditor', 'Hidden article with message \'%reason\'', 
+			array('%reason' => $reason),
+			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
+	}
+	cache_clear_all();
+}
+function imceditor_undelete($nids, $reason) {
+	global $user;
+	foreach ($nids as $nid) {
+		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
+		db_query("UPDATE {node} SET status = 1 WHERE nid = %d", $nid);
+		watchdog('imceditor', 'Deleted article undeleted with message \'%reason\'', 
+			array('%reason' => $reason),
+			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
+	}
+	cache_clear_all();
+}
+
+function imceditor_delete($nids, $reason) {
+	global $user;
+	foreach ($nids as $nid) {
+		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
+		db_query("INSERT INTO {imc_node_moderation} (nid, status, comment, uid, timestamp) VALUES (%d,%d,'%s',%d,%d)",
+			$nid, IMCEDITOR_NODE_STATUS_DELETED, $reason, $user->uid, time());
+		db_query("UPDATE {node} SET status = 0 WHERE nid = %d", $nid);
+		watchdog('imceditor', 'Deleted article with message \'%reason\'', 
+			array('%reason' => $reason),
+			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
+	}
+	cache_clear_all();
+}
+
+function imceditor_ajax_hide() {
+	$reason = check_plain($_GET['reason']);
+	imceditor_hide(array($_GET['nid']), $reason);
+	
+	print drupal_to_js(array('status' => "ok", 'hidden_msg' => 
+		theme("imceditor_hidden_msg", $reason)));
+}
+
+function imceditor_ajax_unhide() {
+	global $user;
+	imceditor_unhide(array($_GET['nid']), $reason);
+	print drupal_to_js(array('status' => "ok"));
+}
+
+function _imceditor_add_node_editorbox(&$node) {
+	global $user;
+	$q = db_query('SELECT * FROM {imc_node_moderation} WHERE nid = %d', $node->nid);
+
+	$res = db_fetch_array($q);
+	$hidden = ($res ? $res['status'] : 0);
+	
+	$prop = _imceditor_get_prop($node->nid);
+	
+	$voted_before = $prop && $prop['active'] && db_result(db_query("SELECT COUNT(*) FROM {imc_feature_vote} WHERE nid = %d AND uid = %d", $node->nid, $user->uid));
+
+	$can_propose = !($node->promote || (($prop) && ($prop['active'] == 1)));
+	$can_unpropose = $prop && $prop['active'] && ($prop['uid'] == $user->uid);
+	$can_vote = $prop && $prop['active'] && !$voted_before;
+
+	$dummy = array("query"=>"dummy");
+	//while ($nid = db_result($q)) {
+	drupal_add_js('
+	var url_hide = "'.url('imceditor/hide', $dummy).'";
+	var url_unhide = "'.url('imceditor/unhide', $dummy).'";
+	var url_propose_feature = "'.url('imceditor/propose_feature', $dummy).'";
+	var url_unpropose_feature = "'.url('imceditor/unpropose_feature', $dummy).'";
+	var url_vote_feature = "'.url('imceditor/vote_feature', $dummy).'";
+	var url_retract_vote = "'.url('imceditor/retract_vote', $dummy).'";
+	var g_nodeIsHidden = '.$hidden.';
+	var g_nodeHiddenReason = "'.$res['comment'].'";
+	var g_nodeNid = '.$node->nid.';
+	var g_canPropose = '.($can_propose ? '1' : '0').';
+	var g_canVote = '.($can_vote ? '1' : '0').';
+	var g_canRetractVote = '.($voted_before ? '1' : '0').';
+	var g_canUnpropose = '.($can_unpropose ? '1' : '0').';', 'inline');
+
+	drupal_add_js(drupal_get_path('module', 'imceditor') . '/' . 'imceditor.js');
+
+	$code = theme('imceditor_cpanel', $node, $prop);
+	$node->content[] = array(
+		'#value' => $code,
+		'#weight' => variable_get("imceditor_cpanel_weight", IMCEDITOR_DEFAULT_CPANEL_WEIGHT),
+	);
+}
+
+function _imceditor_add_editor_messages(&$node) {
+	$prop = _imceditor_get_prop($node->nid);
+	$weight = variable_get("imceditor_feature_msg_weight", IMCEDITOR_DEFAULT_FEATURE_MSG_WEIGHT);
+	if (!$prop) {
+		$node->content[] = array(
+			'#value' => '<div id="editor_mod_msgs"></div>',
+			'#weight' => $weight
+		);
+	} else {
+		$node->content[] = array(
+			'#value' => '<div id="editor_mod_msgs">'.
+					theme('imceditor_proposal', $node, $prop).
+					'</div>',
+			'#weight' => $weight
+		);
+	}
+}
+
+function _imceditor_normal_user_msg(&$node) {
+	$q = db_query('SELECT * FROM {imc_node_moderation} WHERE nid = %d', $node->nid);
+	$res = db_fetch_array($q);
+	$weight = variable_get("imceditor_hidden_msg_weight", IMCEDITOR_DEFAULT_HIDDEN_MSG_WEIGHT);
+
+	if ($res['status']) {
+		if ($res['status'] ==
+			IMCEDITOR_NODE_STATUS_HIDDEN_PENDING_PROMOTION)
+		{
+			$node->content[] = array(
+				'#value' => '
+					<div id="hidden-msg-'.$node->nid.'"><div class="warning">
+						'.t("This article is hidden from normal users pending promotion").
+					'</div></div>',
+				'#weight' => $weight,
+			);
+		} else {
+			$node->content[] = array(
+				'#value' => '
+					<div id="hidden-msg-'.$node->nid.'">'.theme("imceditor_hidden_msg", $res['comment']).'</div>
+				',
+				'#weight' => $weight,
+			);
+		}
+	} else {
+		$node->content[] = array(
+			'#value' => '<div id="hidden-msg-'.$node->nid.'"></div>',
+			'#weight' => $weight
+		);
+	}
+}
+
+function imceditor_nodeapi(&$node, $op, $teaser, $page) {
+	switch ($op) {
+		case 'view':
+			if (!isset($node->nid)) return;
+			// don't want admin control panel stuck in rss feeds, search results, etc
+			if ($node->build_mode != NODE_BUILD_NORMAL) return;
+			if (!variable_get('imceditor_moderate_type_'. $node->type, FALSE)) return;
+			
+			global $user;
+			drupal_add_css(drupal_get_path('module', 'imceditor') .'/imceditor.css', 'module');
+			_imceditor_normal_user_msg($node);
+			if (user_access('moderate content')) {
+				if (!$teaser) _imceditor_add_node_editorbox($node);
+				_imceditor_add_editor_messages($node);
+			}
+	}
+}
+
+/* Generic hook access so custom node types can easily support imceditor
+ * extended moderation. */
+function imceditor_generic_access($op, $node, $type) {
+	global $user;
+
+	if ($op == 'view') {
+		// only 'deleted' nodes of this type not viewable
+		$is_deleted = db_fetch_array(db_query('SELECT COUNT(*) FROM {imc_node_moderation} WHERE nid = %d AND status = %d', $node->nid, IMCEDITOR_NODE_STATUS_DELETED));
+		return (!reset($is_deleted));
+	} else if ($op == 'create') {
+		return user_access("create $type content");
+	} else if ($op == 'update') {
+		if ($user->uid == $node->uid) return user_access("edit own $type content");
+		else return user_access("edit any $type content");
+	} else if ($op == 'delete') {
+		if ($user->uid == $node->uid) return user_access("delete own $type content");
+		else return user_access("delete any $type content");
+	}
+	return NULL;
+} 
+

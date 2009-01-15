@@ -1,0 +1,127 @@
+<?php
+
+function imceditor_update_1() {
+  $ret[] = update_sql("ALTER TABLE {imc_node_moderation} ADD COLUMN timestamp INTEGER NOT NULL DEFAULT 0");
+  return $ret;
+}
+
+function imceditor_update_2() {
+	$ret[] = update_sql("ALTER TABLE {imc_node_moderation} CHANGE hidden status INTEGER UNSIGNED DEFAULT '0'");
+	$ret[] = update_sql("ALTER TABLE {imc_node_moderation} CHANGE reason comment VARCHAR(255) NOT NULL DEFAULT ''");
+	return $ret;
+}
+	
+function imceditor_update_3() {
+	variable_set('imceditor_moderate_type_article', 1);
+	variable_set('imceditor_moderate_type_nodecomment', 1);
+	variable_set('imceditor_moderate_type_story', 1);
+	return array();
+}
+
+function imceditor_schema() {
+	$schema['imc_node_moderation'] = array(
+		'fields' => array(
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'status' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'default' => '0'),
+			'comment' => array(
+				'type' => 'varchar',
+				'length' => 255,
+				'not null' => TRUE,
+				'default' => ''),
+			'uid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'timestamp' => array(
+				'type' => 'int',
+				'not null' => TRUE,
+				'default' => 0,
+				'description' => t('The time at which the node was hidden')),
+		),
+		'primary key' => array('nid'),
+	);
+	$schema['imc_feature_proposal'] = array(
+		'fields' => array(
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'active' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '1'),
+			'comment' => array(
+				'type' => 'varchar',
+				'length' => 255,
+				'not null' => TRUE,
+				'default' => ''),
+			'uid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'timestamp' => array(
+				'type' => 'int',
+				'not null' => TRUE,
+				'default' => 0,
+				'description' => t('The time that the feature proposal was made')),
+		),
+		'primary key' => array('nid'),
+	);
+	$schema['imc_feature_vote'] = array(
+		'fields' => array(
+			'vid' => array(
+				'type' => 'serial',
+				'not null' => TRUE),
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'value' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '1',
+				'description' => t('Normally one')),
+			'block' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'comment' => array(
+				'type' => 'varchar',
+				'length' => 255,
+				'not null' => TRUE,
+				'default' => ''),
+			'uid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'timestamp' => array(
+				'type' => 'int',
+				'not null' => TRUE,
+				'default' => 0,
+				'description' => t('The time that the feature proposal was made')),
+		),
+		'primary key' => array('vid'),
+	);
+
+	return $schema;
+}
+
+function imceditor_install() {
+	drupal_install_schema('imceditor');
+}
+
+function imceditor_uninstall() {
+	drupal_uninstall_schema('imceditor');
+}

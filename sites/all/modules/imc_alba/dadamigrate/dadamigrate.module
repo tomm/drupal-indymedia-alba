@@ -1,0 +1,1039 @@
+<?php
+// $Id: dadamigrate.module,v 1.18.2.1 2008/08/27 18:57:30 tomm Exp $
+
+define('DADA_UID_OFFSET', 1000);
+
+// From dadaimc. Used to sortof hash media files into directories 1..13.
+// 	subdir: return a "magic" directory number
+// 	parameters: filename (string)
+// 	returns: integer
+function dadamigrate_subdir($str) {
+	// gets a number between 1 and 13 using the first character
+	$num = 0;
+	for ($x=0;$x<strlen($str);$x++) {
+		$num += ord($str[$x]);
+	}
+	return ($num % 13) + 1;
+}
+
+function __dm_urlpath($path) { return '/'.file_directory_path().'/usermedia/'.$path; }
+function __dm_uploadpath($path) { return file_directory_path().'/usermedia/'.$path; }
+
+function dadamigrate_filepath($mime_class, $filename) {
+	return $mime_class.'/'.dadamigrate_subdir($filename).'/'.$filename;
+}
+
+function dadamigrate_filepath_thumbnail($mime_class, $filename) {
+	return $mime_class.'/'.dadamigrate_subdir($filename).'/thumb/'.$filename;
+}
+
+function dadamigrate_filepath_large($mime_class, $filename) {
+	return $mime_class.'/'.dadamigrate_subdir($filename).'/large/'.$filename;
+}
+
+/**
+ * Implementation of hook_menu.
+ */
+function dadamigrate_menu() {
+	$items = array();
+	$items['admin/settings/indymedia/dadamigrate'] = array(
+		'title' => t('Indymedia Dada to Drupal migrator.'),
+		'description' => t('Converts your old dada site database to drupal.'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('dadamigrate_settings'),
+		'access arguments' => array('administer site configuration'),
+	);
+	$items['indymedia/dadamigrate/setup'] = array(
+		'page callback' => 'dadamigrate_setup',
+		'access arguments' => array('administer site configuration'),
+		'type' => MENU_CALLBACK
+	);
+	$items['newswire/display/%'] = array(
+		'page callback' => 'dadamigrate_redirect_newswire',
+		'access callback' => TRUE,
+		'type' => MENU_CALLBACK
+	);
+	$items['feature/display/%'] = array(
+		'page callback' => 'dadamigrate_redirect_feature',
+		'access callback' => TRUE,
+		'type' => MENU_CALLBACK
+	);
+	$items['mod/otherpress/display/%'] = array(
+		'page callback' => 'dadamigrate_redirect_otherpress',
+		'access callback' => TRUE,
+		'type' => MENU_CALLBACK
+	);
+	$items['media/all/display/%'] = array(
+		'page callback' => 'dadamigrate_redirect_media',
+		'access callback' => TRUE,
+		'type' => MENU_CALLBACK
+	);
+	$items['mod/comments/display/%'] = array(
+		'page callback' => 'dadamigrate_redirect_comments',
+		'access callback' => TRUE,
+		'type' => MENU_CALLBACK
+	);
+
+	return $items;
+}
+
+/*
+ * It is nice to keep the dada urls working.
+ */
+function dadamigrate_redirect_comments() {
+	$q = db_fetch_array(db_query("SELECT nid FROM {dada_comments} WHERE objectid = %d", intval(arg(3))));
+	if ($q) drupal_goto('node/'.$q['nid']);
+}
+function dadamigrate_redirect_media() {
+	$q = db_fetch_array(db_query("SELECT nid FROM {dada_media} WHERE objectid = %d", intval(arg(3))));
+	if ($q) drupal_goto('node/'.$q['nid']);
+}
+function dadamigrate_redirect_otherpress() {
+	$q = db_fetch_array(db_query("SELECT nid FROM {dada_otherpress} WHERE objectid = %d", intval(arg(3))));
+	if ($q) drupal_goto('node/'.$q['nid']);
+}
+function dadamigrate_redirect_feature() {
+	$q = db_fetch_array(db_query("SELECT nid FROM {dada_features} WHERE objectid = %d", intval(arg(2))));
+	if ($q) drupal_goto('node/'.$q['nid']);
+}
+function dadamigrate_redirect_newswire() {
+	$q = db_fetch_array(db_query("SELECT nid FROM {dada_articles} WHERE objectid = %d", intval(arg(2))));
+	if ($q) drupal_goto('node/'.$q['nid']);
+}
+
+/**
+ * Configuration options for Indymedia cities list.
+ */
+function dadamigrate_settings() {
+	$form = array();
+
+	if (is_dir(__dm_uploadpath('.'))) {
+		$form[] = array('#value' => '<p>Dada usermedia found at	'.__dm_uploadpath('.').'  You are ready to run the migration script!</p>');
+	} else {
+		drupal_set_message('Dada usermedia not found. You should link or copy 
+			the usermedia directory from your dada setup to your drupal directory 
+			(into '.file_directory_path().').
+			If you do not do this then images and videos will not 
+			be imported correctly.', 'error');
+	}
+	if (!db_result(db_query("SELECT rid FROM {role} WHERE name = 'editor'")) ||
+	    !db_result(db_query("SELECT rid FROM {role} WHERE name = 'admin'"))) {
+		drupal_set_message("Roles named 'editor' and 'admin' could not
+		be found. If you run the dada migration without creating these
+		roles, editors and admins from the old site will lose their
+		privileges.", 'error');
+	}
+
+	$form[] = array(
+		'#value' => '<p>The dada migrator will import feature,
+		articles, comments and media from your dadaimc database. It
+		will also set up redirects from dada newswire and feature urls
+		to drupal nodes, keeping most old urls working.</p><p>'.
+		l(t("Run the dada migration script"), "indymedia/dadamigrate/setup").'</p>',
+	);
+	return system_settings_form($form);
+}
+
+function dadamigrate_setup_form() {
+	$form = array();
+
+	$form['dbhost'] = array(
+		'#title' => t('Database host'),
+		'#type' => 'textfield',
+		'#default_value' => 'localhost',
+		'#required' => TRUE,
+	);
+	$form['dbuser'] = array(
+		'#title' => t('Database user'),
+		'#type' => 'textfield',
+		'#required' => TRUE,
+	);
+	$form['dbpasswd'] = array(
+		'#title' => t('Database password'),
+		'#type' => 'password',
+	);
+	$form['dbname'] = array(
+		'#title' => t('Database name'),
+		'#type' => 'textfield',
+		'#required' => TRUE,
+	);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => 'Run'
+	);
+	return $form;
+}
+
+function dadamigrate_setup_form_validate($form_id, $form_state) {
+//	form_set_error('dbname', t("DBname is silly"));
+}
+
+function _dada_db_connect(&$args, $verbose=false) {
+	$connection = @mysql_connect($args['dbhost'],
+		$args['dbuser'], $args['dbpasswd'], TRUE, 2);
+	if (!$connection) {
+		if ($verbose) drupal_set_message(t("Could not connect to database ".$args['dbname']));
+	} else {
+		if ($verbose) drupal_set_message(t("Connected OK"));
+		if (!mysql_select_db($args['dbname'])) {
+			if ($verbose) drupal_set_message('Unable to select database. Does it exist?');
+			return;
+		}
+		if ($verbose) drupal_set_message(t("Selected database ".$args['dbname']));
+	}
+	return $connection;
+}
+
+function _dada_to_drupal_uid($uid) {
+	if ($uid != 0) {
+		$uid += DADA_UID_OFFSET;
+		$q = db_fetch_array(db_query("SELECT uid FROM {users} WHERE uid = %d", $uid));
+		return $q['uid'];
+	} else {
+		return 0;
+	}
+}
+
+function _import_users(&$dbArgs, &$context) {
+	$connection = _dada_db_connect($dbArgs);
+	if (!empty($context['sandbox'])) {
+		$start = $context['sandbox']['current_objectid'];
+	} else {	
+		$start = 0;
+		$a = mysql_fetch_array(mysql_query("SELECT COUNT(objectid) FROM users", $connection));
+		$context['sandbox']['max'] = $a[0];
+		drupal_set_message("Users to import: ".$context['sandbox']['max']);
+	}
+	$STEP = 200;
+	$result = mysql_query("SELECT objectid,username,password,email,created_datetime,lastaccess_timestamp,level,pw_method FROM users LIMIT $start,$STEP", $connection);
+	$context['sandbox']['current_objectid'] = $start+$STEP;
+	$i=0;
+
+	$editor_rid = db_result(db_query("SELECT rid FROM {role} WHERE name = 'editor'"));
+	$admin_rid = db_result(db_query("SELECT rid FROM {role} WHERE name = 'admin'"));
+
+	while ($user = mysql_fetch_array($result)) {
+		$i++;
+		// ignore dada users with pre-MD5 password hash. they are boned.
+		if (strtoupper($user['pw_method']) != 'MD5') continue;
+
+		// some old dada users don't have valid last access times
+		if ($user['lastaccess_timestamp'] == '0000-00-00 00:00:00') {
+			$last_access = strtotime($user['created_datetime']);
+		} else {
+			$last_access = strtotime($user['lastaccess_timestamp']);
+		}
+
+		$junk = array(
+			'uid' => $user['objectid']+DADA_UID_OFFSET,
+			'name' => $user['username'],
+			'pass' => $user['password'],
+			'created' => strtotime($user['created_datetime']),
+			'access' => $last_access,
+			'login' => $last_access,
+			'status' => 1,
+		);
+		if ($user['email']) $junk['mail'] = $user['email'];
+
+		user_save('', $junk);
+		// user_save likes to store the md5sum of the password
+		// provided, but actually we already have that so let's put it
+		// in the db
+		db_query("UPDATE {users} SET pass='%s' WHERE uid=%d",
+				$user['password'], $junk['uid']);
+		if (($user['level'] == 'Editor') && $editor_rid) {
+			db_query("INSERT INTO {users_roles} (uid, rid) VALUES (%d, %d)", $junk['uid'], $editor_rid);
+		}
+		if (($user['level'] == 'Admin') && $admin_rid) {
+			db_query("INSERT INTO {users_roles} (uid, rid) VALUES (%d, %d)", $junk['uid'], $admin_rid);
+		}
+	}
+	if ($i != 0) {
+		$max = $context['sandbox']['max'];
+		$context['finished'] = ($start+$i) / $context['sandbox']['max'];
+		$context['message'] = "Importing users";
+	}
+}
+
+function _dadamigrate_save_article(&$dbArgs, $article, $connection, $type) {
+	$uid = _dada_to_drupal_uid($article['authorid']);
+
+	// user doesn't exist...
+	if (!db_query("SELECT * FROM {users} WHERE uid = %d", $uid)) $uid = 0;
+	$title = str_replace("&quot;","\"", $article['heading']);
+
+	$created_datetime = strtotime($article['created_datetime']);
+	if (!$created_datetime) $created_datetime = strtotime($article['edit_datetime']);
+
+	$node = (object)array(
+		'type' => ($type == 'comment' ? 'nodecomment' : 'article'),
+		'title' => $title,
+		'status' => $article['displayable'],
+		'created' => $created_datetime,
+		'changed' => strtotime($article['modified_timestamp']),
+		'promote' => $article['feature'],
+		'comment' => 2, // allow comments (1 = no further comments)
+		'format' => 1, // unfiltered HTML
+		//'language' => 'en',
+		'uid' => $uid,
+	);
+	$node->teaser = $article['summary'];
+	$node->body = $article['summary'].($article['body'] ? "<!--break-->\n\n".$article['body'] : '');
+
+	if ($type == 'comment') {
+		$node->parent_nid = $article['parent_nid'];
+	}
+
+	if ($article['related_url1'] || $article['related_url2'])
+		$node->body .= '<p><strong>Related</strong></p>';
+	if ($article['related_url1'])
+		$node->body .= '<p><a href="'.$article['related_url1'].'">'.
+				$article['related_url1'].'</a></p>';
+	if ($article['related_url2'])
+		$node->body .= '<p><a href="'.$article['related_url2'].'">'.
+				$article['related_url2'].'</a></p>';
+
+	if (($article['heading'] == "") &&
+	    ($article['summary'] == "") &&
+	    ($article['body'] == "")) return;
+
+	node_save($node);
+
+	// anonymous attribution
+	if (($uid == 0) && ($article['author'])) {
+		db_query('INSERT INTO {nodextradata} (nid, author) VALUES (%d,"%s")', $node->nid, $article['author']);
+	}	
+
+	if ($type != 'comment') {
+		// do terms
+		$terms = array();
+		$sql = sprintf('SELECT category_id FROM hash_category WHERE ref_class="%s" AND ref_id=%d',
+				$type,
+				$article['objectid']);
+		$q = mysql_query($sql, $connection);
+		while ($cat = mysql_fetch_array($q)) {
+			$terms[] = $dbArgs['cats'][$cat['category_id']];
+		}
+
+
+		if ($type == 'Otherpress') {
+			$section_tid = variable_get('dada_section_Otherpress', 0);
+			if ($section_tid) $terms[] = $section_tid;
+		} else {
+			$section_tid = variable_get('dada_section_'.$article['section'], 0);
+			if ($section_tid) $terms[] = $section_tid;
+		}
+
+		taxonomy_node_save($node, $terms);
+	}
+	return $node;
+}
+
+function _dadamigrate_register_node_media($node, &$minfo) {
+	foreach ($minfo as $m) {
+		$path = dadamigrate_filepath($m['mime_class'], $m['filename']);
+		if (!file_exists(__dm_uploadpath($path))) continue;
+		if (strncmp ('image/', $m['mime_type'], 6) === 0) {
+			// XXX what about large image size?...
+			$file = array(
+				'uid' => $node->uid,
+				'filename' => basename($path),
+				'filepath' => __dm_uploadpath($path),
+				'filemime' => $m['mime_type'],
+				'filesize' => filesize(__dm_uploadpath($path)),
+				'status' => FILE_STATUS_PERMANENT,
+				'timestamp' => $node->created,
+			);
+			drupal_write_record('files', $file);
+			$upload = array(
+				'fid' => $file['fid'],
+				'nid' => $node->nid,
+				'vid' => $node->vid,
+				'description' => '',
+				'list' => 0,
+				'weight' => 0,
+			);
+			drupal_write_record('upload', $upload);
+		
+			$parent_fid = $file['fid'];
+			$thumb = dadamigrate_filepath_thumbnail($m['mime_class'], $m['filename']);
+			if (file_exists(__dm_uploadpath($thumb))) {
+				$file = array(
+					'uid' => $node->uid,
+					'filename' => '_thumbnail',
+					'filepath' => __dm_uploadpath($thumb),
+					'filemime' => $m['mime_type'],
+					'filesize' => filesize(__dm_uploadpath($thumb)),
+					'status' => FILE_STATUS_PERMANENT,
+					'timestamp' => $node->created,
+				);
+				drupal_write_record('files', $file);
+				$upload_deriv = array(
+					'fid' => $file['fid'],
+					'fid_parent' => $parent_fid,
+					'type' => 'img.thumb',
+				);
+				drupal_write_record('upload_derivative', $upload_deriv);
+			}
+			$big = dadamigrate_filepath_large($m['mime_class'], $m['filename']);
+			if (file_exists(__dm_uploadpath($big))) {
+				$file = array(
+					'uid' => $node->uid,
+					'filename' => '_large',
+					'filepath' => __dm_uploadpath($big),
+					'filemime' => $m['mime_type'],
+					'filesize' => filesize(__dm_uploadpath($big)),
+					'status' => FILE_STATUS_PERMANENT,
+					'timestamp' => $node->created,
+				);
+				drupal_write_record('files', $file);
+				$upload_deriv = array(
+					'fid' => $file['fid'],
+					'fid_parent' => $parent_fid,
+					'type' => 'img.large',
+				);
+				drupal_write_record('upload_derivative', $upload_deriv);
+			}
+		} else {
+			$file = array(
+				'uid' => $node->uid,
+				'filename' => basename($path),
+				'filepath' => __dm_uploadpath($path),
+				'filemime' => $m['mime_type'],
+				'filesize' => filesize(__dm_uploadpath($path)),
+				'status' => FILE_STATUS_PERMANENT,
+				'timestamp' => $node->created,
+			);
+			drupal_write_record('files', $file);
+			$upload = array(
+				'fid' => $file['fid'],
+				'nid' => $node->nid,
+				'vid' => $node->vid,
+				'description' => '',
+				'list' => 1,
+				'weight' => 0,
+			);
+			drupal_write_record('upload', $upload);
+		}
+	}
+}
+
+function dadamigrate_feature_add_media(&$feature, &$m) {
+	if (strncmp ('image/', $m['mime_type'], 6) === 0) {
+		//$fid = db_next_id('{files}_fid');
+		$filepath = dadamigrate_filepath_thumbnail($m['mime_class'], $m['filename']);
+		// TODO check files actually exist and do not insert if not
+		// TODO sometimes there is no big version of the image
+		$imgtag = "<img align=\"".($m['alignment'] ? $m['alignment'] : "left")."\" src=\"".__dm_urlpath($filepath)."\" />";
+		$feature['summary'] = dadamigrate_image_insert($feature['summary'], $feature['embedded_media'], $imgtag, $m['sequence_number']);
+	} else {
+		$filepath = dadamigrate_filepath($m['mime_class'], $m['filename']);
+		// don't know what to do with it yet...
+		$feature['summary'] .= "<p><a href=\"".__dm_urlpath($filepath)."\">".$m['filename']."</a></p>";
+	}
+}
+
+function _import_features(&$dbArgs, &$context) {
+	$connection = _dada_db_connect($dbArgs);
+	if (!empty($context['sandbox'])) {
+		$start = $context['sandbox']['current_objectid'];
+	} else {	
+		db_query('DELETE FROM {dada_features}');
+		$start = 0;
+		$a = mysql_fetch_array(mysql_query("SELECT COUNT(objectid) FROM features", $connection));
+		$context['sandbox']['max'] = $a[0];
+		drupal_set_message("Features to import: ".$context['sandbox']['max']);
+	}
+	$STEP = 200;
+	$result = mysql_query("SELECT * FROM features LIMIT $start,$STEP", $connection);
+	
+	$context['sandbox']['current_objectid'] = $start+$STEP;
+
+	if (!$result) {
+		drupal_set_message("Error in SELECT * FROM features...");
+		return;
+	}
+	
+	$i=0;
+
+	while ($feature = mysql_fetch_array($result)) {
+		$i++;
+
+		$sql = sprintf("SELECT * FROM media WHERE parentid=%d AND parent_class='Feature' ORDER BY sequence_number %s",
+				$feature['objectid'],
+				($feature['embedded_media'] == 'aftersummary' ? "DESC" : "ASC"));
+		$mq = mysql_query($sql, $connection);
+		$minfo = array();
+		if ($mq) while ($media = mysql_fetch_array($mq)) {
+			dadamigrate_feature_add_media(&$feature, &$media);
+			$minfo[] = array('mime_class' => $media['mime_class'],
+					'mime_type' => $media['mime_type'],
+					'filename' => $media['filename']);
+		}
+
+		// inline media convocation!
+		preg_match('/#media_(\d+);(left|right)#/', $feature['summary'], $results);		
+		if ($results) {
+			$media_id = $results[1];
+			$align = $results[2];
+
+			$m = mysql_fetch_array(mysql_query("SELECT * FROM media WHERE objectid = ".$media_id, $connection));
+			if ($m) {
+				$thumb_filepath = dadamigrate_filepath_thumbnail($m['mime_class'], $m['filename']);
+				$feature['summary'] = str_replace("#media_".$media_id.";".$align."#", '<img align="'.$align.'" src="'.__dm_urlpath($thumb_filepath).'" />', $feature['summary']);
+			}
+		}
+
+		if ($feature['refid']) {
+			/* feature linked to an article */
+			if ($feature['ref_class'] != 'Article') continue;
+		
+			$nid = db_result(db_query('SELECT nid FROM {dada_articles} WHERE objectid = %d', $feature['refid']));
+			if (!$nid) continue;
+
+			$created_datetime = strtotime($feature['created_datetime']);
+			if (!$created_datetime) $created_datetime = strtotime($feature['edit_datetime']);
+			// move the newswire summary into the body and set
+			// summmary to be that of the feature
+			$node = node_load($nid);
+			$node->teaser = $feature['summary'];
+			$node->created = $created_datetime;
+			$node->status = $feature['displayable'];
+			$node->body = "<!--break-->".str_replace("<!--break-->", "", $node->body);
+			node_save($node);
+			_dadamigrate_register_node_media($node, &$minfo);
+			
+			db_query('INSERT INTO {dada_features} (objectid, nid) VALUES (%d,%d)',
+					$feature['objectid'], $node->nid);
+		} else {
+			/* feature not linked to article */
+			$feature['feature'] = 1;
+			$feature['body'] = "";
+			$node = _dadamigrate_save_article(&$dbArgs, $feature, $connection, "Feature");
+
+			if ($node) {
+				_dadamigrate_register_node_media($node, &$minfo);
+				db_query('INSERT INTO {dada_features} (objectid, nid) VALUES (%d,%d)',
+					$feature['objectid'], $node->nid);
+			}
+		}
+	}
+
+	if ($i != 0) {
+		$max = $context['sandbox']['max'];
+		$context['finished'] = ($start+$i) / $context['sandbox']['max'];
+		$context['message'] = "Importing features";
+	}
+}
+
+function dadamigrate_image_insert($body, $embedded_media_type, $imgtag, $img_seq_no) {
+	switch ($embedded_media_type) {
+		case 'aftersummary':
+			$body = $imgtag.$body;
+			break;
+		case 'oneaftersummary':
+			if ($img_seq_no == 1) {
+				$body = $imgtag.$body;
+			} else {
+				$body .= $imgtag;
+			}
+			break;
+		case 'placeholders':
+			$body = str_replace("#file_".$img_seq_no."#", $imgtag, $body);
+			break;
+		default:
+			$body .= $imgtag;
+			break;
+	}
+	return $body;
+}
+
+function dadamigrate_article_add_media(&$article, &$m) {
+	if (strncmp ('image/', $m['mime_type'], 6) === 0) {
+		// TODO check files actually exist and do not insert if not
+		// TODO sometimes there is no big version of the image
+		$filepath = dadamigrate_filepath($m['mime_class'], $m['filename']);
+		$large_filepath = dadamigrate_filepath_large($m['mime_class'], $m['filename']);
+		// ignore first character (/), so that it is relative path in unix fs
+		$imgtag = '<span class="imgbox">';
+		if (is_file(__dm_uploadpath($large_filepath))) {
+			$imgtag .= sprintf('<a href="%s"><img src="%s" /></a>', __dm_urlpath($large_filepath), __dm_urlpath($filepath));
+		} else {
+			$imgtag .= sprintf('<img src="%s" />', __dm_urlpath($filepath));
+		}
+		if ($m['caption'] != $article['heading']) {
+			$imgtag .= '<div class="imgcaption">'.t($m['caption']).'</div>';
+		}
+		$imgtag .= '</span>';
+		$article['body'] = dadamigrate_image_insert($article['body'], $article['embedded_media'], $imgtag, $m['sequence_number']);
+	} else {
+		$filepath = dadamigrate_filepath($m['mime_class'], $m['filename']);
+		// don't know what to do with it yet...
+		$article['body'] .= "<p><a href=\"".__dm_urlpath($filepath)."\">".$m['filename']."</a></p>";
+	}
+}
+
+
+function _import_articles(&$dbArgs, &$context) {
+	$connection = _dada_db_connect($dbArgs);
+	if (!empty($context['sandbox'])) {
+		$start = $context['sandbox']['current_objectid'];
+	} else {	
+		db_query('DELETE FROM {dada_articles}');
+		$start = 0;
+		$a = mysql_fetch_array(mysql_query("SELECT COUNT(objectid) FROM articles", $connection));
+		$context['sandbox']['max'] = $a[0];
+		drupal_set_message("Articles to import: ".$context['sandbox']['max']);
+	}
+	$STEP = 200;
+	$result = mysql_query("SELECT * FROM articles LIMIT $start,$STEP", $connection);
+	
+	$context['sandbox']['current_objectid'] = $start+$STEP;
+
+	if (!$result) {
+		drupal_set_message("Error in SELECT * FROM articles...");
+		return;
+	}
+	
+	$i=0;
+
+	while ($article = mysql_fetch_array($result)) {
+		$i++;
+
+		// drop articles marked deleted by dada. probably desirable
+		if ($article['deleted']==1) continue;
+
+		$sql = sprintf("SELECT * FROM media WHERE parentid=%d AND parent_class='Article' ORDER BY sequence_number %s",
+				$article['objectid'],
+				($article['embedded_media'] == 'aftersummary' ? "DESC" : "ASC"));
+		$mq = mysql_query($sql, $connection);
+		$minfo = array();
+		if ($mq) while ($media = mysql_fetch_array($mq)) {
+			dadamigrate_article_add_media(&$article, &$media);
+			$minfo[] = array('mime_class' => $media['mime_class'],
+					'mime_type' => $media['mime_type'],
+					'filename' => $media['filename']);
+		}
+
+		$node = _dadamigrate_save_article(&$dbArgs, $article, $connection, "Article");
+		_dadamigrate_register_node_media($node, &$minfo);
+
+		if ($node) db_query('INSERT INTO {dada_articles} (objectid, nid) VALUES (%d,%d)',
+				$article['objectid'], $node->nid);
+	}
+	if ($i != 0) {
+		$max = $context['sandbox']['max'];
+		$context['finished'] = ($start+$i) / $context['sandbox']['max'];
+		$context['message'] = "Importing articles";
+	}
+}
+
+function _import_otherpress(&$dbArgs, &$context) {
+	$connection = _dada_db_connect($dbArgs);
+	if (!empty($context['sandbox'])) {
+		$start = $context['sandbox']['current_objectid'];
+	} else {
+		$start = 0;
+		$a = mysql_fetch_array(mysql_query("SELECT COUNT(*) FROM otherpress", $connection));
+		$context['sandbox']['max'] = $a[0];
+		drupal_set_message("Otherpress to import: ".$context['sandbox']['max']);
+	}
+
+	$STEP = 200;
+	$i=0;
+	$context['sandbox']['current_objectid'] = $start+$STEP;
+	// import objections
+	$result = mysql_query("SELECT * FROM otherpress LIMIT $start,$STEP", $connection);
+	while ($article = mysql_fetch_array($result)) {
+		$i++;
+
+		// drop articles marked deleted by dada. probably desirable
+		if ($article['deleted']==1) continue;
+
+		$article['displayable'] = 1;
+		$article['feature'] = 0;
+		$article['body'] = "";
+		$article['related_url1'] = $article['link'];
+		$article['related_url2'] = "";
+		$node = _dadamigrate_save_article(&$dbArgs, $article, $connection, "Otherpress");
+
+		if ($node) db_query('INSERT INTO {dada_otherpress} (objectid, nid) VALUES (%d,%d)',
+				$article['objectid'], $node->nid);
+	}
+	if ($i != 0) {
+		$max = $context['sandbox']['max'];
+		$context['finished'] = ($start+$i) / $context['sandbox']['max'];
+		$context['message'] = "Importing otherpress";
+	}
+}
+
+function _import_objections(&$dbArgs, &$context) {
+	$connection = _dada_db_connect($dbArgs);
+	if (!empty($context['sandbox'])) {
+		$start = $context['sandbox']['current_objectid'];
+	} else {
+		$start = 0;
+		$a = mysql_fetch_array(mysql_query('SELECT COUNT(*) FROM objections WHERE hide=1 AND (type="Article" OR type="Comment" OR type="Media") ', $connection));
+		$context['sandbox']['max'] = $a[0];
+		drupal_set_message("Objections to import: ".$context['sandbox']['max']);
+	}
+
+	$STEP = 200;
+	$i=0;
+	$context['sandbox']['current_objectid'] = $start+$STEP;
+	// import objections
+	$result = mysql_query('SELECT * FROM objections WHERE hide=1 AND (type="Article" OR type="Comment" OR type="Media") ORDER BY modified_timestamp DESC LIMIT '.$start.','.$STEP, $connection);
+	while ($obj = mysql_fetch_array($result)) {
+		$i++;
+		switch ($obj['type']) {
+			case 'Comment': $_dbpostfix = 'comments'; break;
+			case 'Media': $_dbpostfix = 'media'; break;
+			default: $_dbpostfix = 'articles'; break;
+		}
+		$nid = db_result(db_query('SELECT nid FROM {dada_'.$_dbpostfix.'} WHERE objectid = %d', $obj['refid']));
+		if (!$nid) continue;
+		// there can be objections duplicates due to the way dada stored them...
+		if (db_result(db_query('SELECT COUNT(*) FROM {imc_node_moderation} WHERE nid = %d', $nid))) continue;
+
+		// featured articles just drop hidden info. it is usually users voting it down but the effect is silly
+		if (db_result(db_query('SELECT COUNT(*) FROM {node} WHERE nid = %d AND promote = 1', $nid))) continue;
+		
+		$reason = ($obj['hide_code'] ? $obj['hide_code'].": ".$obj['hide_notes'] : $obj['hide_notes']);
+
+		db_query("INSERT INTO {imc_node_moderation} (nid, status, comment, uid, timestamp) VALUES (%d,%d,'%s',%d,%d)",
+			$nid, IMCEDITOR_NODE_STATUS_HIDDEN, $reason, 1, strtotime($obj['modified_timestamp']));
+		db_query("UPDATE {node} SET status=0 WHERE nid=%d", $nid);
+	}
+
+	if ($i != 0) {
+		$max = $context['sandbox']['max'];
+		$context['finished'] = ($start+$i) / $context['sandbox']['max'];
+		$context['message'] = "Importing objections";
+	}
+}
+
+function _import_comments(&$dbArgs, &$context) {
+	$connection = _dada_db_connect($dbArgs);
+	if (!empty($context['sandbox'])) {
+		$start = $context['sandbox']['current_objectid'];
+	} else {
+		$start = 0;
+		$a = mysql_fetch_array(mysql_query("SELECT COUNT(objectid) FROM comments", $connection));
+		$context['sandbox']['max'] = $a[0];
+		drupal_set_message("Comments to import: ".$context['sandbox']['max']);
+	}
+
+	$STEP = 200;
+	$i=0;
+	$context['sandbox']['current_objectid'] = $start+$STEP;
+	// convert comments
+	$result = mysql_query("SELECT * FROM comments LIMIT $start,$STEP", $connection);
+	while ($dcom = mysql_fetch_array($result)) {
+		$i++;
+		if ($dcom['deleted']) continue;
+
+		$q = db_query('SELECT nid FROM {dada_articles} WHERE objectid = %d', $dcom['parentid']);
+		if (!$q) continue;
+		else if ($q = db_fetch_array($q)) {
+			$parent_nid = reset($q);
+		}
+		
+		$uid = _dada_to_drupal_uid($dcom['authorid']);
+
+		// user doesn't exist...
+		if (!db_query("SELECT COUNT(*) FROM {users} WHERE uid = %d", $uid)) $uid = 0;
+
+		$sql = sprintf("SELECT * FROM media WHERE parentid=%d AND parent_class='Comment' ORDER BY sequence_number %s",
+				$dcom['objectid'],
+				($dcom['embedded_media'] == 'aftersummary' ? "DESC" : "ASC"));
+		$mq = mysql_query($sql, $connection);
+		$minfo = array();
+		if ($mq) while ($media = mysql_fetch_array($mq)) {
+			dadamigrate_article_add_media(&$dcom, &$media);
+			$minfo[] = array('mime_class' => $media['mime_class'],
+					'mime_type' => $media['mime_type'],
+					'filename' => $media['filename']);
+		}
+
+		if (function_exists('nodecomment_perm')) {
+			$dcom['feature'] = 0;
+			$dcom['parent_nid'] = $parent_nid;
+			// full view even on teaser.
+			$dcom['summary'] .= $dcom['body'];
+			$dcom['body'] = '';
+			$node = _dadamigrate_save_article(&$dbArgs, $dcom, $connection, "comment");
+			if ($node) {
+				_dadamigrate_register_node_media($node, &$minfo);
+				db_query('INSERT INTO {dada_comments} (objectid, nid) VALUES (%d,%d)',
+					$dcom['objectid'], $node->nid);
+			}
+		} else {
+			// normal comment module
+			$comment = array(
+				'cid' => 0,
+				'nid' => $parent_nid,
+				'subject' => $dcom['heading'],
+				'comment' => $dcom['summary']."\n".$dcom['body'],
+				//'timestamp' => strtotime($dcom['modified_timestamp']),
+				'format' => 1, // unfiltered HTML
+				'pid' => 0, // parent id.
+				'uid' => $uid,
+				'name' => $dcom['author'],
+			);
+
+			$cid = comment_save($comment);
+			// sadly the comment_save function sets timestamp to time()...
+			db_query("UPDATE {comments} SET timestamp=%d WHERE cid=%d",
+					strtotime($dcom['created_datetime']),
+					$cid);
+		}
+	}
+
+	if ($i != 0) {
+		$max = $context['sandbox']['max'];
+		$context['finished'] = ($start+$i) / $context['sandbox']['max'];
+		$context['message'] = "Importing comments";
+	}
+}
+
+function _import_media(&$dbArgs, &$context) {
+	$connection = _dada_db_connect($dbArgs);
+	if (!empty($context['sandbox'])) {
+		$start = $context['sandbox']['current_objectid'];
+	} else {
+		$start = 0;
+		$a = mysql_fetch_array(mysql_query("SELECT COUNT(*) FROM media WHERE parent_class=''", $connection));
+		$context['sandbox']['max'] = $a[0];
+		drupal_set_message("Media objects to import: ".$context['sandbox']['max']);
+	}
+
+	$STEP = 200;
+	$i=0;
+	$context['sandbox']['current_objectid'] = $start+$STEP;
+	// import media (note: you must copy the contents of your dada
+	// usermedia/ directory to your drup files/ directory.
+	// cp -r dada/usermedia/* drupal/files/
+	$result = mysql_query("SELECT * FROM media WHERE parent_class='' LIMIT $start,$STEP", $connection);
+	while ($m = mysql_fetch_array($result)) {
+		$i++;
+		// comment, article and feature media has already been
+		// imported. we are only interested in the unparented crap
+		if ($m['parent_class']) continue;
+		if ($m['deleted']) continue;
+		$article = array();
+		// media things have to title, so we have to make one...
+		if ($m['caption']) {
+			if (strlen($m['caption']) > 64) {
+				$article['heading'] = substr($m['caption'], 0, 64).'...';
+			} else if (strlen($m['caption']) > 0) {
+				$article['heading'] = $m['caption'];
+			}
+			$article['heading'] = $m['orig_filename'].": ".$article['heading'];
+		} else {
+			$article['heading'] = $m['orig_filename'];
+		}
+		$article['created_datetime'] = $m['created_datetime'];
+		$article['displayable'] = 1;
+		$article['feature'] = 0;
+		$article['summary'] = '';
+		$article['body'] = '';
+		$article['section'] = '';
+		$article['modified_timestamp'] = $m['modified_timestamp'];
+		$article['embedded_media'] = '';
+		$article['authorid'] = '';
+		$article['author'] = '';
+		$article['related_url1'] = $m['related_url1'];
+		$article['related_url2'] = '';
+		$article['objectid'] = $m['objectid'];
+
+		dadamigrate_article_add_media(&$article, &$m);
+
+		$node = _dadamigrate_save_article(&$dbArgs, $article, $connection, "");
+		if ($node) {
+			$minfo = array($m);
+			_dadamigrate_register_node_media($node, &$minfo);
+			db_query('INSERT INTO {dada_media} (objectid, nid) VALUES (%d,%d)',
+				$m['objectid'], $node->nid);
+		}
+	}
+	if ($i != 0) {
+		$max = $context['sandbox']['max'];
+		$context['finished'] = ($start+$i) / $context['sandbox']['max'];
+		$context['message'] = "Importing media objects";
+	}
+}
+
+function _dadamigrate_stuff_terms(&$terms, $vid) {
+	$tids = array();
+	foreach ($terms as $name => $desc) {
+		$term = array(
+			'name' => $name, 'vid' => $vid,
+			'description' => $desc,
+		);
+		taxonomy_save_term($term);
+		$tids[] = $term['tid'];
+	}
+	return $tids;
+}
+
+function _import_categories(&$dbArgs) {
+	$connection = _dada_db_connect($dbArgs);
+	
+	// check sections exist. if not then make them
+	if (variable_get('dada_section_vid', 0) == 0) {
+		$vocab = array(
+			'nodes' => array('article' => 1),
+			'name' => 'Section',
+			'relations' => 1,
+			'hierarchy' => 1,
+			'multiple' => 0,
+			'required' => 1,
+			'tags' => 0,
+		);
+		taxonomy_save_vocabulary($vocab);
+
+		// for that split-newswire feature that people ask for..........
+		$terms = array('News' => '',
+			       'Commentary' => '',
+			       'Announcements' => '',
+			       'Reviews' => '',
+			       'Interviews' => '',
+			       'Other Press' => 'Links to interesting articles by other media outlets.');
+		$tids = _indymedia_alba_stuff_terms(&$terms, $vocab['vid']);
+
+		variable_set('dada_section_vid', $vocab['vid']);
+		variable_set('dada_section_News', $tids[0]);
+		variable_set('dada_section_Commentary', $tids[1]);
+		variable_set('dada_section_Announcement', $tids[2]);
+		variable_set('dada_section_Review', $tids[3]);
+		variable_set('dada_section_Interview', $tids[4]);
+		variable_set('dada_section_Otherpress', $tids[5]);
+	}
+
+
+	$vid = db_result(db_query("SELECT vid FROM {vocabulary} WHERE name='Category'"));
+	if (!$vid) {
+		// doesn't exist. make it
+		$vocab = array(
+			'nodes' => array('article' => 1),
+			'name' => 'Category',
+			'relations' => 1,
+			'hierarchy' => 1,
+			'multiple' => 1,
+			'required' => 1,
+			'tags' => 0,
+		);
+		taxonomy_save_vocabulary($vocab);
+		$vid = $vocab['vid'];
+	}
+
+	$dbArgs['cats'] = array();
+
+	$i = 0;
+	$result = mysql_query("SELECT * FROM categories", $connection);
+	while ($c = mysql_fetch_array($result)) {
+		$i++;
+
+		// if it already exists...
+		$r = db_query("SELECT tid FROM {term_data} WHERE name='%s' AND vid=%d", $c['catname'], $vid);
+		if ($term = db_fetch_array($r)) {
+			$dbArgs['cats'][$c['objectid']] = $term['tid'];
+			continue;
+		}	
+	
+		// otherwise create term
+		$term = array(
+			'name' => $c['catname'],
+			'description' => $c['description'],
+			'vid' => $vid,
+		);
+		taxonomy_save_term($term);
+		$dbArgs['cats'][$c['objectid']] = $term['tid'];
+	}
+	drupal_set_message("Categories to import: ".$i);
+	
+	// LOCAL or global interest crud
+/*
+	$vid = db_result(db_query("SELECT vid FROM {vocabulary} WHERE name='Location'"));
+	if (!$vid) {
+		// doesn't exist. make it
+		$vocab = array(
+			'nodes' => array('article' => 1),
+			'name' => 'Location',
+			'relations' => 1,
+			'hierarchy' => 1,
+			'multiple' => 0,
+			'required' => 1,
+			'tags' => 0,
+		);
+		taxonomy_save_vocabulary($vocab);
+		$vid = $vocab['vid'];
+	}
+
+	$dbArgs['locs'] = array();
+*/
+}
+
+function _import_do_node_indexing(&$dbArgs, &$context) {
+	$connection = _dada_db_connect($dbArgs);
+	if (!empty($context['sandbox'])) {
+		$start = $context['sandbox']['current_objectid'];
+	} else {
+		$start = 0;
+		$num = db_result(db_query("SELECT COUNT(*) FROM {node}"));
+		$context['sandbox']['max'] = $num;
+		drupal_set_message("Media objects to import: ".$context['sandbox']['max']);
+	}
+
+	$STEP = 10;
+	$i=0;
+	$context['sandbox']['current_objectid'] = $start+$STEP;
+	// import media (note: you must copy the contents of your dada
+	// usermedia/ directory to your drup files/ directory.
+	// cp -r dada/usermedia/* drupal/files/
+	$result = db_query("SELECT nid FROM {node} LIMIT $start,$STEP");
+	while ($nid = db_result($result)) {
+		$i++;
+		// comment, article and feature media has already been
+		// imported. we are only interested in the unparented crap
+		$node = (object)array('nid' => $nid);
+		_node_index_node($node);
+	}
+	if ($i != 0) {
+		$max = $context['sandbox']['max'];
+		$context['finished'] = ($start+$i) / $context['sandbox']['max'];
+		$context['message'] = "Building article search index";
+	}
+}
+
+function _import_done() {
+	drupal_set_message("Import done.");
+}
+
+function dadamigrate_setup_form_submit($form_id, $form_state) {
+	$connection = _dada_db_connect($form_state['values'], true);
+
+	_import_categories(&$form_state['values']);
+
+	$batch = array(
+		'title' => t('Importing DadaIMC database'),
+		'operations' => array(
+			array('_import_users', array(&$form_state['values'])),
+			array('_import_articles', array(&$form_state['values'])),
+			array('_import_otherpress', array(&$form_state['values'])),
+			array('_import_features', array(&$form_state['values'])),
+			array('_import_comments', array(&$form_state['values'])),
+			array('_import_media', array(&$form_state['values'])),
+			array('_import_objections', array(&$form_state['values'])),
+			// this seems to be a bit buggered (seems to build
+			// index but searches don't work)
+			// array('_import_do_node_indexing', array(&$form_state['values'])),
+		),
+		'finished' => '_import_done',
+	);
+	batch_set($batch);
+}
+
+function dadamigrate_setup() {
+	return drupal_get_form('dadamigrate_setup_form');
+}

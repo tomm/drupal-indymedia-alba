@@ -1,0 +1,14 @@
+<?php 
+
+function imcviews_update_1() {
+	/* Preserve some dubious defaults that were good for the imc alba install profile */
+	$cats = array();
+	$cats[] = array('tid' => 21, 'color' => 'darkcyan', 'style' => 'summaries', 'num' => 6, 'title' => '', 'weight'=>-1);
+	$cats[] = array('tid' => 19, 'color' => '#606', 'style' => 'titles', 'num' => 1, 'title' => 'Other recent features', 'weight'=>0);
+	$cats[] = array('tid' => 20, 'color' => '#660', 'style' => 'summaries', 'num' => 6, 'title' => '', 'weight'=>1);
+	$cats[] = array('tid' => 23, 'color' => 'green', 'style' => 'summaries', 'num' => 6, 'title' => '', 'weight'=>2);
+	$cats[] = array('tid' => 22, 'color' => 'darkred', 'style' => 'summaries', 'num' => 6, 'title' => '', 'weight'=>3);
+	variable_set('imcviews_front_sections', $cats);
+	return array();
+}
+

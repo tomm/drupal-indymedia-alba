@@ -1,0 +1,9 @@
+<?php
+
+function article_install() {
+	variable_set('node_options_article', array('status','revision'));
+}
+
+function article_uninstall() {
+	
+}

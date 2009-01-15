@@ -1,0 +1,426 @@
+<?php
+
+/**
+ * Default comment visibility when in node view.
+ */
+define("NODECOMMENT_VISIBLE_NONE", 0);
+define("NODECOMMENT_VISIBLE_TITLES", 1);
+define("NODECOMMENT_VISIBLE_TEASERS", 2);
+
+/**
+ * Comments for this node are disabled.
+ */
+define('COMMENT_NODE_DISABLED', 0);
+
+/**
+ * Comments for this node are locked.
+ */
+define('COMMENT_NODE_READ_ONLY', 1);
+
+/**
+ * Comments are enabled on this node.
+ */
+define('COMMENT_NODE_READ_WRITE', 2);
+
+/**
+ * Comments are ordered by date - newest first.
+ */
+define('COMMENT_ORDER_NEWEST_FIRST', 1);
+
+/**
+ * Comments are ordered by date - oldest first.
+ */
+define('COMMENT_ORDER_OLDEST_FIRST', 2);
+
+
+function nodecomment_node_info() {
+  return array(
+    'nodecomment' => array(
+      'name' => t('Comment'),
+      'module' => 'nodecomment',
+      'description' => t("A response to an article."),
+    )
+  );
+}
+
+/**
+ * Return an array of viewing orders for comment listings.
+ *
+ * We can't use a global variable array because the locale system
+ * is not initialized yet when the comment module is loaded.
+ */
+function __comment_get_orders() {
+  return array(
+    COMMENT_ORDER_NEWEST_FIRST => t('Date - newest first'),
+    COMMENT_ORDER_OLDEST_FIRST => t('Date - oldest first')
+  );
+}
+
+function _nodecomment_get_visible() {
+	return array(
+		NODECOMMENT_VISIBLE_NONE => t('None visible until the user clicks to view them'),
+		NODECOMMENT_VISIBLE_TITLES => t('Comment titles'),
+		NODECOMMENT_VISIBLE_TEASERS => t('Comment titles and text'),
+	);
+}
+
+function nodecomment_form_alter(&$form, $form_state, $form_id) {
+	// Ulla wants :)
+	if ($form_id == 'nodecomment_node_form') {
+		$form['buttons']['submit']['#value'] = t('Publish your comment');
+		$form['taxonomy']['#title'] = t('Classification');
+	}
+	elseif ($form_id == 'node_type_form' && isset($form['identity']['type'])) {
+		$form['comment'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Comment settings'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+		);
+		$form['comment']['comment'] = array(
+			'#type' => 'radios',
+			'#title' => t('Default comment setting'),
+			'#default_value' => variable_get('comment_'. $form['#node_type']->type, COMMENT_NODE_READ_WRITE),
+			'#options' => array(t('Disabled'), t('Read only'), t('Read/Write')),
+			'#description' => t('Users with the <em>administer comments</em> permission will be able to override this setting.'),
+		);/*
+    $form['comment']['comment_default_mode'] = array(
+      '#type' => 'radios',
+      '#title' => t('Default display mode'),
+      '#default_value' => variable_get('comment_default_mode_'. $form['#node_type']->type, COMMENT_MODE_THREADED_EXPANDED),
+      '#options' => _comment_get_modes(),
+      '#description' => t('The default view for comments. Expanded views display the body of the comment. Threaded views keep replies together.'),
+    );*/
+    $form['comment']['comment_default_order'] = array(
+      '#type' => 'radios',
+      '#title' => t('Default display order'),
+      '#default_value' => variable_get('comment_default_order_'. $form['#node_type']->type, COMMENT_ORDER_NEWEST_FIRST),
+      '#options' => _comment_get_orders(),
+      '#description' => t('The default sorting for new users and anonymous users while viewing comments. These users may change their view using the comment control panel. For registered users, this change is remembered as a persistent user preference.'),
+    );
+	$form['comment']['comment_default_visible'] = array(
+		'#type' => 'radios',
+		'#title' => t('Default visibility'),
+		'#default_value' => variable_get('comment_default_visible_'. $form['#node_type']->type, NODECOMMENT_VISIBLE_TEASERS),
+		'#options' => _nodecomment_get_visible(),
+		'#description' => t('Default visibility of comments when a node is first viewed.'),
+	);/*
+    $form['comment']['comment_default_per_page'] = array(
+      '#type' => 'select',
+      '#title' => t('Default comments per page'),
+      '#default_value' => variable_get('comment_default_per_page_'. $form['#node_type']->type, 50),
+      '#options' => _comment_per_page(),
+      '#description' => t('Default number of comments for each page: more comments are distributed in several pages.'),
+    );
+    $form['comment']['comment_controls'] = array(
+      '#type' => 'radios',
+      '#title' => t('Comment controls'),
+      '#default_value' => variable_get('comment_controls_'. $form['#node_type']->type, COMMENT_CONTROLS_HIDDEN),
+      '#options' => array(
+        t('Display above the comments'),
+        t('Display below the comments'),
+        t('Display above and below the comments'),
+        t('Do not display')),
+      '#description' => t('Position of the comment controls box. The comment controls let the user change the default display mode and display order of comments.'),
+    );
+    $form['comment']['comment_anonymous'] = array(
+      '#type' => 'radios',
+      '#title' => t('Anonymous commenting'),
+      '#default_value' => variable_get('comment_anonymous_'. $form['#node_type']->type, COMMENT_ANONYMOUS_MAYNOT_CONTACT),
+      '#options' => array(
+        COMMENT_ANONYMOUS_MAYNOT_CONTACT => t('Anonymous posters may not enter their contact information'),
+        COMMENT_ANONYMOUS_MAY_CONTACT => t('Anonymous posters may leave their contact information'),
+        COMMENT_ANONYMOUS_MUST_CONTACT => t('Anonymous posters must leave their contact information')),
+      '#description' => t('This option is enabled when anonymous users have permission to post comments on the <a href="@url">permissions page</a>.', array('@url' => url('admin/user/permissions', array('fragment' => 'module-comment')))),
+    );
+    if (!user_access('post comments', drupal_anonymous_user())) {
+      $form['comment']['comment_anonymous']['#disabled'] = TRUE;
+    }
+    $form['comment']['comment_subject_field'] = array(
+      '#type' => 'radios',
+      '#title' => t('Comment subject field'),
+      '#default_value' => variable_get('comment_subject_field_'. $form['#node_type']->type, 1),
+      '#options' => array(t('Disabled'), t('Enabled')),
+      '#description' => t('Can users provide a unique subject for their comments?'),
+    );
+    $form['comment']['comment_preview'] = array(
+      '#type' => 'radios',
+      '#title' => t('Preview comment'),
+      '#default_value' => variable_get('comment_preview_'. $form['#node_type']->type, COMMENT_PREVIEW_REQUIRED),
+      '#options' => array(t('Optional'), t('Required')),
+      '#description' => t("Forces a user to look at their comment by clicking on a 'Preview' button before they can actually add the comment"),
+    );
+    $form['comment']['comment_form_location'] = array(
+      '#type' => 'radios',
+      '#title' => t('Location of comment submission form'),
+      '#default_value' => variable_get('comment_form_location_'. $form['#node_type']->type, COMMENT_FORM_SEPARATE_PAGE),
+      '#options' => array(t('Display on separate page'), t('Display below post or comments')),
+    );*/
+  }
+	elseif (isset($form['type']) && isset($form['#node'])) {
+		if ($form['type']['#value'] .'_node_form' == $form_id) {
+			$node = $form['#node'];
+			$form['comment_settings'] = array(
+				'#type' => 'fieldset',
+				'#access' => user_access('administer comments'),
+				'#title' => t('Comment settings'),
+				'#collapsible' => TRUE,
+				'#collapsed' => TRUE,
+				'#weight' => 30
+			);
+			$form['comment_settings']['comment'] = array(
+				'#type' => 'radios',
+				'#parents' => array('comment'),
+				'#default_value' => $node->comment,
+				'#options' => array(t('Disabled'), t('Read only'), t('Read/Write')),
+			);
+		}
+	}
+}
+
+function nodecomment_perm() {
+	return array('administer comments',
+		'create nodecomment content',
+		'delete any nodecomment content',
+		'delete own nodecomment content',
+		'edit any nodecomment content',
+		'edit own nodecomment content');
+}
+
+function nodecomment_access($op, $node) {
+	return imceditor_generic_access($op, $node, 'nodecomment');
+} 
+
+function nodecomment_ensure_valid_parent_nid($parent_nid) {
+  $errorRedirect = false;
+  $parent_node = node_load($parent_nid);
+  if (!$parent_node) $errorRedirect = '<front>';
+  if ($parent_node->comment != COMMENT_NODE_READ_WRITE) $errorRedirect = '<front>';
+  else if ($parent_node->type == 'nodecomment') $errorRedirect = 'node/'.$parent_node->nid;
+  if ($errorRedirect) {
+    drupal_set_message('Cannot make a comment to an invalid content type', 'error');
+    drupal_goto($errorRedirect);
+  }
+}
+
+function nodecomment_form(&$node) {
+  if (!isset($node->parent_nid)) {
+    // Parent node must be set, valid, not nodecomment.
+    $errorRedirect = false;
+    if (!isset($_GET['parentnid'])) $errorRedirect = '<front>';
+    else {
+      $parent_node = node_load($_GET['parentnid']);
+      if (!$parent_node) $errorRedirect = '<front>';
+      if ($parent_node->comment != COMMENT_NODE_READ_WRITE) $errorRedirect = '<front>';
+      else if ($parent_node->type == 'nodecomment') $errorRedirect = 'node/'.$parent_node->nid;
+    }
+    if ($errorRedirect) {
+      drupal_set_message('Cannot make a comment to an invalid content type', 'error');
+      drupal_goto($errorRedirect);
+    } else {
+      // must remember parent nid.
+      $form['parent_nid'] = array(
+	'#type' => 'hidden',
+	'#default_value' => $_GET['parentnid'],
+      );
+    }
+  } else {
+    // must remember parent nid.
+    $form['parent_nid'] = array(
+      '#type' => 'hidden',
+      '#default_value' => $node->parent_nid,
+    );
+  }
+
+  $type = node_get_types('type', $node);
+
+  // We need to define form elements for the node's title and body.
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => !empty($node->title) ? $node->title : 'Re: '.$parent_node->title,
+    '#weight' => -5
+  );
+  $form['body_field'] = node_body_field($node, $type->body_label, 0);
+/*  if (!$form['body_field']['body']['#default_value']) {
+    $form['body_field']['body']['#default_value'] = "<p></p><!--break-->";
+  }*/
+
+  return $form;
+}
+
+function nodecomment_validate($node, &$form) {
+	if (!isset($node->parent_nid)) $node->parent_nid = db_result(db_query('SELECT parent_nid FROM {nodecomment} WHERE comment_nid = %d', $node->nid));
+	nodecomment_ensure_valid_parent_nid($node->parent_nid);
+}
+
+function nodecomment_insert($node) {
+	db_query('INSERT INTO {nodecomment} (comment_nid, parent_nid) VALUES (%d, %d)', $node->nid, $node->parent_nid);
+}
+      
+function nodecomment_load($node) {
+	$node->teaser = $node->body;
+	return db_fetch_object(db_query('SELECT parent_nid FROM {nodecomment} WHERE comment_nid = %d', $node->nid));
+}
+
+function nodecomment_nodeapi(&$node, $op, $a3=NULL, $a4=NULL) {
+	switch ($op) {
+		case 'prepare':
+			if (!isset($node->comment)) {
+				$node->comment = variable_get("comment_$node->type", COMMENT_NODE_READ_WRITE);
+			}
+			break;
+	}
+}
+
+/* More node.module dirty hook */
+function _comment_render($node, $cid = 0) {
+	if (isset($_GET['showcomments'])) $vis = NODECOMMENT_VISIBLE_TEASERS;
+	else $vis = variable_get('comment_default_visible_'. $node->type, NODECOMMENT_VISIBLE_TEASERS);
+	
+	if ($vis == NODECOMMENT_VISIBLE_NONE) return;
+	
+	$order = variable_get('comment_default_order_'.$node->type, COMMENT_ORDER_NEWEST_FIRST);
+	$q = db_query('SELECT nc.comment_nid FROM {nodecomment} nc
+		  INNER JOIN {node} n ON n.nid=nc.comment_nid
+		  WHERE n.status=1 AND nc.parent_nid=%d
+		  ORDER BY n.created %s', $node->nid,
+		  ($order == COMMENT_ORDER_NEWEST_FIRST) ? 'DESC' : 'ASC');
+	$out = '<a id="comments"></a>';
+	$out .= '<h2>'.t("Comments").'</h2>';
+	$i=1;
+
+	if ($vis == NODECOMMENT_VISIBLE_TITLES) {
+		while ($comment_nid = db_result($q)) {
+			$comment = db_fetch_array(db_query('SELECT title FROM {node} WHERE nid=%d', $comment_nid));
+			$out .= l($comment['title'],url('node/'.$comment_nid,array('absolute'=>true))).'<br/>';
+		}
+	} else {
+		while ($comment_nid = db_result($q)) {
+			$cnode = node_load($comment_nid);
+			$out .= theme('nodecomment_view', $cnode, $i++);
+		}
+		/* Avoiding the nodeapi for performance reasons... */
+		/*
+		while ($comment_nid = db_result($q)) {
+			$comment = db_fetch_array(db_query('SELECT n.nid,n.title,n.created,n.uid,nr.body,nr.format,u.name AS username FROM {node} n
+						INNER JOIN {node_revisions} nr ON nr.nid = n.nid AND nr.vid = n.vid
+						LEFT OUTER JOIN {users} u ON n.uid = u.uid
+						WHERE n.nid = %d',
+						$comment_nid));
+			$comment['nid'] = $comment_nid;
+			// Must be very careful to filter everything properly,
+			// since the safety of the nodeapi has been dispensed with
+			$comment['body'] = check_markup($comment['body'], $comment['format']);
+			$comment['title'] = check_plain($comment['title']);
+			if (!$comment['username']) $comment['username'] = variable_get('anonymous', 'Anonymous');
+			else $comment['username'] = '<a href="/user/'.$comment['uid'].'">'.$comment['username'].'</a>';
+
+			$out .= theme('nodecomment_quickview', $comment, $i++);
+		}*/
+	}
+	return $out;
+}
+
+function nodecomment_help($section) {
+	switch ($section) {
+		case 'admin/help#nodecomment':
+			return t('This module was created by Tom!');
+			break;
+	}
+}
+
+function nodecomment_link($type, $node=NULL, $teaser=FALSE) {
+  $links = array();
+  
+  if ($type == 'node' && $node->type == 'nodecomment') {
+    if (!$teaser) {
+      $links['go_back'] = array(
+        'title' => t('Go back'),
+        'href' => url('node/'.$node->parent_nid, array('absolute' => TRUE,
+	  'query' => 'showcomments',
+	  'fragment' => 'comment-nid-'.$node->nid)),
+      );
+      $links['parent_node'] = array(
+        'title' => t('Original article'),
+        'href' => url('node/'.$node->parent_nid, array('absolute' => TRUE)),
+      );
+    }
+  }
+  else if ($type == 'node' && $node->comment) {
+    $num = reset(db_fetch_array(db_query('SELECT COUNT(*) FROM {nodecomment} nc 
+      INNER JOIN {node} n ON n.nid = nc.comment_nid 
+      WHERE nc.parent_nid = %d AND n.status = 1', $node->nid)));
+    /* Only want that get argument if default view doesn't show teasers... */
+    $vis = variable_get('comment_default_visible_'. $node->type, NODECOMMENT_VISIBLE_TEASERS);
+    $args = array('absolute' => TRUE, 'fragment' => 'comments');
+    if ($vis != NODECOMMENT_VISIBLE_TEASERS) $args['query'] = 'showcomments';
+
+    if ($num) {
+      $links['num_comments'] = array(
+	'title' => t('!num', array('!num' => format_plural($num, 'View 1 comment', 'View @count comments'))),
+	'href' => url('node/'.$node->nid, $args),
+      );
+    }
+    if ($node->comment == COMMENT_NODE_READ_WRITE && !$teaser) {
+      $links['add_comment'] = array(
+        'title' => t('Add a comment'),
+        'href' => url('node/add/nodecomment', array('absolute' => TRUE,
+	'query' => 'parentnid='.$node->nid)),
+      );
+    }
+  }
+  return $links;
+}
+
+function nodecomment_theme() {
+	return array(
+		'nodecomment_view' => array(
+			'arguments' => array('node' => NULL, 'cnum' => NULL),
+//			'template' => 'nodecomment-view',
+		),
+		'nodecomment_quickview' => array(
+			'arguments' => array('ninfo' => NULL, 'cnum' => NULL),
+//			'template' => 'nodecomment-quickview',
+		),
+	);
+}
+
+/**
+ * Implementation of hook_view().
+ *
+ * This is a typical implementation that simply runs the node text through
+ * the output filters.
+ */
+/*function nodecomment_view($node, $teaser = FALSE, $page = FALSE) {
+	$node = node_prepare($node, $teaser);
+	//$node->content['body']['#value'] = "<b>Yes</b>";
+	$node->content['myfield'] = array(
+		'#value' => theme('nodecomment_Blah', $node),
+		'#weight' => 1,
+	);
+
+	return $node;
+}*/
+
+function theme_nodecomment_view($node, $cnum) {
+	return '<div class="comment"><a id="comment-'.$cnum.'"></a>
+		<a id="comment-nid-'.$node->nid.'"></a>'.
+		node_view($node, TRUE, FALSE, TRUE).'</div>';
+}
+
+function theme_nodecomment_quickview($ninfo, $cnum) {
+	return '<div class="comment">
+	<a id="comment-'.$cnum.'"></a>
+	<a id="comment-nid-'.$ninfo['nid'].'"></a>
+	<div class="node teaser nodecomment">
+		<h2 class="title"><a href="/node/'.$ninfo['nid'].'">'.$ninfo['title'].'</a></h2>
+		<div class="submitted">
+			Submitted by '.$ninfo['username'].' on '.format_date($ninfo['created'], 'medium').'
+		</div>
+		<div class="content">'.$ninfo['body'].'</div>
+	</div>
+</div>';
+}
+

@@ -1,0 +1,101 @@
+<?php
+function article_node_info() {
+  return array(
+    'article' => array(
+      'name' => t('Article'),
+      'module' => 'article',
+      'description' => t("An article is ideal for creating and displaying content that informs or engages website visitors."),
+    )
+  );
+}
+
+function article_form_alter(&$form, $form_state, $form_id) {
+	// Ulla wants :)
+	if ($form_id == 'article_node_form') {
+		$form['buttons']['submit']['#value'] = t('Publish your article');
+		$form['taxonomy']['#title'] = t('Classification');
+  
+		// make taxonomy pack a little tighter together
+		$form['taxonomy']['#type'] = '';
+		
+		$form['revision_information']['#collapsed'] = TRUE;
+	}
+}
+
+function article_perm() {
+	return array('create article content',
+		'delete any article content',
+		'delete own article content',
+		'edit any article content',
+		'edit own article content');
+}
+
+function article_access($op, $node) {
+	/* imceditor extended access rules */
+	return imceditor_generic_access($op, $node, 'article');
+} 
+
+function article_nodeapi(&$node, $op, $a3=NULL, $a4=NULL) {
+  if ($node->type == 'article') {
+
+    if ($op == 'update index') {
+      $username = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $node->uid));
+      return '<h2>'.$username.'</h2>';
+    }
+
+    if (!isset($node->editor_options)) return;
+    if ($op == 'presave') {
+      if (user_access('moderate content') && ($node->editor_options['make_summary_feature'])) {
+	// the whole lot goes on the front page..
+	$node->body = str_replace('<!--break-->','',$node->body);
+	$node->teaser = $node->body;
+      }
+    }
+    if (($op == 'insert') || (($op == 'presave') && ($node->nid))) {
+      if (user_access('moderate content') && ($node->editor_options['make_summary_feature'])) {
+	drupal_set_message("Proposing the article for promotion");
+	imceditor_propose_feature($node->nid, 'Topic summary feature');
+	imceditor_vote_feature($node->nid, 'for', '');
+	imceditor_set_hidden_status(array($node->nid), IMCEDITOR_NODE_STATUS_HIDDEN_PENDING_PROMOTION, '');
+	$node->status = 0;
+      }
+      //drupal_set_message("Front-page thingy ".drupal_to_js($node->make_feature));
+    }
+  }
+}
+
+function article_form(&$node) {
+  $type = node_get_types('type', $node);
+
+  // We need to define form elements for the node's title and body.
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => check_plain($type->title_label),
+    '#required' => TRUE,
+    '#default_value' => !empty($node->title) ? $node->title : NULL,
+    '#weight' => -5
+  );
+  if (user_access('moderate content')) {
+    $form['editor_options'] = array(
+      '#type' => 'checkboxes',
+      '#options' => array(
+	'make_summary_feature' => t('Make this a front page summary of related articles'),
+      ),
+    );
+  }
+  $form['body_field'] = node_body_field($node, $type->body_label, 0);
+  if (!$form['body_field']['body']['#default_value']) {
+    $form['body_field']['body']['#default_value'] = "<p>&nbsp;</p><!--break--><p>&nbsp;</p>";
+  }
+
+  return $form;
+}
+
+function article_help($section) {
+  switch ($section) {
+    case 'admin/help#article':
+      return t('This module was created by Tom!');
+      break;
+  }
+}
+

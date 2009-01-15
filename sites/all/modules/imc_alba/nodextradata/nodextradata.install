@@ -1,0 +1,29 @@
+<?php
+
+function nodextradata_schema() {
+	$schema['nodextradata'] = array(
+		'fields' => array(
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'author' => array(
+				'type' => 'varchar',
+				'length' => 255,
+				'default' => NULL),
+		),
+		'primary key' => array('nid'),
+		'indexes' => array(
+			'nid' => array('nid'),
+		),
+	);
+	return $schema;
+}
+
+function nodextradata_install() {
+	drupal_install_schema('nodextradata');
+}
+
+function nodextradata_uninstall() {
+	drupal_uninstall_schema('nodextradata');
+}
