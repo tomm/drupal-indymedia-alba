@@ -1,5 +1,5 @@
 <?php
-// $Id: event-nodeapi.tpl.php,v 1.3 2008/12/01 16:08:02 killes Exp $
+// $Id: event-nodeapi.tpl.php,v 1.4 2008/12/17 23:00:20 killes Exp $
 
 /**
  * @file event-nodeapi.tpl.php
@@ -21,16 +21,16 @@
  */
 ?>
 <div class="event-nodeapi">
-  <div class="<?php print $type ?>-start dtstart" title="<?php print $start_date_utc ?>"><label><?php print t('Start: ') ?> </label> <?php print "$start_date_formatted $start_time_formatted" ?> </div>
+  <div class="<?php print $node_type ?>-start dtstart" title="<?php print $start_date_utc ?>"><label><?php print t('Start: ') ?> </label> <?php print "$start_date_formatted $start_time_formatted" ?> </div>
 </div>
 <?php if ($show_end) { ?>
   <div class="event-nodeapi">
-    <div class="<?php print $type ?>-end dtend" title="<?php print $end_date_utc ?>"><label><?php print t('End: ') ?></label> <?php print "$end_date_formatted $end_time_formatted" ?> </div>
+    <div class="<?php print $node_type ?>-end dtend" title="<?php print $end_date_utc ?>"><label><?php print t('End: ') ?></label> <?php print "$end_date_formatted $end_time_formatted" ?> </div>
   </div>
 <?php } ?>
 <?php if (variable_get('configurable_timezones', 1)) {
  $zone = event_zonelist_by_id($node->event['timezone']); ?>
  <div class="event-nodeapi">
-   <div class="<?php print $type ?>-tz"><label><?php print t('Timezone: ') ?></label><?php print t($zone['name']) ?> </div>
+   <div class="<?php print $node_type ?>-tz"><label><?php print t('Timezone: ') ?></label><?php print t($zone['name']) ?> </div>
   </div>
 <?php } ?>

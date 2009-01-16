@@ -1,9 +1,9 @@
 <?php
-// $Id: event-node-week.tpl.php,v 1.8 2009/01/01 23:25:39 killes Exp $
+// $id:
 
 /**
- * @file event-node-week.tpl.php
- * Display an event in the week view.
+ * @file event-node-list.tpl.php
+ * Display an event in the month view.
  *
  * Available variables:
  * - $stripe: An index, incremented per node
@@ -27,16 +27,16 @@
  * - $start_time_formatted: The formatted start time, according to the chosen settings
  * - $end_time_formatted: The formatted end time, according to the chosen settings
  *
- * @see template_preprocess_event_node_week()
+ * @see template_preprocess_event_node_list()
  */
 ?>
-<div class="event weekview vevent">
+<div class="event listview">
   <div class="stripe-<?php print $stripe ?>"></div>
   <?php if ($show_calendar_link) { ?>
     <div class="type"> <?php print l("($node_type)", $calendar_link, array('attributes' => array('title' => t('limit view to events of this type')))) ?> </div>
   <?php } ?>
-  <div class="title"><?php print l($node_title_unsafe, $node_link, array('attributes' => array('title' => t('view this event'))))?></div>
-
+  <div class="title summary"><?php print l($node_title_unsafe, $node_link, array('attributes' => array('title' => t('view this event'))))?></div>
+  <div id="info_<?php print $link_count ?>" class="info vevent">
   <?php if ($show_start) { ?>
     <div class="start dtstart" title="<?php print event_format_date($start_date_utc, 'custom', "Y-m-d\TH:i:s\Z") ?>"><?php print t('Start: ') . $start_date_formatted .' '. $start_time_formatted ?></div>
   <?php } ?>
@@ -48,6 +48,6 @@
   <?php } ?>
 
   <div class="content description"><?php print $teaser ?></div>
+  </div>
+  </div>
   <div class="links"><?php print $links ?></div>
-  <div class="links"><?php print $calendarsignup ?></div>
-</div>

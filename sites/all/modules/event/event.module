@@ -1,5 +1,5 @@
 <?php
-// $Id: event.module,v 1.398 2008/12/01 16:27:42 killes Exp $ 
+// $Id: event.module,v 1.400 2008/12/30 23:54:03 killes Exp $ 
 
 define('EVENT_API', '5.2');
 define('EVENT_PATH', drupal_get_path('module', 'event'));
@@ -53,17 +53,20 @@ function event_theme() {
       ),
     'event_node_week' => array(
       'template' => 'event-node-week',
-      'arguments' => array('node' => NULL)
+      'arguments' => array('node' => NULL),
       ),
     'event_node_month' => array(
       'template' => 'event-node-month',
-      'arguments' => array('node' => NULL)
+      'arguments' => array('node' => NULL),
       ),
     'event_node_table' => array(
       'template' => 'event-node-table',
-      'arguments' => array('node' => NULL)
+      'arguments' => array('node' => NULL),
       ),
-    'event_node_list' => array('arguments' => array('node' => NULL, 'module' => NULL)),
+    'event_node_list' => array(
+      'template' => 'event-node-list',
+      'arguments' => array('node' => NULL),
+      ),
     'event_calendar_date_box' => array('arguments' => array('date' => NULL, 'view' => NULL)),
     'event_empty_day' => array('arguments' => array('date' => NULL, 'view' => NULL)),
     'event_nodeapi' => array(
@@ -2957,13 +2960,13 @@ function event_format_date($date, $type = 'medium', $format = '') {
         $ret .= str_pad($result, 2, '0', STR_PAD_LEFT);
         break;
       case 'H':
-        $ret .= $date['hour'];
+        $ret .= str_pad($date['hour'], 2, '0', STR_PAD_LEFT);
         break;
       case 'i':
-        $ret .= $date['minute'];
+        $ret .= str_pad($date['minute'], 2, '0', STR_PAD_LEFT);
         break;
       case 's':
-        $ret .= $date['second'];
+        $ret .= str_pad($date['second'], 2, '0', STR_PAD_LEFT);
         break;
       case 'l':
         $ret .= t(gmdate('l', strtotime($date['year'] .'-'. $date['month'] .'-'. $date['day'] .' 12:00:00')));
@@ -3072,6 +3075,26 @@ function event_zonelist_by_id($id) {
   }
 
   return $zones[$id];
+}
+
+/**
+ * Returns a single timezone by name
+ *
+ * @param $name timezone name
+ *
+ * @return 
+ */
+function event_zone_by_name($name) {
+  static $zones = array();
+  var_dump($name);
+  if (!isset($zones[$name])) {
+    $zone = db_fetch_array(db_query("SELECT * FROM {event_timezones} WHERE name = '%s'", $name));
+    if ($zone) {
+      $zones[$name] = $zone;
+    }
+  }
+
+  return isset($zones[$name]) ? $zones[$name] : FALSE;
 }
 
 /**
