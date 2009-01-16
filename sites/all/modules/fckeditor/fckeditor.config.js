@@ -12,6 +12,7 @@
  FCKEDITOR_FORCE_SIMPLE_TOOLBAR_NAME in fckeditor.module
  */
 
+FCKConfig.ForcePasteAsPlainText = true;
 //uncomment these three lines to enable teaser break and page break plugins
 //remember to add 'DrupalBreak' and 'DrupalPageBreak' buttons to the toolbar
 FCKConfig.PluginsPath = '../../plugins/' ;
