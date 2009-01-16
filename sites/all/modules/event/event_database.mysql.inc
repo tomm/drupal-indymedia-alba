@@ -1,5 +1,5 @@
 <?php
-// $Id: event_database.mysql.inc,v 1.14 2008/04/08 09:09:55 killes Exp $
+// $Id: event_database.mysql.inc,v 1.15 2008/06/30 22:34:46 killes Exp $
 
 /**
  * @param $nid node ID
@@ -10,7 +10,7 @@ function event_get_event_load($nid) {
   global $user;
   $shift = variable_get('date_default_timezone', 0);
 
-  return db_fetch_object(db_query('SELECT e.event_start, e.event_end, e.timezone, e.has_time, e.has_end_date, tz.offset AS offset, tz.offset_dst AS offset_dst, tz.dst_region, tz.is_dst, e.event_start - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND AS event_start_utc, e.event_end - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND AS event_end_utc, e.event_start - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND + INTERVAL %d SECOND AS event_start_user, e.event_end - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND + INTERVAL %d SECOND AS event_end_user, e.event_start - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND + INTERVAL %d SECOND AS event_start_site, e.event_end - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND + INTERVAL %d SECOND AS event_end_site, tz.name as timezone_name FROM {event} e INNER JOIN {event_timezones} tz ON tz.timezone = e.timezone WHERE nid = %d', $user->timezone, $user->timezone, $shift, $shift, $nid));
+  return db_fetch_object(db_query('SELECT e.event_start, e.event_end, e.timezone, e.has_time, e.has_end_date, tz.offset AS offset, tz.offset_dst AS offset_dst, tz.dst_region, tz.is_dst, e.event_start - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND AS event_start_utc, e.event_end - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND AS event_end_utc, e.event_start - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND + INTERVAL %d SECOND AS event_start_user, e.event_end - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND + INTERVAL %d SECOND AS event_end_user, e.event_start - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND + INTERVAL %d SECOND AS event_start_site, e.event_end - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND + INTERVAL %d SECOND AS event_end_site, tz.name as timezone_name FROM {event} e INNER JOIN {event_timezones} tz ON tz.timezone = e.timezone WHERE nid = %d', (isset($user->timezone) ? $user->timezone : 0), (isset($user->timezone) ? $user->timezone : 0), $shift, $shift, $nid));
 }
 
 /**
@@ -40,7 +40,8 @@ function event_get_events_user($first, $last, $order, $rewrite_parameter = array
       break;
   }
 
-  return db_query(db_rewrite_sql($query, 'n', 'nid', array_merge(array('event' => TRUE, 'event_get_events' => TRUE, 'event_get_events_user' => TRUE), $rewrite_parameter)), $user->timezone, $user->timezone, $user->timezone, $user->timezone, $shift, $shift, $before_first, $after_last, $before_first, $after_last, $before_first, $after_last, $first, $last, $first, $last, $first, $last);
+  $timezone = (isset($user->timezone) ? $user->timezone : 0);
+  return db_query(db_rewrite_sql($query, 'n', 'nid', array_merge(array('event' => TRUE, 'event_get_events' => TRUE, 'event_get_events_user' => TRUE), $rewrite_parameter)), $timezone, $timezone, $timezone, $timezone, $shift, $shift, $before_first, $after_last, $before_first, $after_last, $before_first, $after_last, $first, $last, $first, $last, $first, $last);
 }
 
 /**
@@ -69,7 +70,8 @@ function event_get_events_site($first, $last, $order, $rewrite_parameter = array
       break;
   }
 
-  return db_query(db_rewrite_sql($query, 'n', 'nid', array_merge(array('event' => TRUE, 'event_get_events' => TRUE, 'event_get_events_site' => TRUE), $rewrite_parameter)), $user->timezone, $user->timezone, $shift, $shift, $shift, $shift, $before_first, $after_last, $before_first, $after_last, $before_first, $after_last, $first, $last, $first, $last, $first, $last);
+  $timezone = (isset($user->timezone) ? $user->timezone : 0);
+  return db_query(db_rewrite_sql($query, 'n', 'nid', array_merge(array('event' => TRUE, 'event_get_events' => TRUE, 'event_get_events_site' => TRUE), $rewrite_parameter)), $timezone, $timezone, $shift, $shift, $shift, $shift, $before_first, $after_last, $before_first, $after_last, $before_first, $after_last, $first, $last, $first, $last, $first, $last);
 }
 
 /**
@@ -99,7 +101,8 @@ function event_get_events_event($first, $last, $order, $rewrite_parameter = arra
       break;
   }
 
-  return db_query(db_rewrite_sql($query, 'n', 'nid', array_merge(array('event' => TRUE, 'event_get_events' => TRUE, 'event_get_events_event' => TRUE), $rewrite_parameter)), $user->timezone, $user->timezone, $shift, $shift, $before_first, $after_last, $before_first, $after_last, $before_first, $after_last, $first, $last, $first, $last, $first, $last);
+  $timezone = (isset($user->timezone) ? $user->timezone : 0);
+  return db_query(db_rewrite_sql($query, 'n', 'nid', array_merge(array('event' => TRUE, 'event_get_events' => TRUE, 'event_get_events_event' => TRUE), $rewrite_parameter)), $timezone, $timezone, $shift, $shift, $before_first, $after_last, $before_first, $after_last, $before_first, $after_last, $first, $last, $first, $last, $first, $last);
 }
 
 /**
@@ -130,7 +133,8 @@ function event_where_user($type = 'start') {
   switch ($type) {
     case 'end':
     case 'start':
-      return str_replace('%d', (int) $user->timezone, "(e.event_$type - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND + INTERVAL %d SECOND)");
+      $timezone = (isset($user->timezone) ? $user->timezone : 0);
+      return str_replace('%d', (int) $timezone, "(e.event_$type - INTERVAL IF(tz.is_dst, tz.offset_dst, tz.offset) HOUR_SECOND + INTERVAL %d SECOND)");
   }
 }
 

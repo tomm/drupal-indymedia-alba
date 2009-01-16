@@ -1,5 +1,5 @@
 <?php
-/* $Id: ical.inc,v 1.13 2008/05/06 21:48:25 killes Exp $ */
+/* $Id: ical.inc,v 1.16 2008/09/06 22:20:28 killes Exp $ */
 
 /**
  * @file
@@ -38,7 +38,7 @@ function ical_export($events, $calname = NULL) {
   foreach ($events as $uid => $event) {
     $output .= "BEGIN:VEVENT\n";
     $output .= "DTSTAMP;VALUE=DATE-TIME:". gmdate("Ymd\THis\Z", time()) ."\n";
-    if (event_all_day($event)) { // all day event
+    if (!$event['has_time']) { // all day event
       $output .= "DTSTART;VALUE=DATE-TIME:" . event_format_date($event['start_utc'], 'custom', "Ymd\THis\Z") ."\n";
       //If allday event, set to day after allday start
       $end_date = event_date_later($event['start'], 1);
@@ -311,7 +311,6 @@ function ical_help($path, $arg) {
 }
 
 function _ical_tz($tz) {
-  include_once(drupal_get_path('module', 'event') .'/event_timezones.inc');
   foreach (event_get_timezones() as $delta => $zone) {
     if ($tz == $zone['timezone']);
     return (object) $zone;

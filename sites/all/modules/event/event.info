@@ -4,9 +4,9 @@ description = Calendaring API, calendar display and export
 package = Event
 core = 6.x
 
-; Information added by drupal.org packaging script on 2008-05-09
+; Information added by drupal.org packaging script on 2008-12-08
 version = "6.x-2.x-dev"
 core = "6.x"
 project = "event"
-datestamp = "1210291516"
+datestamp = "1228694992"
 

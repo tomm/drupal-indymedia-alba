@@ -1,5 +1,5 @@
 <?php
-// $Id: event-node-week.tpl.php,v 1.4 2008/04/09 07:15:36 killes Exp $
+// $Id: event-node-week.tpl.php,v 1.7 2008/12/01 14:40:10 killes Exp $
 
 /**
  * @file event-node-week.tpl.php
@@ -15,13 +15,17 @@
  * - $node_title_unsafe: Unfiltered event title, use only in l() functions
  * - $node_title_safe: Sanitized version of the title
  * - $node_link: URL to the event's detail page 
- * - $show_details: If the start date should be shown
+ * - $show_start: If the start date should be shown
  * - $show_end: If the end date should be shown
  * - $ongoing: If this is an ongoing event
  * - $start_date: The unformatted start date
  * - $end_date: The unformatted end date
+ * - $start_date_utc: The unformatted start date (UTC)
+ * - $end_date_utc: The unformatted end date (UTC)
  * - $start_date_formatted: The formatted start date, according to the chosen settings
  * - $end_date_formatted: The formatted end date, according to the chosen settings
+ * - $start_time_formatted: The formatted start time, according to the chosen settings
+ * - $end_time_formatted: The formatted end time, according to the chosen settings
  *
  * @see template_preprocess_event_node_week()
  */
@@ -33,15 +37,16 @@
   <?php } ?>
   <div class="title"><?php print l($node_title_unsafe, $node_link, array('attributes' => array('title' => t('view this event'))))?></div>
 
-  <?php if ($show_details) { ?>
-    <div class="start dtstart" title="<?php print event_format_date($start_date, 'custom', "Y-m-d\TH:i:s\Z") ?>"><?php print t('Start: ') . $start_date_formatted ?></div>
+  <?php if ($show_start) { ?>
+    <div class="start dtstart" title="<?php print event_format_date($start_date_utc, 'custom', "Y-m-d\TH:i:s\Z") ?>"><?php print t('Start: ') . $start_date_formatted .' '. $start_time_formatted ?></div>
   <?php } ?>
   <?php if ($show_end) { ?>
-      <div class="end dtend" title="<?php print event_format_date($end_date, 'custom', "Y-m-d\TH:i:s\Z") ?>"><?php print t('End: ') . $end_date_formatted ?></div>
+      <div class="end dtend" title="<?php print event_format_date($end_date_utc, 'custom', "Y-m-d\TH:i:s\Z") ?>"><?php print t('End: ') . $end_date_formatted .' '. $end_time_formatted ?></div>
   <?php } ?>
   <?php if ($ongoing) { ?>
       <div class="ongoing" ><?php print t('all day'); ?></div>
   <?php } ?>
 
   <div class="links"><?php print $links ?></div>
+  <div class="links"><?php print $calendarsignup ?></div>
 </div>

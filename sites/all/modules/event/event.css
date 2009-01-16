@@ -33,14 +33,36 @@
 .event-calendar th.heading {
   border-width: 1px 0px;
 }
-.event-calendar th.prev {
+
+/* head navigation */
+.event-calendar caption span {
+  font-weight: bold;
+  font-size: 1.5em;
+}
+
+.event-calendar span a {
+   text-decoration: none;
+}
+
+.event-calendar span a:hover, 
+   .event-calendar span a:active, 
+   .event-calendar span a:focus {
+  background-color: #363636;
+  color: #fff;
+}
+
+.event-calendar .prev {
   text-align: left;
   border-width: 1px 0px 1px 1px;
 }
-.event-calendar th.next {
+.event-calendar .next {
   text-align: right;
   border-width: 1px 1px 1px 0px;
 }
+.event-calendar .stop {
+  color: #ccc;
+}
+
 .event-calendar th a {
   font-weight: bold;
   color: #363636;
@@ -141,6 +163,7 @@
   color: #555;
   margin: 2px 0 2px 0;
   padding-left: 3px;
+  font-size: 0.8em;
 }
 .event-calendar .end {
   font-style: normal;

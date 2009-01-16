@@ -1,5 +1,5 @@
 <?php
-// $Id: event.module,v 1.371 2008/05/08 23:03:21 killes Exp $ 
+// $Id: event.module,v 1.398 2008/12/01 16:27:42 killes Exp $ 
 
 define('EVENT_API', '5.2');
 define('EVENT_PATH', drupal_get_path('module', 'event'));
@@ -66,10 +66,15 @@ function event_theme() {
     'event_node_list' => array('arguments' => array('node' => NULL, 'module' => NULL)),
     'event_calendar_date_box' => array('arguments' => array('date' => NULL, 'view' => NULL)),
     'event_empty_day' => array('arguments' => array('date' => NULL, 'view' => NULL)),
-    'event_nodeapi' => array('arguments' => array('node' => NULL)),
+    'event_nodeapi' => array(
+      'template' => 'event-nodeapi',
+      'arguments' => array('node' => NULL)
+      ),
     'event_filter_control' => array('arguments' => array('form' => NULL)),
     'event_nav_next' => array('arguments' => array('url' => NULL, 'attributes' => NULL)),
     'event_nav_prev' => array('arguments' => array('url' => NULL, 'attributes' => NULL)),
+    'event_nav_stop_next' => array('arguments' => array('text' => NULL)),
+    'event_nav_stop_prev' => array('arguments' => array('text' => NULL)),
     'event_links' => array('arguments' => array('links' => NULL, 'view' => NULL)),
     'event_ical_link' => array('arguments' => array('path' => NULL)),
     'event_more_link' => array('arguments' => array('path' => NULL)),
@@ -170,7 +175,7 @@ function event_menu() {
     'access callback' => 'user_access',
     'access arguments' => array('access content'),
     'file' => 'ical.inc',
-    'type' => MENU_CALLBACK
+    'type' => MENU_SUGGESTED_ITEM
   );
   $items['event/type'] = array(
     'title' => 'Filter by content type',
@@ -260,7 +265,7 @@ function event_ical_access($nid) {
  */
 function event_user($type, &$edit, &$user) {
   if ($type == 'login') {
-    if (!$user->timezone_id) {
+    if (!$user->timezone_id && is_numeric($user->timezone)) {
       // Lookup TZ ID based on TZ offset
       $timezone_id = event_timezone_map($user->timezone);
       // Update all users with the same offset.
@@ -399,13 +404,14 @@ function event_page($year = NULL, $month = NULL, $day = NULL, $view = NULL, $typ
   $date['year'] = $year;
   $date['month'] = $month;
   $date['day'] = $day;
+  $date['second'] = '00';
   $view = $view ? $view : variable_get('event_overview', 'month');
   if (isset($_POST['event_type_select'])) {
-    drupal_goto('event/'. $year .'/'. $month .'/'. $day .'/'. $view .'/'. check_plain($_POST['event_type_select']) .'/'. $tids);
+    drupal_goto('event/'. $year .'/'. $month .'/'. $day .'/'. $view .'/'. check_plain($_POST['event_type_select']) .'/'. $tids .'/'. check_plain($duration));
   }
 
   if (isset($_POST['event_term_select'])) {
-    drupal_goto('event/'. $year .'/'. $month .'/'. $day .'/'. $view .'/'. ($types ? $types : 'all') .'/'. check_plain($_POST['event_term_select']));
+    drupal_goto('event/'. $year .'/'. $month .'/'. $day .'/'. $view .'/'. ($types ? $types : 'all') .'/'. check_plain($_POST['event_term_select']) .'/'. check_plain($duration));
   }
 
   $breadcrumbs[] = l(t('Home'), NULL);
@@ -463,22 +469,36 @@ function event_page($year = NULL, $month = NULL, $day = NULL, $view = NULL, $typ
       // day view
       $caption = event_format_date($date, 'custom', t('l F d, Y'));
       list($thead, $tbody) = event_calendar_day('page', $date, $types, $terms);
+      $ical_date = $date;
+      $duration = 1;
       break;
     case 'week':
       // week view
       // setup calendar table header
       $dow = _event_day_of_week($date);
-      $temp = event_format_date(event_date_later($date, -1 * $dow), 'custom', 'F-j-Y');
+      $start_date = event_date_later($date, -1 * $dow);
+      $temp = event_format_date($start_date, 'custom', 'F-j-Y');
       $temp = explode('-', $temp);
       $caption = t('Week of !month !day, !year', array('!month' => $temp[0], '!day' => $temp[1], '!year' => $temp[2]));
       $colspan = 5;
       list($thead, $tbody) = event_calendar_week('page', $date, $types, $terms);
+      $ical_date = $start_date;
+      $ical_date['hour'] = '00';
+      $ical_date['minute'] = '00';
+      $ical_date['second'] = '00';
+      $ical_duration = 7;
       break;
     case 'month':
       // month view
       $caption = event_format_date($date, 'custom', t('F Y'));
       $colspan = 5;
       list($thead, $tbody) = event_calendar_month('page', $date, $types, $terms);
+      $ical_date = $date;
+      $ical_date['day'] = '01';
+      $ical_date['hour'] = '00';
+      $ical_date['minute'] = '00';
+      $ical_date['second'] = '00';
+      $ical_duration = date('t', mktime(0, 0, 0, $date['month'], 1, $date['year']));
       break;
     case 'table':
       // table view
@@ -488,6 +508,11 @@ function event_page($year = NULL, $month = NULL, $day = NULL, $view = NULL, $typ
       $end_date = event_date_later($date, $duration);
       $caption = event_format_date($date, 'custom', t('F d Y')) .' - '. event_format_date($end_date, 'custom', t('F d Y'));
       list($thead, $tbody) = event_calendar_table('page', $date, $end_date, $types, $terms);
+      $ical_date = $date;
+      $ical_duration = $duration;
+      $ical_date['hour'] = '00';
+      $ical_date['minute'] = '00';
+      $ical_date['second'] = '00';
       break;
     case 'list':
       // list view
@@ -497,6 +522,11 @@ function event_page($year = NULL, $month = NULL, $day = NULL, $view = NULL, $typ
       $end_date = event_date_later($date, $duration);
       $caption = event_format_date($date, 'custom', t('F d Y')) .' - '. event_format_date($end_date, 'custom', t('F d Y'));
       $tbody = event_calendar_list('page', $date, $end_date, $types, $terms);
+      $ical_date = $date;
+      $ical_duration = $duration;
+      $ical_date['hour'] = '00';
+      $ical_date['minute'] = '00';
+      $ical_date['second'] = '00';
       break;
     case 'feed':
       // rss feed
@@ -538,7 +568,7 @@ function event_page($year = NULL, $month = NULL, $day = NULL, $view = NULL, $typ
     $output .= theme('event_links', array_merge(module_invoke_all('link', 'event_'. $view, $node, FALSE), $links), $view);
 
     $output .= theme('event_calendar_'. $view, 'page', (!empty($thead) ? $thead : array()), $tbody, array(), $caption);
-    $output .= theme('event_ical_link', 'event/'. _event_format_url($date) .'/ical/'. $node->event['filter']);
+    $output .= theme('event_ical_link', 'event/'. (isset($ical_date) ? _event_format_url($ical_date) : _event_format_url($date)) .'/ical/'. $node->event['filter'] . (isset($ical_duration) ? "/$ical_duration" :''));
 
     // Add RSS feed and icon to events page
     drupal_add_feed(url('event/feed', array('absolute' => TRUE)), t('Events at %site', array('%site' => variable_get('site_name', 'drupal'))));
@@ -820,7 +850,7 @@ function event_calendar_rss($date, $duration, $types = NULL, $terms = NULL, $tit
 
   $headertitle = event_format_date($date, 'custom', t('F d Y')) .'-'. event_format_date($end_date, 'custom', t('F d Y'));
 
-  $result = event_get_events(event_implode_date($date), event_implode_date($end_date), $rewrite_parameter);
+  $result = event_get_events(event_implode_date($date), event_implode_date($end_date), 'ASC', $rewrite_parameter);
 
   $nodes = array();
   while ($nid = db_fetch_object($result)) {
@@ -835,7 +865,7 @@ function event_calendar_rss($date, $duration, $types = NULL, $terms = NULL, $tit
   foreach ($filtered as $node) {
     $body = '<div class="start">'. t('Start') .': '. $node->event['start_format'] .'</div>'."\n";
     $body .= '<div class="end">'. t('End') .': '. $node->event['end_format'] .'</div>'."\n";
-    $body .= check_markup($node->teaser);
+    $body .= check_markup($node->teaser, $node->format);
     $link = url('node/'. $node->nid, array('absolute' => TRUE));
     // Allow modules to add additional item fields
     $extra = node_invoke_nodeapi($node, 'rss item');
@@ -880,7 +910,7 @@ function event_calendar_ical($date, $duration, $types = NULL, $terms = NULL, $ti
 
   $headertitle = event_format_date($date, 'custom', t('F d Y')) .'-'. event_format_date($end_date, 'custom', t('F d Y'));
 
-  $result = event_get_events(event_implode_date($date), event_implode_date($end_date), $rewrite_parameter);
+  $result = event_get_events(event_implode_date($date), event_implode_date($end_date), 'ASC', $rewrite_parameter);
 
   $events = array();
   while ($nid = db_fetch_object($result)) {
@@ -915,7 +945,7 @@ function _event_node_ical($node) {
   $event = $node->event;
   $event['uid'] = $node->uid;
   $event['summary'] = $node->title;
-  $event['description'] = check_markup($node->teaser ? $node->teaser : $node->body);
+  $event['description'] = check_markup($node->teaser ? $node->teaser : $node->body, $node->format);
   $event['uid'] = url("node/$node->nid", array('absolute' => TRUE));
   $event['url'] = url("node/$node->nid", array('absolute' => TRUE));
 
@@ -1009,7 +1039,7 @@ function event_calendar_data($date, $view = NULL, $types = NULL, $terms = NULL, 
       if ($node_load) {
         // we don't want to cache the nodes, we do our own caching
         $node = node_load($nid->nid, NULL, TRUE);
-        event_nodeapi($node, 'view', FALSE, FALSE);
+        node_invoke_nodeapi($node, 'view', FALSE, FALSE);
       }
       // don't do node_load for calendar block
       else {
@@ -1036,11 +1066,16 @@ function event_calendar_data($date, $view = NULL, $types = NULL, $terms = NULL, 
         $node->title = $nid->title;
         $node->type = $nid->type;
         $node->event = $event;
+
         $node->event['start_exploded'] = event_explode_date($node->event['start']);
         $node->event['end_exploded'] = event_explode_date($node->event['end']);
+
+        $format = event_strip_time(variable_get('date_format_short', 'm/d/Y - H:i'));
         $node->event['start_format'] = event_format_date($node->event['start_exploded'], 'small');
+        $node->event['start_date_format'] = event_format_date($node->event['start_exploded'], 'custom', $format);
         $node->event['start_time_format'] = event_format_date($node->event['start_exploded'], 'custom', (variable_get('event_ampm', '0') ? 'g:i a' : 'H:i'));
         $node->event['end_format'] = event_format_date($node->event['end_exploded'], 'small');
+        $node->event['end_date_format'] = event_format_date($node->event['end_exploded'], 'custom', $format);
         $node->event['end_time_format'] = event_format_date($node->event['end_exploded'], 'custom', (variable_get('event_ampm', '0') ? 'g:i a' : 'H:i'));
       }
 
@@ -1066,7 +1101,7 @@ function event_calendar_data($date, $view = NULL, $types = NULL, $terms = NULL, 
       }
 
       if ((event_same_day($node->event['start_exploded'], $node->event['end_exploded']))) {
-        if (event_all_day($node)) {
+        if (!$node->event['has_time']) {
           $nid->state = 'allday';
         }
         else {
@@ -1083,22 +1118,11 @@ function event_calendar_data($date, $view = NULL, $types = NULL, $terms = NULL, 
         $cur_date['minute'] = '00';
         while (event_is_later($node_end, $cur_date)) {
           if (event_same_day($cur_date, $node->event['end_exploded'])) {
-            if ($node->event['end_exploded']['hour'] = '23' && $node->event['end_exploded']['minute'] = '59') {
-              $nid->state = 'allday';
-            }
-            else {
-              $nid->state = 'end';
-            }
+            $nid->state = 'end';
             $data[$rewrite_key][$node->event['end_exploded']['year']][(int)$node->event['end_exploded']['month']][(int)$node->event['end_exploded']['day']][] = drupal_clone($nid);
-            break;
           }
           elseif (event_same_day($cur_date, $node->event['start_exploded'])) {
-            if ($node->event['start_exploded']['hour'] = '00' && $node->event['start_exploded']['minute'] = '00') {
-              $nid->state = 'allday';
-            }
-            else {
-              $nid->state = 'start';
-            }
+            $nid->state = 'start';
             $data[$rewrite_key][$node->event['start_exploded']['year']][(int)$node->event['start_exploded']['month']][(int)$node->event['start_exploded']['day']][] = drupal_clone($nid);
           }
           else {
@@ -1295,7 +1319,7 @@ function event_where($type = 'start') {
  * @param $type 'INNER' OR 'LEFT', default 'INNER'
  */
 function event_join($prefix = 'n', $type = 'INNER') {
-  return "INNER JOIN {event} e ON $prefix.nid = e.nid INNER JOIN {event_timezones} tz ON e.timezone = tz.timezone";
+  return "$type JOIN {event} e ON $prefix.nid = e.nid $type JOIN {event_timezones} tz ON e.timezone = tz.timezone";
 }
 
 /**
@@ -1454,7 +1478,6 @@ function event_render_day($date, $view, $types, $terms, $rewrite_parameter = arr
   if (count($nodes)) {
     $output = theme('event_calendar_date_box', $date, $view);
     foreach ($nodes as $node) {
-      var_dump($node);
       $output .= theme('event_node_'. $view, $node);
     }
   }
@@ -1476,11 +1499,11 @@ function event_week_days() {
   static $weekdays;
 
   if (!$weekdays) {
-    if (variable_get('date_first_day', 1)) {
-      $weekdays = array(array('day' => 'Mon', 't' => t('Mon')), array('day' => 'Tue', 't' => t('Tue')), array('day' => 'Wed', 't' => t('Wed')), array('day' => 'Thu', 't' => t('Thu')), array('day' => 'Fri', 't' => t('Fri')), array('day' => 'Sat', 't' => t('Sat')), array('day' => 'Sun', 't' => t('Sun')));
-    }
-    else {
-      $weekdays = array(array('day' => 'Sun', 't' => t('Sun')), array('day' => 'Mon', 't' => t('Mon')), array('day' => 'Tue', 't' => t('Tue')), array('day' => 'Wed', 't' => t('Wed')), array('day' => 'Thu', 't' => t('Thu')), array('day' => 'Fri', 't' => t('Fri')), array('day' => 'Sat', 't' => t('Sat')));
+    $initial_weekdays = array(array('day' => 'Sun', 't' => t('Sun')), array('day' => 'Mon', 't' => t('Mon')), array('day' => 'Tue', 't' => t('Tue')), array('day' => 'Wed', 't' => t('Wed')), array('day' => 'Thu', 't' => t('Thu')), array('day' => 'Fri', 't' => t('Fri')), array('day' => 'Sat', 't' => t('Sat')));
+    $weekdays = array();
+    $idx = variable_get('date_first_day', 1);
+    for ($i = 0; $i <= 6; $i++) {
+      $weekdays[$i] = $initial_weekdays[(($i + $idx) % 7)];
     }
   }
   return $weekdays;
@@ -1509,7 +1532,7 @@ function event_week_header() {
  * @return integer day of the week
  */
 function _event_day_of_week($date) {
-  $dow = gmdate('w', mktime(12, 0, 0, $date['month'], $date['day'], $date['year']));
+  $dow = gmdate('w', gmmktime(12, 0, 0, $date['month'], $date['day'], $date['year']));
   $dow = (variable_get('date_first_day', 1) ? ($dow == 0 ? 6 : --$dow ) : $dow);
   return $dow;
 }
@@ -1563,18 +1586,6 @@ function event_same_day($date_1, $date_2) {
 }
 
 /**
- * Does an event run all day?
- *
- * @ingroup event_support
- * @param $node fully loaded event node
- *
- * @return TRUE or FALSE
- */
-function event_all_day(&$node) {
-  return $node->event['has_time'] ? FALSE : TRUE;
-}
-
-/**
  * Roll out a single event element.
  * @ingroup event_support
  *
@@ -1593,6 +1604,21 @@ function expand_event($element) {
       'ampm' => event_format_date($date, 'custom', 'a'),
       );
   }
+  
+  if (variable_get('event_ampm', 0)) {
+    if ($element['#value']['hour'] > 11) {
+      $element['#value']['ampm'] = 'pm';     
+    }
+    $element['#value']['hour'] = _event_hour_to_ampm($element['#value']['hour']);
+  }
+
+  $element['#value']['hour'] = (int) $element['#value']['hour'];
+  $element['#value']['minute'] = (int) $element['#value']['minute'];
+
+  // Elements should be validated by default
+  if(!isset($element['#skip_validate'])) {
+    $element['#skip_validate'] = FALSE;
+  }
 
   $element['#tree'] = TRUE;
 
@@ -1604,7 +1630,9 @@ function expand_event($element) {
   $sort['year'] = strpos($format, 'Y');
   $sort['hour'] = max(strpos($format, 'h'), strpos($format, 'H'), strpos($format, 'g'), strpos($format, 'G'));
   $sort['minute'] = strpos($format, 'i');
-  $sort['ampm'] = $sort['minute'] + 1;
+  if (variable_get('event_ampm', 0)) {
+    $sort['ampm'] = $sort['minute'] + 1;
+  }
   asort($sort);
   $order = array_keys($sort);
 
@@ -1627,7 +1655,7 @@ function expand_event($element) {
       case 'hour':
         $form_type = 'select';
         if (variable_get('event_ampm', 0)) {
-          for ($i = 0; $i <= 12; $i++) $options["$i"] = $i < 10 ? "0$i" : "$i";
+          for ($i = 1; $i <= 12; $i++) $options["$i"] = $i < 10 ? "0$i" : "$i";
         }
         else {
           for ($i = 0; $i <= 23; $i++) $options["$i"] = ($i < 10) ? "0$i" : "$i";
@@ -1653,7 +1681,7 @@ function expand_event($element) {
     $parents[] = $type;
     $element[$type] = array(
       '#type' => $form_type,
-      '#value' => $element['#value'][$type],
+      '#default_value' => $element['#value'][$type],
       '#attributes' => $element['#attributes'],
     );
     if (isset($options)) {
@@ -1676,11 +1704,13 @@ function expand_event($element) {
  * @return formatted hour
  */
 function _event_hour_to_ampm($hour) {
-  if (variable_get('event_ampm', 0) && $hour > 0) {
-    $hour = $hour % 12;
+  if (variable_get('event_ampm', 0)) {
+    if ($hour > 0) {
+      $hour = $hour % 12;
+    }
     if ($hour == 0) {
       $hour = 12;
-    }
+    } 
   }
   return $hour;
 }
@@ -1693,7 +1723,13 @@ function _event_hour_to_ampm($hour) {
  * @param $form The form.
  */
 function event_validate($form) {
-  if (!checkdate($form['#value']['month'], $form['#value']['day'], $form['#value']['year'])) {
+  
+  if(isset($form['#skip_validate']) && $form['#skip_validate']) {
+    return;
+  }
+
+  // checkdate can be picky about the input, cast to int.
+  if (!checkdate((int)$form['#value']['month'], (int)$form['#value']['day'], (int)$form['#value']['year'])) {
     form_error($form, t('The specified date is invalid.'));
   }
 
@@ -1711,7 +1747,7 @@ function event_validate($form) {
     }
   }
   if (isset($form['#value']['minute']) && $form['#value']['minute'] > 60) {
-    form_error($form, t('There are only 60 minutes in the day.'));
+    form_error($form, t('There are only 60 minutes in an hour.'));
   }
 }
 
@@ -1776,6 +1812,10 @@ function _event_nav($date, $dir, $view, $types, $terms, $duration = NULL) {
 
     return theme('event_nav_'. $dir, implode('/', $url), $attributes);
   }
+  else {
+    $text = t('No more events.');
+    return theme('event_nav_stop_'. $dir, $text);
+  }
 }
 
 /**
@@ -1783,7 +1823,7 @@ function _event_nav($date, $dir, $view, $types, $terms, $duration = NULL) {
  *
  * @ingroup event_support.
  * @param $curterm The current term id.
- * @param $autosubmit Adds 'onChange' form submit javascript command to control.
+ * @param $autosubmit Adds 'onchange' form submit javascript command to control.
  * @return A form with a dropdown event taxonomy term input control.
  */
 function _event_get_taxonomy_control($curterm = NULL, $autosubmit = TRUE) {
@@ -1800,7 +1840,7 @@ function _event_get_taxonomy_control($curterm = NULL, $autosubmit = TRUE) {
  *
  * @ingroup event_support.
  * @param $curterm The current term id.
- * @param $autosubmit Adds 'onChange' form submit javascript command to control.
+ * @param $autosubmit Adds 'onchange' form submit javascript command to control.
  * @return An array representing the form.
  */
 function event_taxonomy_filter_form($form_state, $curterm, $autosubmit) {
@@ -1836,7 +1876,7 @@ function event_taxonomy_filter_form($form_state, $curterm, $autosubmit) {
     '#options' => $items,
     '#description' => t('Select event terms to filter by'));
   if ($autosubmit) {
-    $form['event_term_select']['#attributes'] = array('onChange' => 'this.form.submit()');
+    $form['event_term_select']['#attributes'] = array('onchange' => 'this.form.submit()');
   }
 
   return $form;
@@ -1847,7 +1887,7 @@ function event_taxonomy_filter_form($form_state, $curterm, $autosubmit) {
  *
  * @ingroup event_support.
  * @param $curtype The current type id.
- * @param $autosubmit Adds 'onChange' form submit javascript command to control.
+ * @param $autosubmit Adds 'onchange' form submit javascript command to control.
  * @return A form with a dropdown event taxonomy term input control.
  */
 function _event_get_type_control($curtype = NULL, $autosubmit = TRUE) {
@@ -1864,7 +1904,7 @@ function _event_get_type_control($curtype = NULL, $autosubmit = TRUE) {
  *
  * @ingroup event_support.
  * @param $curtype The current type id.
- * @param $autosubmit Adds 'onChange' form submit javascript command to control.
+ * @param $autosubmit Adds 'onchange' form submit javascript command to control.
  * @return An array representing the form.
  */
 function event_type_filter_form($form_state, $curtype, $autosubmit) {
@@ -1883,7 +1923,7 @@ function event_type_filter_form($form_state, $curtype, $autosubmit) {
     '#options' => $items,
     '#description' => t('Select event type to filter by'));
   if ($autosubmit) {
-    $form['event_type_select']['#attributes'] = array('onChange' => 'this.form.submit()');
+    $form['event_type_select']['#attributes'] = array('onchange' => 'this.form.submit()');
   }
 
   return $form;
@@ -2080,6 +2120,7 @@ function event_form_alter(&$form, $form_state, $form_id) {
       if (isset($form_state['node_preview'])) {
         event_pre_render($node);
       }
+      drupal_add_js(drupal_get_path('module', 'event') .'/event_node_edit.js');
       $form['event'] = array('#type' => 'fieldset', '#tree' =>TRUE);
       $form['event']['has_time'] = array(
         '#type' => 'checkbox',
@@ -2108,11 +2149,14 @@ function event_form_alter(&$form, $form_state, $form_id) {
         '#weight' => -15,
         );
 
+      // This needs to be validated only if has_end_date checked
+      // So we'll do that manually in the form validation function
       $form['event']['end_exploded'] = array(
         '#type' => 'event',
         '#title' => t('End date'),
         '#default_value' => isset($node->event['end_exploded']) ? $node->event['end_exploded'] : _event_user_time(),
         '#weight' => -13,
+        '#skip_validate' => TRUE,
         );
 
       if (variable_get('event_timezone_input', 'site') == 'input') {
@@ -2169,6 +2213,22 @@ function event_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
+ * Special validate handler for the node form
+ */
+function event_form_validate($form, &$form_state) {
+  // If an end date is specified, it needs to be validated.
+  if ($form_state['values']['event']['has_end_date']) {
+    $form['event']['end_exploded']['#skip_validate'] = FALSE;
+    event_validate($form['event']['end_exploded']);
+  }
+  // We set the end date to the start date.
+  else {
+    $form_item['#parents'] = array('event', 'end_exploded');
+    form_set_value($form_item, $form_state['values']['event']['start_exploded'], $form_state);
+  }
+}
+
+/**
  * Helper function to add missing properties
  */
 function event_pre_render(&$node) {
@@ -2197,6 +2257,12 @@ function event_pre_render(&$node) {
   }
   if (!isset($node->event['end_site'])) {
     $node->event['end_site'] = event_date_later($node->event['end_exploded'], variable_get('date_default_timezone', 0), 'seconds');
+  }
+  if (!isset($node->event['start_utc'])) {
+    $node->event['start_utc'] = event_date_later($node->event['start_exploded'], -1 * variable_get('date_default_timezone', 0), 'seconds');
+  }
+  if (!isset($node->event['end_utc'])) {
+    $node->event['end_utc'] = event_date_later($node->event['end_exploded'], -1 * variable_get('date_default_timezone', 0), 'seconds');
   }
 }
 
@@ -2257,9 +2323,14 @@ function event_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 
         $node->event['start_exploded'] = event_explode_date($node->event['start']);
         $node->event['end_exploded'] = event_explode_date($node->event['end']);
+
+        $format = event_strip_time(variable_get('date_format_short', 'm/d/Y - H:i'));
+
         $node->event['start_format'] = event_format_date($node->event['start_exploded'], 'small');
+        $node->event['start_date_format'] = event_format_date($node->event['start_exploded'], 'custom', $format);
         $node->event['start_time_format'] = event_format_date($node->event['start_exploded'], 'custom', (variable_get('event_ampm', '0') ? 'g:i a' : 'H:i'));
         $node->event['end_format'] = event_format_date($node->event['end_exploded'], 'small');
+        $node->event['end_date_format'] = event_format_date($node->event['end_exploded'], 'custom', $format);
         $node->event['end_time_format'] = event_format_date($node->event['end_exploded'], 'custom', (variable_get('event_ampm', '0') ? 'g:i a' : 'H:i'));
 
         include_once(EVENT_PATH .'/event.theme');
@@ -2273,16 +2344,22 @@ function event_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
         $node->teaser = theme('event_nodeapi', $node) . $node->teaser;
         break;
       case 'presave':
-        if (event_is_later($node->event['start_exploded'], $node->event['end_exploded'], 'array')) {
-          $node->event['end_exploded'] = $node->event['start_exploded'];
-        }
-        if (variable_get('event_ampm', '0') == 1) {
+        if (variable_get('event_ampm', '0')) {
+          if ($node->event['start_exploded']['hour'] == 12) {
+            $node->event['start_exploded']['hour'] = 0;
+          }
+          if ($node->event['end_exploded']['hour'] == 12) {
+            $node->event['end_exploded']['hour'] = 0;
+          }
           if ($node->event['start_exploded']['ampm'] == 'pm') {
             $node->event['start_exploded']['hour'] += 12;
           }
           if ($node->event['end_exploded']['ampm'] == 'pm') {
             $node->event['end_exploded']['hour'] += 12;
           }
+        }
+        if (event_is_later($node->event['start_exploded'], $node->event['end_exploded'], 'array')) {
+          $node->event['end_exploded'] = $node->event['start_exploded'];
         }
         $node->event['start_in_dst'] = event_is_dst($node->event['timezone'], $node->event['start_exploded']);
         $node->event['end_in_dst'] = event_is_dst($node->event['timezone'], $node->event['end_exploded']);
@@ -2485,7 +2562,7 @@ function event_is_dst($dst_region, $time) {
   }
 
   $year = $time['year'];
-  $timestamp = strtotime($time['year'] .'-'. $time['month'] .'-'. $time['day'] .' '. $time['hour'] .':'. $time['minute'] .':'. $time['second']);
+  $timestamp = strtotime($time['year'] .'-'. $time['month'] .'-'. $time['day'] .' '. $time['hour'] .':'. $time['minute'] .':'. (isset($time['second']) ? $time['second'] : '00'));
 
   // Information on Daylight Saving time was obtained from http://webexhibits.org/daylightsaving/g.html
   switch ($dst_region) {
@@ -2920,6 +2997,34 @@ function event_format_date($date, $type = 'medium', $format = '') {
   return $ret;
 }
 
+/**
+ * Returns only the date component of a date format
+ *
+ * @param $format the date format
+ *
+ * @return the date format with the time part omitted
+ */
+function event_strip_time($format) {
+  $no_time_date = array();
+  foreach (array('d', 'm', 'Y', 'M', 'j') as $key) {
+    $pos = strpos($format, $key);
+    if ($pos !== FALSE) {
+      if ($pos > 0) {
+        $str = substr($format, $pos - 1, 3);
+        $no_time_date[$pos] = $str;
+        $format = strtr($format, array($str => '^^^'));
+      }
+      else {
+        $str = substr($format, $pos, 2);
+        $no_time_date[$pos] = $str;
+        $format = strtr($format, array($str => '^^'));
+      }
+    }
+  }
+  ksort($no_time_date);
+  return trim(str_replace('^', '', implode('', $no_time_date)));
+}
+
 function event_get_dst_regions() {
   static $regions;
 
@@ -3044,7 +3149,7 @@ function event_date_later($date, $duration, $type = 'days') {
       }
       break;
     case 'seconds':
-      $end = explode('-', gmdate('H-i-s-Y-m-d', gmmktime((int)$date['hour'], (int)$date['minute'], (int)$date['second'] + $duration, (int)$date['month'], (int)$date['day'], (int)$date['year'])));
+      $end = explode('-', gmdate('H-i-s-Y-m-d', gmmktime((int)$date['hour'], (int)$date['minute'], (int)(isset($date['second']) ? $date['second'] : 0) + $duration, (int)$date['month'], (int)$date['day'], (int)$date['year'])));
       break;
   }
   
@@ -3204,8 +3309,8 @@ function event_token_list($type = 'all') {
 function event_token_values($type, $object = NULL) {
   if ($type == 'node') {
     // Get the event start time as a Unix timestamp
-    $eventstart = $object->event['start'];
-    $eventstart = strtotime($eventstart);
+    $start = $object->event['start_exploded'];
+    $eventstart = mktime($start['hour'], $start['minute'], 0, $start['month'], $start['day'], $start['year']);
 
     $tokens['eventyyyy'] = date('Y', $eventstart);
     $tokens['eventmm']   = date('m', $eventstart);
@@ -3216,5 +3321,21 @@ function event_token_values($type, $object = NULL) {
 
     return $tokens;
   }
+}
+
+/**
+ * Implementation of hook_schema_alter(). We alter $schema by reference.
+ *
+ * @param $schema
+ * The system-wide schema collected by drupal_get_schema().
+ */
+function event_schema_alter(&$schema) {
+  // Add field to existing schema.
+  $schema['users']['fields']['timezone_id'] = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => t('Per-user timezone configuration.'),
+  );
 }
 

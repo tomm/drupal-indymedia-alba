@@ -1,5 +1,5 @@
 <?php
-// $Id: event.install,v 1.29 2008/04/30 00:33:24 killes Exp $ 
+// $Id: event.install,v 1.34 2008/12/01 07:09:35 killes Exp $ 
 
 /**
  * We need mysql >= 4.1.1
@@ -8,6 +8,7 @@ function event_requirements($phase) {
   // Ensure translations don't break at install time
   $t = get_t();
   global $db_type;
+  $requirements = array();
   if ($db_type == 'mysql' || $db_type == 'mysqli') {
     $version = db_version();
 
@@ -138,7 +139,7 @@ function event_install() {
   variable_set('event_nodeapi_event', 'all');
 
   // Notify of changes
-  drupal_set_message(t('Event module was successfully installed with default options. To customize event and/or location settings for events, please view the <a href="!settings">event content type settings page</a>. Make sure to <a href="!url">select the default timezone</a> for your website before creating events.', array('!settings' => url('admin/content/types/event'), '!url' => url('admin/settings/date-time'))));
+  drupal_set_message(t('Event module was successfully installed with default options. To customize event and/or location settings for events, please view the <a href="!settings">event content type settings page</a>. Make sure to <a href="!url">select the default timezone</a> for your website before creating events.', array('!settings' => url('admin/content/node-type/event'), '!url' => url('admin/settings/date-time'))));
   drupal_set_message('A content type "event" was created.');
 }
 
@@ -318,6 +319,11 @@ function event_update_5() {
       $ret[] = update_sql("ALTER TABLE {event_timezones} ADD is_dst int NOT NULL default 0");
       break;
   }
+  // There's a bug in core that will runn this update funcvtion even
+  // if the module is not enabled.
+  if (!function_exists('_event_user_time')) {
+    include_once(drupal_get_path('module', 'event') .'/event.module');
+  }
   $time = _event_user_time();
   // Loop over the 21 supported DST regions.
   for ($i = 0; $i <= 20;  $i++) {
@@ -431,6 +437,21 @@ function event_update_6000() {
   return array();
 }
 
+/**
+ * Truncate cache because of new theme functions.
+ */
+function event_update_6001() {
+  db_query('TRUNCATE {cache}');
+  return array();
+}
+
+/**
+ * Truncate cache because of new theme functions.
+ */
+function event_update_6002() {
+  db_query('TRUNCATE {cache}');
+  return array();
+}
 
 /**
  * Timezones table used only during installation.
