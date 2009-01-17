@@ -2,6 +2,6 @@
 name = Comment Node
 description = A content type used to comment on other node content.
 dependencies[] = imceditor
-version = "6.x-1.1"
+version = "6.x-1.5"
 core = 6.x
 project = "imc_alba"

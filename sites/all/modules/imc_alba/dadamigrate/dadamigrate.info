@@ -3,7 +3,7 @@ name = Indymedia DadaIMC migrator
 description = Converts DadaIMC database to drupal and sets up redirects from the old article urls.
 package = Indymedia
 
-version = "6.x-1.1"
+version = "6.x-1.5"
 core = 6.x
 dependencies[] = imceditor
 dependencies[] = nodextradata

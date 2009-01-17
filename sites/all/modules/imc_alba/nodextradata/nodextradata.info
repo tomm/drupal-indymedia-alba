@@ -1,6 +1,6 @@
 name = Node extra data
 description = Useful additional fields that can be enabled per- node-type
 package = Indymedia
-version = "6.x-1.1"
+version = "6.x-1.5"
 core = 6.x
 project = "imc_alba"

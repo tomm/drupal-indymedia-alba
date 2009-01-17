@@ -1,6 +1,6 @@
 name = Indymedia Alba Core
 description = "Core components of the Indymedia Alba distribution"
 package = Indymedia
-version = "6.x-1.4"
+version = "6.x-1.5"
 core = 6.x
 project = "imc_alba"
