@@ -357,7 +357,7 @@ diff -r -u -N upload.orig/upload.module upload/upload.module
 +++ upload/upload.module	2009-01-15 12:41:44.000000000 +0000
 @@ -1,6 +1,8 @@
  <?php
- // $Id: upload.module,v 1.197.2.4 2009/01/12 15:30:23 goba Exp $
+ // $Id: upload_imcalba.diff,v 1.1.2.3 2009/01/17 18:15:44 tomm Exp $
  
 +define('UPLOAD_DEFAULT_THUMBNAIL_WIDTH', 100);
 +
