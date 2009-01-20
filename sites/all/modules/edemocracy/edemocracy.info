@@ -1,0 +1,6 @@
+name = e-Democracy
+description = "Polls and user elections module."
+#package = Indymedia
+version = "6.x-0.9"
+core = 6.x
+#project = "imc_alba"

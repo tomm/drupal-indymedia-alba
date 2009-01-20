@@ -1,0 +1,399 @@
+<?php
+
+define('POLL_STATE_GETCANDIDATES', 0);
+define('POLL_STATE_VOTING', 1);
+define('POLL_STATE_CLOSED', 2);
+define('POLL_CANDIDATETYPE_USER', 0);
+define('POLL_CANDIDATETYPE_PROPOSITION', 1);
+$poll_candidatetype = array('User election', 'Proposition choice');
+
+include 'edemocracy.model.inc';
+
+
+
+function edemocracy_form_alter(&$form, $form_state, $form_id) {
+
+	if (isset($form['type']) && isset($form['#node']) && 
+			_edemocracy_is_nodetype_a_poll($form['#node']->type)) {
+		$node = &$form['#node'];
+		$hidden = isset($node->nid);
+		$form['edemocracy'] = array('#type' => 'fieldset', '#collapsible' => true, '#title' => 'Poll', '#weight' => -1);
+		$form['edemocracy']['edemocracy_poll_candidatetype'] = array(
+			'#type' => ($hidden ? 'hidden' : 'select'),
+			'#title' => t('Type of poll'),
+			'#default_value' => isset($node->edemocracy_poll_candidatetype) ?
+						$node->edemocracy_poll_candidatetype : POLL_CANDIDATETYPE_USER,
+			'#options' => array(
+				POLL_CANDIDATETYPE_USER => t('User election'),
+				POLL_CANDIDATETYPE_PROPOSITION => t('Proposition choice'),
+			),
+		);
+		$form['edemocracy']['edemocracy_poll_numberofwinners'] = array(
+			'#type' => 'select',
+			'#title' => t('Number of winning candidates'),
+			'#default_value' => isset($node->edemocracy_poll_numberofwinners) ?
+					$node->edemocracy_poll_numberofwinners : 1,
+			'#options' => array(1=>'1',2=>'2',3=>'3',4=>'4',5=>'5',6=>'6',7=>'7',8=>'8',9=>'9',10=>'10'),
+		);
+		$time = localtime(isset($node->edemocracy_poll_opentime) ? $node->edemocracy_poll_opentime : time()+60*60*24*7, true);
+		$form['edemocracy']['edemocracy_poll_opentime'] = array(
+			'#type' => 'date',
+			'#default_value' => array('day' => $time['tm_mday'],
+						'month' => $time['tm_mon']+1,
+						'year' => $time['tm_year']+1900),
+			'#description' => t('When the poll becomes closed to new candidate submissions, and open to voting.'),
+			'#title' => t('Poll opens'),
+		);
+		$time = localtime(isset($node->edemocracy_poll_closetime) ? $node->edemocracy_poll_closetime : time()+60*60*24*14, true);
+		$form['edemocracy']['edemocracy_poll_closetime'] = array(
+			'#type' => 'date',
+			'#default_value' => array('day' => $time['tm_mday'],
+						'month' => $time['tm_mon']+1,
+						'year' => $time['tm_year']+1900),
+			'#description' => t('When the poll becomes closed to voting and the votes are counted.'),
+			'#title' => t('Poll closes'),
+		);
+		$form['edemocracy']['edemocracy_poll_state'] = array(
+			'#type' => 'hidden',
+			'#default_value' => isset($node->edemocracy_poll_state) ? $node->edemocracy_poll_state : 0,
+		);
+		$form['#submit'][] = '_edemocracy_form_alter_submit';
+	}
+}
+
+function _edemocracy_form_alter_submit($form_id, &$form_state) {
+	$start = $form_state['values']['edemocracy_poll_opentime'];
+	$start = mktime(0, 0, 0, $start['month'], $start['day'], $start['year'], 0);
+	$form_state['values']['edemocracy_poll_opentime'] = $start;
+
+	$end = $form_state['values']['edemocracy_poll_closetime'];
+	$end = mktime(0, 0, 0, $end['month'], $end['day'], $end['year'], 0);
+	$form_state['values']['edemocracy_poll_closetime'] = $end;
+}
+
+function edemocracy_menu() {
+	$items = array();
+	$items['edemocracy/addcandidate'] = array(
+		'title' => t('Poll candidate submission.'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('edemocracy_addcandidate_form'),
+		'access arguments' => array('create own candidacy'),
+		'type' => MENU_CALLBACK
+	);
+	$items['edemocracy/addproposition'] = array(
+		'title' => t('Poll proposition submission.'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('edemocracy_addproposition_form'),
+		'access arguments' => array('create poll choice'),
+		'type' => MENU_CALLBACK
+	);
+	$items['edemocracy/vote'] = array(
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('edemocracy_vote_form'),
+		'access arguments' => array('vote on polls'),
+		'type' => MENU_CALLBACK,
+		'file' => 'voteform.inc',
+	);
+	$items['edemocracy/nextstage'] = array(
+		'page callback' => 'edemocracy_move_to_next_polling_stage',
+		'access arguments' => array('open and close polling'),
+		'type' => MENU_CALLBACK,
+	);
+	return $items;
+}
+
+function edemocracy_perm() {
+	return array('open and close polling', 'create poll choice', 'vote on polls', 'create own candidacy');
+}
+
+function edemocracy_move_to_next_polling_stage($nid) {
+	$node = node_load($nid);
+	if ($node) {
+		if ($node->edemocracy_poll_state < POLL_STATE_CLOSED) {
+			$node->edemocracy_poll_state++;
+			
+			if ($node->edemocracy_poll_state == POLL_STATE_CLOSED) {
+				edemocracy_count_votes($nid);
+			}
+
+			node_save($node);
+		}
+	}
+	drupal_goto("/node/" . intval($nid));
+}
+
+function edemocracy_addcandidate_form_submit($form_id, $form_state) {
+	global $user;
+	edemocracy_add_user_candidate($form_state['values']['nid'],
+		$user->uid, check_markup($form_state['values']['statement']));
+	drupal_set_message('Your candidacy has been registered.');
+	drupal_goto('/node/' . intval($form_state['values']['nid']));
+}
+
+function edemocracy_addcandidate_form($form_state, $nid)
+{
+	$node = node_load($nid);
+	if (!_edemocracy_is_nodetype_a_poll($node->type)) drupal_goto('/node/' . $nid);
+
+	if ($node->edemocracy_poll_candidatetype == POLL_CANDIDATETYPE_USER) {
+		$form = array();
+		$form['statement'] = array(
+			'#title' => t('Your candidate statement'),
+			'#type' => 'textarea',
+			'#required' => true
+		);
+		$form['nid'] = array(
+			'#type' => 'hidden',
+			'#value' => $nid,
+		);
+		$form['submit'] = array(
+			'#type' => 'submit',
+			'#value' => 'Submit',
+			'#weight' => 10,
+		);
+		return $form;
+	}
+}
+
+function edemocracy_addproposition_form_submit($form_id, $form_state) {
+	global $user;
+	edemocracy_add_poll_proposition($form_state['values']['nid'],
+		check_plain($form_state['values']['name']), check_markup($form_state['values']['statement']));
+	drupal_set_message('Your proposition has been registered.');
+	drupal_goto('/node/' . intval($form_state['values']['nid']));
+}
+
+function edemocracy_addproposition_form($form_state, $nid)
+{
+	$node = node_load($nid);
+	if (!_edemocracy_is_nodetype_a_poll($node->type)) drupal_goto('/node/' . $nid);
+
+	if ($node->edemocracy_poll_candidatetype == POLL_CANDIDATETYPE_PROPOSITION) {
+		$form = array();
+		$form['name'] = array(
+			'#title' => t('Proposition name'),
+			'#type' => 'textfield',
+			'#required' => 'true',
+		);
+		$form['statement'] = array(
+			'#title' => t('Proposition long description'),
+			'#type' => 'textarea',
+			'#required' => true
+		);
+		$form['nid'] = array(
+			'#type' => 'hidden',
+			'#value' => $nid,
+		);
+		$form['submit'] = array(
+			'#type' => 'submit',
+			'#value' => 'Submit',
+			'#weight' => 10,
+		);
+		return $form;
+	}
+}
+
+function _edemocracy_is_nodetype_a_poll($type) {
+	$OUR_TYPES = array("poll", "election");
+	return in_array($type, $OUR_TYPES);
+}
+
+function _edemocracy_show_candidates(&$node) {
+	if ($node->edemocracy_poll_candidatetype == POLL_CANDIDATETYPE_USER) {
+		$rows = array();
+		$header = array(t('User'), t('Candidate statement'));
+		$r = db_query("SELECT * FROM {edemocracy_poll_option} WHERE nid=%d", $node->nid);
+		while ($a = db_fetch_array($r)) {
+			$u = user_load($a['uid']);
+			$rows[] = array(l($u->name, '/user/'.$u->uid), $a['description']);
+		}
+		return theme('table', $header, $rows);
+	} else {
+		$rows = array();
+		$header = array(t('Proposition'), t('Description'));
+		$r = db_query("SELECT * FROM {edemocracy_poll_option} WHERE nid=%d", $node->nid);
+		while ($a = db_fetch_array($r)) {
+			$u = user_load($a['uid']);
+			$rows[] = array($a['name'], $a['description']);
+		}
+		return theme('table', $header, $rows);
+	}
+}
+
+function _edemocracy_view_getcandidates(&$node) {
+	global $user;
+
+	$node->content['edemocracy_candidates']['#value'] = _edemocracy_show_candidates($node);
+	$node->content['edemocracy_candidates']['#weight'] = 9;
+	$node->content['edemo_action'] = array('#type'=>'fieldset', '#weight' => 10);
+	$node->content['edemo_action'][0] = array('#value'=>'', '#prefix' => '<ul>', '#suffix' => '</ul>');
+
+	if ($node->edemocracy_poll_candidatetype == POLL_CANDIDATETYPE_USER) {
+		if (user_access('create own candidacy') && !edemocracy_is_user_a_candidate($node->nid, $user->uid)) {
+			$node->content['edemo_action'][0][] = array(
+				'#value' => l('Submit your candidacy', 'edemocracy/addcandidate/'.$node->nid),
+				'#prefix' => '<li>',
+				'#weight' => 10);
+		}
+	} else {
+		if (user_access('create poll choice')) {
+			$node->content['edemo_action'][0][] = array(
+				'#value' => l('Submit a proposition', 'edemocracy/addproposition/' . $node->nid),
+				'#prefix' => '<li>',
+				'#weight' => 10);
+		}
+	}
+	if (user_access('open and close polling')) {
+		$node->content['edemo_action'][0][] = array('#value' => l('Open polling', 'edemocracy/nextstage/' . $node->nid),
+			'#weight' => 11, '#prefix' => '<li>');
+	}
+}
+
+function _edemocracy_view_statevoting(&$node) {
+	global $user;
+
+	$node->content['edemocracy_candidates'] = array(
+		'#value' => _edemocracy_show_candidates($node),
+		'#weight' => 9);
+	$node->content['edemo_action'] = array('#type'=>'fieldset', '#weight' => 10);
+	$node->content['edemo_action'][0] = array('#value'=>'', '#prefix' => '<ul>', '#suffix' => '</ul>');
+
+	if (edemocracy_has_user_voted($node->nid, $user->uid)) {
+		drupal_set_message('You have cast your vote.');
+	} else {
+		if (user_access('vote on polls')) {
+			$node->content['edemo_action'][0][] = array(
+				'#value' => l('Vote now', 'edemocracy/vote/' . $node->nid),
+				'#prefix' => '<li>', '#weight' => 10);
+		}
+	}
+	if (user_access('open and close polling')) {
+		$node->content['edemo_action'][0][] = array('#value' => l('Close polling', 'edemocracy/nextstage/' . $node->nid),
+			'#prefix' => '<li>', '#weight' => 11);
+	}
+}
+
+function _edemocracy_view_stateclosed(&$node) {
+	
+	$rows = array();
+	if ($node->edemocracy_poll_candidatetype == POLL_CANDIDATETYPE_USER) {
+		$header = array(t('Total votes'), t('User'));
+		$r = db_query("SELECT * FROM `edemocracy_poll_option` WHERE nid=%d ORDER BY winner DESC, finalvotes DESC", $node->nid);
+		while ($a = db_fetch_array($r)) {
+			$u = user_load($a['uid']);
+			$row = array('data' => array(($a['winner']?'* ':'') . $a['finalvotes'], $u->name));
+			if ($a['winner']) $row['class'] = 'error';
+			$rows[] = $row;
+		}
+	} else {
+		$header = array(t('Total votes'), t('Proposition'), t('Description'));
+		$r = db_query("SELECT * FROM `edemocracy_poll_option` WHERE nid=%d ORDER BY winner DESC, finalvotes DESC", $node->nid);
+		while ($a = db_fetch_array($r)) {
+			$u = user_load($a['uid']);
+			$row = array('data'=>array(($a['winner']?'* ':'').$a['finalvotes'], $a['name'], $a['description']));
+			if ($a['winner']) $row['class'] = 'error';
+			$rows[] = $row;
+		}
+	}
+	$node->content[] = array('#value' => theme('table', $header, $rows), '#weight' => 10);
+	$node->content[] = array('#value' => "The winners are: " . implode(', ', edemocracy_get_winners($node)),
+		'#weight' => 9);
+}
+
+function edemocracy_nodeapi(&$node, $op, $a3=NULL, $a4=NULL) {
+	if (!$node->nid) return;
+	if (!_edemocracy_is_nodetype_a_poll($node->type)) return;
+
+	switch ($op) {
+		case 'view':
+			if (!$a4) return; // only full page view
+			if (!isset($node->edemocracy_poll_state)) {
+				drupal_set_message("e-Democracy poll not loaded correctly", 'error');
+			}
+			switch ($node->edemocracy_poll_state) {
+				case POLL_STATE_GETCANDIDATES:
+					if ($node->edemocracy_poll_candidatetype == POLL_CANDIDATETYPE_USER) {
+						$node->content[] = array('#value' => t('This poll is open for candidate submissions until %time%.', 
+								array('%time%' => format_date($node->edemocracy_poll_opentime))),
+							'#prefix' => '<h3>', '#suffix' => '</h3>');
+					} else {
+						$node->content[] = array('#value' => t('This poll is open for new propositions until %time%.', 
+								array('%time%' => format_date($node->edemocracy_poll_opentime))),
+							'#prefix' => '<h3>', '#suffix' => '</h3>');
+					}
+					_edemocracy_view_getcandidates($node);
+					break;
+				case POLL_STATE_VOTING:
+					$node->content[] = array('#value' => t('This poll is open for voting until %time%.', 
+								array('%time%' => format_date($node->edemocracy_poll_closetime))),
+							'#prefix' => '<h3>', '#suffix' => '</h3>');
+					_edemocracy_view_statevoting($node);
+					break;
+				case POLL_STATE_CLOSED:
+					$node->content[] = array('#value' => t('This poll is closed and the votes counted.'),
+							'#prefix' => '<h3>', '#suffix' => '</h3>');
+					_edemocracy_view_stateclosed($node);
+					break;
+			}
+			break;
+		case 'insert':
+			db_query("INSERT INTO {edemocracy_poll} SET nid=%d, state=0, candidatetype=%d, " .
+					"opentime=%d, closetime=%d, numberofwinners=%d",
+					$node->nid, $node->edemocracy_poll_candidatetype,
+					$node->edemocracy_poll_opentime,
+					$node->edemocracy_poll_closetime,
+					$node->edemocracy_poll_numberofwinners);
+			break;
+		case 'update':
+			db_query("UPDATE {edemocracy_poll} SET state=%d, candidatetype=%d, opentime=%d, " .
+					"closetime=%d, numberofwinners=%d WHERE nid=%d",
+					$node->edemocracy_poll_state, $node->edemocracy_poll_candidatetype,
+					$node->edemocracy_poll_opentime,
+					$node->edemocracy_poll_closetime,
+					$node->edemocracy_poll_numberofwinners,
+					$node->nid);
+			break;
+		case 'load':
+			$a = db_fetch_array(db_query("SELECT * FROM {edemocracy_poll} WHERE nid=%d", $node->nid));
+			$node->edemocracy_poll_state = $a['state'];
+			$node->edemocracy_poll_candidatetype = $a['candidatetype'];
+			$node->edemocracy_poll_opentime = $a['opentime'];
+			$node->edemocracy_poll_closetime = $a['closetime'];
+			$node->edemocracy_poll_numberofwinners = $a['numberofwinners'];
+			break;
+		case 'delete':
+			db_query("DELETE FROM {edemocracy_poll} WHERE nid=%d", $node->nid);
+			db_query("DELETE FROM {edemocracy_poll_option} WHERE nid=%d", $node->nid);
+			db_query("DELETE FROM {edemocracy_poll_vote} WHERE nid=%d", $node->nid);
+			break;
+	}
+}
+
+function edemocracy_help($section) {
+  switch ($section) {
+    case 'admin/help#edemocracy':
+      return t('This module was created by Tom!');
+      break;
+  }
+}
+
+function edemocracy_theme() {
+	return array(
+		'edemocracy_vote_form' => array(
+			'arguments' => array('form' => NULL),
+		),
+	);
+}
+
+function edemocracy_cron() {
+	$r = db_query("SELECT opentime,closetime,state,nid FROM {edemocracy_poll} WHERE state!=%d", POLL_STATE_CLOSED);
+	$t = time();
+	while ($a = db_fetch_array($r)) {
+		if ($a['closetime'] < $t) {
+			db_query("UPDATE {edemocracy_poll} SET state=%d WHERE nid=%d", POLL_STATE_CLOSED, $a['nid']);
+			edemocracy_count_votes($a['nid']);
+		}else if ($a['opentime'] < $t) {
+			db_query("UPDATE {edemocracy_poll} SET state=%d WHERE nid=%d", POLL_STATE_VOTING, $a['nid']);
+		}
+	}
+}

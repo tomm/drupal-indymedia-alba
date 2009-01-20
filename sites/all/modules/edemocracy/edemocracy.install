@@ -1,0 +1,116 @@
+<?php
+
+function edemocracy_schema() {
+	$schema['edemocracy_poll'] = array(
+		'fields' => array(
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'state' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'candidatetype' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'opentime' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'closetime' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'numberofwinners' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+		),
+		'primary key' => array('nid'),
+	);
+	$schema['edemocracy_poll_option'] = array(
+		'fields' => array(
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'optionid' => array(
+				'type' => 'serial',
+				'unsigned' => TRUE,
+				'not null' => TRUE),
+			'uid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => FALSE,
+				'default' => '0'),
+			'name' => array(
+				'type' => 'varchar',
+				'length' => 255,
+				'not null' => TRUE,
+				'default' => ''),
+			'description' => array(
+				'description' => 'Candidate statement or option description.',
+				'type' => 'text',
+				'not null' => TRUE,
+				'size' => 'big'),
+			'finalvotes' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'winner' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+		),
+		'primary key' => array('optionid'),
+		'indexes' => array(
+			'nid' => array('nid'),
+			'uid' => array('uid')),
+	);
+	$schema['edemocracy_poll_vote'] = array(
+		'fields' => array(
+			'nid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'optionid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => '0'),
+			'uid' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => FALSE,
+				'default' => '0'),
+			'vote' => array(
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => FALSE,
+				'default' => '0'),
+		),
+		'primary key' => array('nid', 'optionid', 'uid'),
+		'indexes' => array('uid' => array('uid')),
+	);
+	return $schema;
+}
+
+function edemocracy_install() {
+	drupal_install_schema('edemocracy');
+}
+
+function edemocracy_uninstall() {
+	drupal_uninstall_schema('edemocracy');
+}
