@@ -1,4 +1,4 @@
-; $Id: article.info,v 1.3 2008/05/17 16:00:57 tomm Exp $
+; $Id: article.info,v 1.3.2.1 2009/01/17 18:15:45 tomm Exp $
 name = Indymedia Article
 description = "Content type of a news article."
 package = Indymedia
