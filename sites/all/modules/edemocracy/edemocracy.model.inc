@@ -58,15 +58,21 @@ function edemocracy_count_votes($nid) {
 				$votes, $nid, $a['optionid']);
 	}
 	$num_winners = db_result(db_query("SELECT numberofwinners FROM {edemocracy_poll} WHERE nid=%d", $nid));
-	db_query("UPDATE {edemocracy_poll_option} SET winner=1 WHERE nid=%d ORDER BY finalvotes DESC LIMIT %d", $nid, $num_winners);
+	db_query("UPDATE {edemocracy_poll_option} SET winner=2 WHERE nid=%d ORDER BY finalvotes DESC LIMIT %d", $nid, $num_winners);
+	$min_winning_score = db_result(db_query("SELECT MIN(finalvotes) FROM {edemocracy_poll_option} WHERE winner=2 AND nid=%d", $nid));
+	drupal_set_message("Lowest winner ".$min_winning_score);
+	if (db_result(db_query("SELECT COUNT(*) FROM {edemocracy_poll_option} WHERE winner=0 AND nid=%d and finalvotes=%d", $nid, $min_winning_score))) {
+		// tie. mark those with this num as tied
+		db_query("UPDATE {edemocracy_poll_option} SET winner=1 WHERE nid=%d AND finalvotes=%d", $nid, $min_winning_score);
+	}
 }
 
 /*
  * returns array of optionid => name
  */
-function edemocracy_get_winners($node) {
+function edemocracy_get_winners(&$node) {
 	$winners = array();
-	$r = db_query("SELECT optionid,name,uid FROM {edemocracy_poll_option} WHERE nid=%d AND winner=1 ORDER BY finalvotes DESC", $node->nid);
+	$r = db_query("SELECT optionid,name,uid FROM {edemocracy_poll_option} WHERE nid=%d AND winner=2 ORDER BY finalvotes DESC", $node->nid);
 	while ($a = db_fetch_array($r)) {
 		if ($node->edemocracy_poll_candidatetype == POLL_CANDIDATETYPE_USER) {
 			$u = user_load($a['uid']);

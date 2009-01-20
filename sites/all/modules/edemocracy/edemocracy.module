@@ -59,6 +59,19 @@ function edemocracy_form_alter(&$form, $form_state, $form_id) {
 		);
 		$form['#submit'][] = '_edemocracy_form_alter_submit';
 	}
+	elseif ($form_id == 'node_type_form' && isset($form['identity']['type'])) {
+		$form['edemocracy'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('e-Democracy settings'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+		);
+		$form['edemocracy']['edemocracy_poll_node'] = array(
+			'#type' => 'checkbox',
+			'#title' => t('Is a poll'),
+			'#default_value' => variable_get('edemocracy_poll_node_'. $form['#node_type']->type, 0),
+		);
+	}
 }
 
 function _edemocracy_form_alter_submit($form_id, &$form_state) {
@@ -99,11 +112,47 @@ function edemocracy_menu() {
 		'access arguments' => array('open and close polling'),
 		'type' => MENU_CALLBACK,
 	);
+	$items['admin/settings/edemocracy'] = array(
+		'title' => 'e-Democracy',
+		'description' => '',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('edemocracy_admin'),
+		'access arguments' => array('administer edemocracy'),
+	);
+	
 	return $items;
 }
 
+function edemocracy_admin() {
+	$form = array();
+	{
+		$rows = array();
+		$header = array(t('Node type'), t('Status'), t('Action'));
+		$types = node_get_types('types');
+		foreach ($types as $type) {
+			$is_poll = _edemocracy_is_nodetype_a_poll($type->type);
+			$rows[] = array($type->type, ($is_poll ? 'Poll' : 'Not a poll'), l('edit', '/admin/content/node-type/' . $type->type));
+		}
+		$form['wank'] = array('#value' => theme('table', $header, $rows));
+	}
+	/*$form['blocks'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Sidebar (block) configuration'),
+		'#collapsible' => TRUE,
+	);
+	$form['blocks']['imcviews_maxdisp'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Maximum number of items shown in the newswire block'),
+		'#default_value' => variable_get('imcviews_maxdisp', NEWSWIRE_DEFAULT_ITEMS),
+		'#size' => 2,
+		'#maxlength' => 2,
+		'#description' => t("The maximum number of items to display in the newswire block.")
+	);*/
+	return $form;
+}
+
 function edemocracy_perm() {
-	return array('open and close polling', 'create poll choice', 'vote on polls', 'create own candidacy');
+	return array('open and close polling', 'create poll choice', 'vote on polls', 'create own candidacy', 'administer edemocracy');
 }
 
 function edemocracy_move_to_next_polling_stage($nid) {
@@ -194,8 +243,7 @@ function edemocracy_addproposition_form($form_state, $nid)
 }
 
 function _edemocracy_is_nodetype_a_poll($type) {
-	$OUR_TYPES = array("poll", "election");
-	return in_array($type, $OUR_TYPES);
+	return variable_get('edemocracy_poll_node_'. $type, 0);
 }
 
 function _edemocracy_show_candidates(&$node) {
@@ -274,6 +322,9 @@ function _edemocracy_view_statevoting(&$node) {
 }
 
 function _edemocracy_view_stateclosed(&$node) {
+	$status = array('','(Tied) ','(Winner) ');
+	$cssclass = array('','edemocracy-tied','edemocracy-winner');
+	drupal_add_css(drupal_get_path('module', 'edemocracy') . '/edemocracy.css', 'module');
 	
 	$rows = array();
 	if ($node->edemocracy_poll_candidatetype == POLL_CANDIDATETYPE_USER) {
@@ -281,8 +332,8 @@ function _edemocracy_view_stateclosed(&$node) {
 		$r = db_query("SELECT * FROM `edemocracy_poll_option` WHERE nid=%d ORDER BY winner DESC, finalvotes DESC", $node->nid);
 		while ($a = db_fetch_array($r)) {
 			$u = user_load($a['uid']);
-			$row = array('data' => array(($a['winner']?'* ':'') . $a['finalvotes'], $u->name));
-			if ($a['winner']) $row['class'] = 'error';
+			$row = array('data' => array($status[$a['winner']] . $a['finalvotes'], $u->name));
+			$row['class'] = $cssclass[$a['winner']];
 			$rows[] = $row;
 		}
 	} else {
@@ -290,8 +341,8 @@ function _edemocracy_view_stateclosed(&$node) {
 		$r = db_query("SELECT * FROM `edemocracy_poll_option` WHERE nid=%d ORDER BY winner DESC, finalvotes DESC", $node->nid);
 		while ($a = db_fetch_array($r)) {
 			$u = user_load($a['uid']);
-			$row = array('data'=>array(($a['winner']?'* ':'').$a['finalvotes'], $a['name'], $a['description']));
-			if ($a['winner']) $row['class'] = 'error';
+			$row = array('data'=>array($status[$a['winner']] . $a['finalvotes'], $a['name'], $a['description']));
+			$row['class'] = $cssclass[$a['winner']];
 			$rows[] = $row;
 		}
 	}
