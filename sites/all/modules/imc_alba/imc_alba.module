@@ -1,2 +1,87 @@
 <?php
 
+function imc_alba_menu() {
+	$items = array();
+	$items['user/%user/articles'] = array(
+		'title' => 'Authored articles',
+		'page callback' => 'imc_alba_show_user_articles',
+		'page arguments' => array(1),
+		'access callback' => TRUE,
+		'type' => MENU_LOCAL_TASK
+	);
+	$items['admin/settings/imcalba'] = array(
+		'title' => 'Indymedia basic settings',
+		'description' => '',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('imc_alba_admin'),
+		'access arguments' => array('administer site configuration'),
+	);
+
+	return $items;
+}
+
+function imc_alba_admin() {
+	$form = array();
+	$form['members'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Members'),
+		'#collapsible' => TRUE,
+	);
+	$q = db_query("SELECT rid, name FROM {role}");
+	$roles = array(0 => '--- ' . t('disabled') . ' ---');
+	while ($a = db_fetch_array($q)) {
+		$roles[$a['rid']] = $a['name'];
+	}
+	$form['members']['imc_alba_member_rid'] = array(
+		'#type' => 'select',
+		'#title' => t('Role assigned to active site \'members\''),
+		'#default_value' => variable_get('imc_alba_member_rid', 0),
+		'#options' => $roles,
+		'#description' => t("Users of the site become members when they have contributed good articles to the site.
+			Note that this role will be automatically
+			added/removed from users, so don't use a role you wish
+			to be permanent for some users.")
+	);
+	return system_settings_form($form);
+}
+
+define('ARTICLES_DEFAULT_ITEMS', 20);
+
+function imc_alba_show_user_articles($arg) {
+	$uid = $arg->uid;
+	
+	// show visible but not front page articles
+	$q = pager_query(db_rewrite_sql(
+		'SELECT n.nid, n.created, n.status, n.title, n.promote FROM {node} n WHERE n.type = "article" AND n.uid='.intval($uid).' ORDER BY n.created DESC'),
+				ARTICLES_DEFAULT_ITEMS, 0);
+	$out = "<h3>" . t('Articles authored by this user'). "</h3>\n";
+	$out .= "<p>" . t('Featured articles <strong>emphasized</strong>.'). "</p>\n";
+	while ($a = db_fetch_array($q)) {
+		if ($a['promote']==1) $out .= '<strong>';
+		$out .= format_date($a['created'], 'small') . ': ' . l($a['title'],
+				'node/' . $a['nid']) . '<br />';
+		if ($a['promote']==1) $out .= '</strong>';
+	}
+	$out .= theme('pager', NULL, 10);
+	
+	return $out;
+}
+
+function imc_alba_cron() {
+	// update membership
+	// find users who have written articles in the last year (and not the
+	// last week to allow moderators time), which are still visible (not
+	// hidden or deleted). These users are now members.
+	$member_rid = variable_get('imc_alba_member_rid', 0);
+	if ($member_rid) {
+		db_query("DELETE FROM {users_roles} WHERE rid=%d", $member_rid);
+		$r = db_query("SELECT u.uid FROM {users} u WHERE u.status=1 AND EXISTS (SELECT * FROM
+		{node} n WHERE n.status=1 AND n.created > %d AND n.created < %d AND
+		n.uid=u.uid AND n.type='article')", time()-60*60*24*365,
+			time()-60*60*24*7);
+		while ($a = db_fetch_array($r)) {
+			db_query("INSERT INTO {users_roles} (uid, rid) VALUES (%d, %d)",
+					$a['uid'], $member_rid);
+		}	
+	}
+}
