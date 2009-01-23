@@ -5,6 +5,8 @@ define('IMCEDITOR_NODE_STATUS_HIDDEN', 1);
 define('IMCEDITOR_NODE_STATUS_DELETED', 2);
 define('IMCEDITOR_NODE_STATUS_HIDDEN_PENDING_PROMOTION', 3);
 
+define('IMCEDITOR_EXPIRE_DELETED_DEFAULT', 60);
+
 define('IMCEDITOR_DEFAULT_VOTES_NEEDED', 2);
 define('IMCEDITOR_DEFAULT_CPANEL_WEIGHT', -9);
 define('IMCEDITOR_DEFAULT_HIDDEN_MSG_WEIGHT', -10);
@@ -49,9 +51,21 @@ function imceditor_block($op='list', $delta=0) {
 
 function imceditor_cron()
 {
+	$days_to_expire_deleted = variable_get("imceditor_days_to_expire_deleted", IMCEDITOR_EXPIRE_DELETED_DEFAULT);
 	// delete feature promotion proposals that have not been ratified
 	// after 30 days
 	db_query("DELETE FROM {imc_feature_proposal} WHERE active = 1 AND timestamp < %d", time() - 60*60*24*30);
+	// delete deleted nodes after some period
+	if ($days_to_expire_deleted) {
+		$r = db_query("SELECT m.nid FROM {imc_node_moderation} m 
+				INNER JOIN {node} n ON n.nid=m.nid
+				WHERE m.status=%d AND n.created < %d",
+				IMCEDITOR_NODE_STATUS_DELETED,
+				time() - 60*60*24*$days_to_expire_deleted);
+		while ($a = db_fetch_array($r)) {
+			node_delete($a['nid']);
+		}
+	}
 }
 
 function imceditor_view_proposals() {
@@ -213,6 +227,15 @@ function imceditor_menu() {
 }
 
 function imceditor_admin() {
+	$form["imceditor_days_to_expire_deleted"] = array(
+		'#type' => 'select',
+		'#title' => t('Expire deleted messages after how long'),
+		'#default_value' => variable_get("imceditor_days_to_expire_deleted", IMCEDITOR_EXPIRE_DELETED_DEFAULT),
+		'#options' => array(
+			0 => t('Never'), 7 => t('1 week'), 30 => t('1 month'),
+			60 => t('2 months'), 90 => t('3 months'), 180 => t('6 months'),
+			),
+		);
 	$form["imceditor_editors_email"] = array(
 		'#type' => 'textfield',
 		'#title' => t('Email address (mailing list) to send notifications of feature proposals to editors.'),
@@ -658,6 +681,9 @@ function imceditor_nodeapi(&$node, $op, $teaser, $page) {
 				if (!$teaser) _imceditor_add_node_editorbox($node);
 				_imceditor_add_editor_messages($node);
 			}
+		case 'delete':
+			db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $node->nid);
+			break;
 	}
 }
 
