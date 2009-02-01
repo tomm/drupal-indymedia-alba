@@ -24,6 +24,10 @@ Title: !title
 ');
 define('IMCEDITOR_PROPOSALS_QUERY',
 	'SELECT nid FROM {node} n WHERE EXISTS (SELECT * FROM {imc_feature_proposal} p WHERE p.nid = n.nid AND p.active = 1) ORDER BY n.created DESC');
+define('IMCEDITOR_PENDING_QUERY',
+	sprintf('SELECT nid FROM {node} n INNER JOIN {imc_node_moderation} m ON
+	m.nid=n.nid WHERE m.status=%d ORDER BY n.created DESC',
+	IMCEDITOR_NODE_STATUS_HIDDEN_PENDING_PROMOTION));
 
 function imceditor_block($op='list', $delta=0) {
 	// listing of blocks, eg admin page
@@ -33,12 +37,18 @@ function imceditor_block($op='list', $delta=0) {
 		return $block;
 	} else if ($op == 'view') {
 		if (!user_access('moderate content')) return;
-		$num = db_result(db_query("SELECT COUNT(*) FROM {imc_feature_proposal} WHERE active = 1"));
-
+		$num_proms = db_result(db_query("SELECT COUNT(*) FROM {imc_feature_proposal} WHERE active = 1"));
+		$num_to_moderate = db_result(db_query("SELECT COUNT(*) FROM
+					{imc_node_moderation} WHERE
+					status=%d",
+					IMCEDITOR_NODE_STATUS_HIDDEN_PENDING_PROMOTION));
 		$out = '';
 
-		if ($num) {
-			$out .= l(sprintf(t("There are %d feature proposals"), $num), 'imceditor/proposals');
+		if ($num_proms) {
+			$out .= l(sprintf(t("There are %d feature proposals"), $num_proms), 'imceditor/proposals');
+		}
+		if ($num_to_moderate) {
+			$out .= l(sprintf(t("There are %d articles imported from RSS feeds awaiting editing or deletion"), $num_to_moderate), 'imceditor/pending');
 		}
 
 		if ($out == '') $out = t('No notices');
@@ -71,6 +81,20 @@ function imceditor_cron()
 function imceditor_view_proposals() {
 	// show visible but not front page articles
 	$q = pager_query(db_rewrite_sql(IMCEDITOR_PROPOSALS_QUERY), 10, 0);
+
+	$out = "";
+	while ($nid = db_fetch_array($q)) {
+		$node = node_load(array('nid'=>$nid['nid']));
+		$out .= node_view($node, TRUE, FALSE, TRUE);
+	}
+	$out .= theme('pager', NULL, 10);
+	
+	return $out;
+}
+
+function imceditor_view_pending() {
+	// show visible but not front page articles
+	$q = pager_query(db_rewrite_sql(IMCEDITOR_PENDING_QUERY), 10, 0);
 
 	$out = "";
 	while ($nid = db_fetch_array($q)) {
@@ -219,6 +243,12 @@ function imceditor_menu() {
 	$items['imceditor/proposals'] = array(
 		'title' => 'Editor Proposals',
 		'page callback' => 'imceditor_view_proposals',
+		'access arguments' => array('moderate content'),
+		'type' => MENU_CALLBACK
+	);
+	$items['imceditor/pending'] = array(
+		'title' => 'Articles pending editing or deletion',
+		'page callback' => 'imceditor_view_pending',
 		'access arguments' => array('moderate content'),
 		'type' => MENU_CALLBACK
 	);
@@ -646,7 +676,7 @@ function _imceditor_normal_user_msg(&$node) {
 			$node->content[] = array(
 				'#value' => '
 					<div id="hidden-msg-'.$node->nid.'"><div class="warning">
-						'.t("This article is hidden from normal users pending promotion").
+						'.t("This article is hidden from normal users pending editing").
 					'</div></div>',
 				'#weight' => $weight,
 			);
@@ -681,8 +711,17 @@ function imceditor_nodeapi(&$node, $op, $teaser, $page) {
 				if (!$teaser) _imceditor_add_node_editorbox($node);
 				_imceditor_add_editor_messages($node);
 			}
+			break;
 		case 'delete':
 			db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $node->nid);
+			break;
+		case 'insert':
+			if (isset($node->feedapi_node) && $node->feedapi_node->feed_item) {
+				// make feedapi rss imported nodes be
+				imceditor_set_hidden_status(array($node->nid),
+						IMCEDITOR_NODE_STATUS_HIDDEN_PENDING_PROMOTION,
+						"");
+			}
 			break;
 	}
 }
