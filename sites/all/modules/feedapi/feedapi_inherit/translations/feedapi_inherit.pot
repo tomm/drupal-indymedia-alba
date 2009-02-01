@@ -1,0 +1,49 @@
+# $Id: feedapi_inherit.pot,v 1.1.2.1 2008/08/23 12:33:43 aronnovak Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  feedapi_inherit.module,v 1.1.2.14.2.3 2008/08/22 16:26:54 aronnovak
+#  feedapi_inherit.info,v 1.1.2.5.2.2 2008/04/11 19:42:51 aronnovak
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2008-08-23 13:57+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: feedapi_inherit.module:21;23
+msgid "FeedAPI Inherit - pass on taxonomy and organic group information from feed to feed items."
+msgstr ""
+
+#: feedapi_inherit.module:72
+msgid "Feed nodes inherit organic group settings from parent feed."
+msgstr ""
+
+#: feedapi_inherit.module:78
+msgid "Feed nodes inherit taxonomy settings from parent feed."
+msgstr ""
+
+#: feedapi_inherit.module:0
+msgid "feedapi_inherit"
+msgstr ""
+
+#: feedapi_inherit.info:0
+msgid "FeedAPI Inherit"
+msgstr ""
+
+#: feedapi_inherit.info:0
+msgid "Passes on group and taxonomy information from feed to feed items. Requires FeedAPI Node processor."
+msgstr ""
+
+#: feedapi_inherit.info:0
+msgid "FeedAPI Add On"
+msgstr ""
+

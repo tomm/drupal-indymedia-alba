@@ -1,0 +1,94 @@
+# $Id: parser_simplepie.pot,v 1.1.2.1 2008/08/23 12:33:45 aronnovak Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  parser_simplepie.module,v 1.6.2.20.2.7 2008/08/22 16:26:55 aronnovak
+#  parser_simplepie.info,v 1.1.2.5.2.3 2008/04/14 19:15:49 aronnovak
+#  parser_simplepie.install,v 1.1.2.6.2.5 2008/08/23 07:48:33 aronnovak
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2008-08-23 14:26+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: parser_simplepie.module:15
+msgid "Provide a common syndication parser for FeedAPI-compatible modules powered by SimplePie library."
+msgstr ""
+
+#: parser_simplepie.module:17
+msgid "Parser SimplePie"
+msgstr ""
+
+#: parser_simplepie.module:0
+msgid "parser_simplepie"
+msgstr ""
+
+#: parser_simplepie.info:0
+msgid "SimplePie parser"
+msgstr ""
+
+#: parser_simplepie.info:0
+msgid "Provides an XML parser for FeedAPI modules. Uses SimplePie library. Requires SimplePid 1.01+."
+msgstr ""
+
+#: parser_simplepie.info:0
+msgid "FeedAPI Default"
+msgstr ""
+
+#: parser_simplepie.install:28
+msgid "The current installed version of SimplePie is !version"
+msgstr ""
+
+#: parser_simplepie.install:44
+msgid "To use SimplePie parser, obtain the !simplepie package and copy simplepie.inc to the parser_simplepie directory."
+msgstr ""
+
+#: (duplicate) parser_simplepie.install:17 
+msgid "FeedAPI SimplePie"
+msgstr ""
+
+#: (duplicate) parser_simplepie.install:18 
+msgid "Obtain the !simplepie package and copy simplepie.inc to the parser_simplepie directory."
+msgstr ""
+
+#: (duplicate) parser_simplepie.install:21 
+msgid "simplepie.inc file missing"
+msgstr ""
+
+#: (duplicate) parser_simplepie.install:27 
+msgid "SimplePie Parser"
+msgstr ""
+
+#: (duplicate) parser_simplepie.install:31 
+msgid "Installed correctly"
+msgstr ""
+
+#: (duplicate) parser_simplepie.install:17 
+msgid "FeedAPI SimplePie"
+msgstr ""
+
+#: (duplicate) parser_simplepie.install:18 
+msgid "Obtain the !simplepie package and copy simplepie.inc to the parser_simplepie directory."
+msgstr ""
+
+#: (duplicate) parser_simplepie.install:21 
+msgid "simplepie.inc file missing"
+msgstr ""
+
+#: (duplicate) parser_simplepie.install:27 
+msgid "SimplePie Parser"
+msgstr ""
+
+#: (duplicate) parser_simplepie.install:31 
+msgid "Installed correctly"
+msgstr ""
+

@@ -1,0 +1,13 @@
+; $Id: feedapi_inherit.info,v 1.1.2.5.2.2 2008/04/11 19:42:51 aronnovak Exp $
+name = FeedAPI Inherit
+description = "Passes on group and taxonomy information from feed to feed items. Requires FeedAPI Node processor."
+dependencies[] = feedapi
+dependencies[] = feedapi_node
+package = "FeedAPI Add On"
+core = 6.x
+; Information added by drupal.org packaging script on 2009-01-24
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "feedapi"
+datestamp = "1232755593"
+

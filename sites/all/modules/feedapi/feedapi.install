@@ -1,0 +1,171 @@
+<?php
+// $Id: feedapi.install,v 1.5.2.21.2.11 2008/10/10 09:58:24 aronnovak Exp $
+
+/**
+ * Implementation of hook_schema().
+ */
+function feedapi_schema() {
+  $schema['feedapi'] = array(
+    'description' => t('Stores feed-related info for each feed'),
+    'fields' => array(
+      'nid' => array(
+        'description' => t('The primary identifier for the feed.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'url' => array(
+        'description' => t('The URL of the feed'),
+        'type' => 'text',
+        'not null' => TRUE),
+      'feed_type' => array(
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'default' => 'XML feed',
+        'length' => '50'),
+      'processors' => array(
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'default' => '',
+        'length' => '255'),
+      'parsers' => array(
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'default' => '',
+        'length' => '255'),
+      'checked' => array(
+        'type' => 'int',
+        'default' => 0,
+        'not null' => TRUE),
+      'hash' => array(
+        'type' => 'varchar',
+        'length' => '32'),
+      'link' => array(
+        'type' => 'text'),
+      'settings' => array(
+        'type' => 'text',
+        'size' => 'big'),
+      'half_done' => array(
+        'type' => 'int',
+        'size' => 'tiny'),
+      'skip' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('nid'),
+    'indexes' => array(
+      'feedapi_skip' => array('skip')),
+  );
+  $schema['feedapi_stat'] = array(
+    'description' => t('Statistics values over the time about the feeds'),
+    'fields' => array(
+      'id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE),
+      'timestamp' => array(
+        'type' => 'int',
+        'not null' => TRUE),
+      'time' => array(
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE),
+      'value' => array(
+        'type' => 'int'),
+    ),
+    'indexes' => array(
+      'feedapi_stat_id' => array('id'),
+      'feedapi_stat_type' => array('type')),
+      'feedapi_stat_timestamp' => array('timestamp'),
+      'feedapi_stat_time' => array('time'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function feedapi_install() {
+  drupal_install_schema('feedapi');
+  // This value warrants that og, taxonomy and similar modules does their job before feedapi. This is important
+  // because of for example feedapi_inherit or whatever processor which needs a 3rd-party processed data.
+  db_query("UPDATE {system} SET weight = 5 WHERE name = 'feedapi'");
+  
+  // Delete variables site-wide
+  variable_del('feedapi_allowed_html_tags');
+  variable_del('feedapi_allow_html_all');
+  variable_del('feedapi_cron_percentage');
+
+  // Delete variables per-content-type
+  $types = array_keys(node_get_types());
+  foreach ($types as $type) {
+    variable_del('feedapi_settings_'. $type);
+  }
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function feedapi_uninstall() {
+  drupal_uninstall_schema('feedapi');
+}
+
+function feedapi_update_6101() {
+  $ret = array();
+  db_add_field($ret, 'feedapi', 'skip', array('type' => 'int', 'size' => 'tiny', 'default' => 0));
+  db_add_index($ret, 'feedapi', 'skip_id', array('skip'));
+  return $ret;
+}
+
+function feedapi_update_6102() {
+  $ret = array();
+  db_change_field($ret, 'feedapi', 'url', 'url', array('description' => t('The URL of the feed'), 'type' => 'text'));
+  db_change_field($ret, 'feedapi', 'link', 'link', array('type' => 'text'));
+  return $ret;
+}
+
+/**
+ * feedapi_access_op() was renamed to _feedapi_op_access().
+ * See #307853.
+ */
+function feedapi_update_6103() {
+  menu_rebuild();
+  return array();
+}
+
+
+/**
+ * Check out if the built-in content-type has an enabled parser.
+ */
+function feedapi_update_6104() {
+  $default_processor = 'feed';
+  // Determine if the installation is affected
+  $affected = FALSE;
+  $settings = variable_get('feedapi_settings_'. $default_processor, FALSE);
+  if (!isset($settings['parsers'])) {
+    $affected = TRUE;
+  }
+  else {
+    foreach ($settings['parsers'] as $parser => $setting) {
+      if (!module_exists($parser) && $setting['enabled']) {
+        $affected = TRUE;
+      }
+    }
+  }
+  
+  if ($affected) {
+    // Set the parser of defaultly shipped processors if it's not done previously
+    $parsers = module_implements('feedapi_feed');
+    if (count($parsers) > 0) {
+      $set_processor = array("parsers" => array(array_pop($parsers) => array("enabled" => TRUE, "weight" => 0)));
+      $settings = is_array($settings) ? array_merge($settings, $set_processor) : $set_processor;
+      variable_set('feedapi_settings_'. $default_processor, $settings);
+    }
+  }
+  return array();
+}

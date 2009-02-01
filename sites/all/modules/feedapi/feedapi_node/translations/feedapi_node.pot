@@ -1,0 +1,146 @@
+# $Id: feedapi_node.pot,v 1.1.2.1 2008/08/23 12:33:43 aronnovak Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  feedapi_node.module,v 1.1.2.18.2.11 2008/08/22 16:26:55 aronnovak
+#  feedapi_node.install,v 1.1.2.13.2.6 2008/08/23 07:48:33 aronnovak
+#  feedapi_node.info,v 1.1.2.1.2.2 2008/04/11 19:42:51 aronnovak
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2008-08-23 14:24+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: feedapi_node.module:16
+msgid "Processor for FeedAPI, transforms items into nodes."
+msgstr ""
+
+#: feedapi_node.module:18
+msgid "FeedAPI Node - create nodes from feed items"
+msgstr ""
+
+#: feedapi_node.module:88
+msgid "Feed:"
+msgstr ""
+
+#: feedapi_node.module:94
+msgid "Original article"
+msgstr ""
+
+#: feedapi_node.module:128
+msgid "Node type of feed items"
+msgstr ""
+
+#: feedapi_node.module:131
+msgid "Choose the node type for feed item nodes created by this feed."
+msgstr ""
+
+#: feedapi_node.module:135
+msgid "Created date of item nodes"
+msgstr ""
+
+#: feedapi_node.module:136
+msgid "Retrieve from feed"
+msgstr ""
+
+#: feedapi_node.module:136
+msgid "Use time of download"
+msgstr ""
+
+#: feedapi_node.module:141
+msgid "Promoted items"
+msgstr ""
+
+#: feedapi_node.module:142
+msgid "The newest N items per feed will be promoted to front page. Leave empty and FeedAPI does not alter the promote property of the feed items."
+msgstr ""
+
+#: feedapi_node.module:147
+msgid "Duplicates"
+msgstr ""
+
+#: feedapi_node.module:148
+msgid "If you choose \"check for duplicates on all feeds\", a feed item will not be created if it already exists on *ANY* feed. Instead, the existing feed item will be linked to the feed. If you are not sure, choose the first option."
+msgstr ""
+
+#: feedapi_node.module:149
+msgid "Check for duplicates only within feed"
+msgstr ""
+
+#: feedapi_node.module:149
+msgid "Check for duplicates on all feeds"
+msgstr ""
+
+#: feedapi_node.module:346
+msgid "No nid on feed item to delete."
+msgstr ""
+
+#: feedapi_node.module:346;0
+msgid "feedapi_node"
+msgstr ""
+
+#: feedapi_node.install:9
+msgid "Stores additional information about feed item nodes."
+msgstr ""
+
+#: feedapi_node.install:15
+msgid "Primary Key: The feed item node's nid."
+msgstr ""
+
+#: feedapi_node.install:21
+msgid "Link to the feed item."
+msgstr ""
+
+#: feedapi_node.install:27
+msgid "Post date of the feed item, as a Unix timestamp."
+msgstr ""
+
+#: feedapi_node.install:33
+msgid "Import date of the feed item, as a Unix timestamp."
+msgstr ""
+
+#: feedapi_node.install:39
+msgid "Unique identifier for the feed item."
+msgstr ""
+
+#: feedapi_node.install:51
+msgid "Bridge table; maps feed items to feeds."
+msgstr ""
+
+#: feedapi_node.install:57
+msgid "The {feedapi}.nid to which the feed item is being assigned."
+msgstr ""
+
+#: feedapi_node.install:63
+msgid "The feed item's {feedapi_node_item}.nid."
+msgstr ""
+
+#: feedapi_node.install:97
+msgid "Feed"
+msgstr ""
+
+#: feedapi_node.install:99
+msgid "Items from these feeds will be turned into nodes."
+msgstr ""
+
+#: feedapi_node.info:0
+msgid "FeedAPI Node"
+msgstr ""
+
+#: feedapi_node.info:0
+msgid "Creates nodes from feed items."
+msgstr ""
+
+#: feedapi_node.info:0
+msgid "FeedAPI Default"
+msgstr ""
+

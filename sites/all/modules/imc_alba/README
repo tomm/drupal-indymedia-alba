@@ -36,4 +36,12 @@ The above steps are required by the Indymedia Alba drupal 6 install profile:
 
 http://drupal.org/project/indymedia_alba
 
+Optional things:
+~~~~~~~~~~~~~~~~
+
+imceditor moderation module supports the feedapi module
+(http://drupal.org/project/feedapi), which allows importing of articles via
+RSS. imceditor enforces moderation of imported articles before they appear
+ on the newswire.
+
 Ta
