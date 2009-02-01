@@ -1,0 +1,652 @@
+# $Id: ja.po,v 1.1.2.1 2008/06/15 13:12:21 imagine Exp $
+# -----------------------------------------------------------------------------
+# Japanese translation of Drupal (modules-captcha)
+#
+# Copyright (c) 2006-2008  0829 <hixarg+0829@gmail.com> /
+#                          Drupal Japan  ( http://drupal.jp/ )  /
+#                          Takafumi      ( jp.drupal@imagine **reverse order**)
+#
+# Generated from file:
+#  text_captcha.admin.inc,v 1.1 2008/01/04 14:29:58 soxofaan Exp
+#  text_captcha.info,v 1.3 2008/01/04 14:29:58 soxofaan Exp
+#  text_captcha.module,v 1.3.2.2 2008/04/07 22:25:46 soxofaan Exp
+#  text_captcha.user.inc,v 1.1 2008/01/04 14:29:58 soxofaan Exp
+#  image_captcha.admin.inc,v 1.3.2.1 2008/04/06 15:27:27 soxofaan Exp
+#  image_captcha.info,v 1.3 2007/12/11 12:05:32 soxofaan Exp
+#  image_captcha.module,v 1.8.2.2 2008/04/07 22:25:45 soxofaan Exp
+#  image_captcha.user.inc,v 1.3.2.1 2008/04/06 15:27:27 soxofaan Exp
+#  captcha.admin.inc,v 1.5.2.6 2008/03/29 17:20:25 soxofaan Exp
+#  captcha.info,v 1.5 2007/10/27 18:24:50 robloach Exp
+#  captcha.install,v 1.3.2.2 2008/03/20 10:27:53 soxofaan Exp
+#  captcha.module,v 1.58.2.6 2008/04/07 22:25:45 soxofaan Exp
+#
+# -----------------------------------------------------------------------------
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2008-06-14 11:45+0900\n"
+"Last-Translator: Takafumi <jp.drupal@imagine **reverse order**>\n"
+"Language-Team: DRUPAL*DRUPAL / Drupal Japan\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: captcha.admin.inc:13 image_captcha/image_captcha.admin.inc:116;138
+msgid "none"
+msgstr "なし"
+
+#: captcha.admin.inc:32;42 captcha.module:39
+msgid "Add CAPTCHA administration links to forms"
+msgstr "CAPTCHA管理用リンクをフォームへ追加"
+
+#: captcha.admin.inc:34
+msgid "This option is very helpful to enable/disable challenges on forms. When enabled, users with the \"%admincaptcha\" permission will see CAPTCHA administration links on all forms (except on administrative pages, which shouldn't be accessible to untrusted users in the first place). These links make it possible to enable a challenge of the desired type or disable it."
+msgstr "このオプションはフォームでの認証問題の有効化・無効化にとても役立ちます。 ここにチェックを入れると、「%admincaptcha」権限を持つユーザは、すべてのフォーム（「信頼できないユーザ」がアクセスできるはずのない管理上のページは除外されます）でCAPTCHA管理のリンクが表示されます。 これらのリンクは、希望するタイプの認証問題を有効化・無効化できるようにします。"
+
+#: captcha.admin.inc:34 captcha.module:100
+msgid "administer CAPTCHA settings"
+msgstr "CAPTCHA設定の管理"
+
+#: captcha.admin.inc:39
+msgid "Challenge type per form"
+msgstr "フォーム単位での認証問題タイプ"
+
+#: captcha.admin.inc:41
+msgid "Select the challenge type you want for each of the listed forms (identified by their so called <em>form_id</em>'s). You can easily add arbitrary forms with the help of the '%CAPTCHA_admin_links' option or the <a href=\"!add_captcha_point\">the CAPTCHA point form</a>."
+msgstr "リストされた各フォーム（<em>form_id</em> で識別されます）での、認証問題のタイプを選択してください。 「%CAPTCHA_admin_links」オプションや、<a href=\"!add_captcha_point\">CAPTCHAポイントの管理</a>を使用することで、任意のフォームを簡単に追加することができます。"
+
+#: captcha.admin.inc:65
+msgid "delete"
+msgstr "削除"
+
+#: captcha.admin.inc:74;89
+msgid "Challenge description"
+msgstr "認証問題の説明"
+
+#: captcha.admin.inc:75;90
+msgid "With this description you can explain the purpose of the challenge to the user."
+msgstr "この説明で、ユーザに認証問題の目的について説明することができます。"
+
+#: captcha.admin.inc:80
+msgid "For language %lang_name (code %lang_code)"
+msgstr "%lang_name（%lang_code）用"
+
+#: captcha.admin.inc:98
+msgid "Persistence"
+msgstr "存続期間"
+
+#: captcha.admin.inc:101
+msgid "Always add a challenge."
+msgstr "常に認証問題を加える"
+
+#: captcha.admin.inc:102
+msgid "Omit challenges for a form once the user has successfully responded to a challenge for that form."
+msgstr "ユーザが特定フォームの認証問題に正しく返答した時点で、そのフォームの認証問題を省略する"
+
+#: captcha.admin.inc:103
+msgid "Omit challenges for all forms once the user has successfully responded to a challenge."
+msgstr "ユーザが認証問題に正しく返答した時点で、すべてのフォームの認証問題を省略する"
+
+#: captcha.admin.inc:105
+msgid "Define if challenges should be omitted during the rest of a session once the user successfully responses to a challenge."
+msgstr "ユーザが認証問題に正しく返答した時点で、残りのセッション間で認証問題を省略するかどうかを指定してください。"
+
+#: captcha.admin.inc:110
+msgid "Log wrong responses"
+msgstr "誤った回答を記録する"
+
+#: captcha.admin.inc:111
+msgid "Report information about wrong responses to the !log."
+msgstr "誤った回答に関する情報を!logに報告します。"
+
+#: captcha.admin.inc:111
+msgid "log"
+msgstr "ログ"
+
+#: captcha.admin.inc:117;227
+msgid "Save"
+msgstr "保存"
+
+#: captcha.admin.inc:135
+msgid "Challenge type (module)"
+msgstr "認証問題タイプ（モジュール）"
+
+#: captcha.admin.inc:135
+msgid "Operations"
+msgstr "操作"
+
+#: captcha.admin.inc:166
+msgid "The CAPTCHA settings were saved."
+msgstr "CAPTCHAの設定が保存されました。"
+
+#: captcha.admin.inc:195;210
+msgid "Form ID"
+msgstr "フォームID"
+
+#: captcha.admin.inc:196;211
+msgid "The Drupal form_id of the form to add the CAPTCHA to."
+msgstr "CAPTCHAを追加するフォームの form_id を入力してください。"
+
+#: captcha.admin.inc:217
+msgid "Challenge type"
+msgstr "認証問題タイプ"
+
+#: captcha.admin.inc:218
+msgid "The CAPTCHA type to use for this form"
+msgstr "このフォームで使用する認証問題のタイプを指定してください。"
+
+#: captcha.admin.inc:237
+msgid "Illegal form_id"
+msgstr "不正な form_id です。"
+
+#: captcha.admin.inc:255
+msgid "Saved CAPTCHA point settings."
+msgstr "CAPTCHAポイントの設定が保存されました。"
+
+#: captcha.admin.inc:272
+msgid "Are you sure you want to delete the CAPTCHA for form_id %form_id?"
+msgstr "本当に、form_id %form_id 用のCAPTCHAを削除してもよろしいですか？"
+
+#: captcha.admin.inc:273
+msgid "Delete"
+msgstr "削除"
+
+#: captcha.admin.inc:276
+msgid "Are you sure you want to disable the CAPTCHA for form_id %form_id?"
+msgstr "本当に、form_id %form_id 用のCAPTCHAを無効にしてもよろしいですか？"
+
+#: captcha.admin.inc:277
+msgid "Disable"
+msgstr "無効"
+
+#: captcha.admin.inc:290
+msgid "Deleted CAPTCHA for form %form_id."
+msgstr "フォーム %form_id 用のCAPTCHAが削除されました。"
+
+#: captcha.admin.inc:294
+msgid "Disabled CAPTCHA for form %form_id."
+msgstr "フォーム %form_id 用のCAPTCHAが無効にされました。"
+
+#: captcha.admin.inc:320
+msgid "This page gives an overview of all available challenge types, generated with their current settings."
+msgstr "このページは、現在の設定で生成された、利用可能なすべての認証問題タイプの概観を表示します。"
+
+#: captcha.admin.inc:331
+msgid "Challenge \"%challenge\" by module \"%module\""
+msgstr "%module モジュールによる認証問題「%challenge」"
+
+#: captcha.admin.inc:334
+msgid "10 more examples of this challenge."
+msgstr "この認証問題のさらに 10 例を表示する。"
+
+#: captcha.module:24
+msgid "\"CAPTCHA\" is an acronym for \"Completely Automated Public Turing test to tell Computers and Humans Apart\". It is typically a challenge-response test to determine whether the user is human. The CAPTCHA module is a tool to fight automated submission by malicious users (spamming) of for example comments forms, user registration forms, guestbook forms, etc. You can extend the desired forms with an additional challenge, which should be easy for a human to solve correctly, but hard enough to keep automated scripts and spam bots out."
+msgstr "「CAPTCHA（キャプチャ）」は「Completely Automated Public Turing test to tell Computers and Humans Apart」の頭字語で、一般的にはユーザが人間かどうかを判断するためのチャレンジレスポンス型のテストです。 CAPTCHAモジュールは、コメントやユーザ登録、あるいはゲストブックなどのフォームに対して行われる、悪意のあるユーザによる自動化された投稿（スパム行為）を防ぐためのツールです。 人間には容易に回答でき、自動スクリプトやスパムボットを締め出すのに十分困難な、追加の認証問題で希望するフォームを拡張することができます。"
+
+#: captcha.module:25
+msgid "Note that the CAPTCHA module interacts with page caching (see <a href=\"!performancesettings\">performance settings</a>). Because the challenge should be unique for each generated form, the caching of the page it appears on is prevented. Make sure that these forms do not appear on too many pages or you will lose much caching efficiency. For example, if you put a CAPTCHA on the user login block, which typically appears on each page for anonymous visitors, caching will practically be disabled. The comment submission forms are another example. In this case you should set the \"%commentlocation\" to \"%separatepage\" in the comment settings of the relevant <a href=\"!contenttypes\">content types</a> for better caching efficiency."
+msgstr "CAPTCHAモジュールがページキャッシュ（<a href=\"!performancesettings\">パフォーマンスの設定</a>を参照）と相互に影響し合うことに注意してください。 認証問題は生成される各フォームに固有である必要があるため、それが表示されるページのキャッシュは阻止されます。 キャッシュ効率を低下させないために、余計なページに認証問題を表示しないようにしてください。 例えば、匿名の訪問者用に通常は各ページ現れる、ユーザログインブロックにCAPTCHAを設置した場合、事実上キャッシュは無効になります。 もう一つの例として、コメント投稿フォームがあります。 この場合は、より良いキャッシュ効率のために、<a href=\"!contenttypes\">コンテンツタイプ</a>の「コメントの設定」で、「%commentlocation」を「%separatepage」に設定するべきです。"
+
+#: captcha.module:28
+msgid "Location of comment submission form"
+msgstr "コメント投稿フォームの位置"
+
+#: captcha.module:29
+msgid "Display on separate page"
+msgstr "別のページに表示"
+
+#: captcha.module:33
+msgid "CAPTCHA is a trademark of Carnegie Mellon University."
+msgstr "CAPTCHAはカーネギーメロン（Carnegie Mellon）大学の商標です。"
+
+#: captcha.module:38
+msgid "A CAPTCHA can be added to virtually each Drupal form. Some default forms are already provided in the form list, but arbitrary forms can be easily added and managed when the option \"%adminlinks\" is enabled."
+msgstr "CAPTCHAは事実上、それぞれのDrupalフォームに付加することができます。 いくつかのデフォルトフォームがすでにフォーム一覧に用意されていますが、「%adminlinks」オプションが有効の場合、任意のフォームの追加と管理を容易に行うことができます。"
+
+#: captcha.module:40
+msgid "Users with the \"%skipcaptcha\" <a href=\"@perm\">permission</a> won't be offered a challenge. Be sure to grant this permission to the trusted users (e.g. site administrators). If you want to test a protected form, be sure to do it as a user without the \"%skipcaptcha\" permission (e.g. as anonymous user)."
+msgstr "「%skipcaptcha」 <a href=\"@perm\">権限</a>を持つユーザには認証問題が表示されないため、必ず信頼できるユーザ（例：サイト管理者）にのみ、この権限を与えるようにしてください。 保護されたフォームをテストしたい場合、必ず「%skipcaptcha」権限を持たないユーザ（例：匿名ユーザ）として行ってください。"
+
+#: captcha.module:41;100
+msgid "skip CAPTCHA"
+msgstr "CAPTCHAの省略"
+
+#: captcha.module:136
+msgid "This question is for testing whether you are a human visitor and to prevent automated spam submissions."
+msgstr "この質問はあなたが人間かどうかをテストし、自動化されたスパム投稿を防ぐためのものです。"
+
+#: (duplicate) captcha.module:215;283;112 ;202;344;53;64 captcha.info:0
+#: image_captcha/image_captcha.user.inc:28
+#: image_captcha/image_captcha.module:92
+msgid "CAPTCHA"
+msgstr "CAPTCHA"
+
+#: captcha.module:288
+msgid "Untrusted users will see a CAPTCHA here (!settings)."
+msgstr "信頼できないユーザは、ここへCAPTCHAが表示されます。（!settings）"
+
+#: captcha.module:289
+msgid "general CAPTCHA settings"
+msgstr "全般的なCAPTCHAの設定"
+
+#: captcha.module:293
+msgid "Enabled challenge"
+msgstr "有効化された認証問題"
+
+#: captcha.module:294
+msgid "\"@type\" by module \"@module\" (!change, !disable)"
+msgstr "@module モジュールによる「@type」（!change | !disable）"
+
+#: captcha.module:297
+msgid "change"
+msgstr "変更"
+
+#: captcha.module:298
+msgid "disable"
+msgstr "無効"
+
+#: captcha.module:304
+msgid "Place a CAPTCHA here for untrusted users."
+msgstr "ここへ信頼できないユーザに対するCAPTCHAを設置する"
+
+#: captcha.module:330
+msgid "Invalid CAPTCHA token."
+msgstr "無効なCAPTCHAトークンです。"
+
+#: captcha.module:339
+msgid "The answer you entered for the CAPTCHA was not correct."
+msgstr "CAPTCHA用に入力された回答が正しくありません。"
+
+#: captcha.module:452
+msgid "Math Question"
+msgstr "計算問題"
+
+#: captcha.module:453
+msgid "Solve this simple math problem and enter the result. E.g. for 1+3, enter 4."
+msgstr "簡単な計算問題を解き、答えを入力してください。（例： 1+3 の場合 4 と入力）"
+
+#: captcha.module:454
+msgid "@x + @y = "
+msgstr "@x + @y = "
+
+#: (duplicate) captcha.module:113
+msgid "Already @counter blocked form submissions"
+msgstr "ブロックされたフォーム投稿数： @counter"
+
+#: captcha.module:202
+msgid "CAPTCHA problem: hook_captcha() of module %module returned nothing when trying to retrieve challenge type %type for form %form_id."
+msgstr "CHAPTCHAの問題： フォーム %form_id 用の認証問題タイプ %type を取得しようとした際、%module モジュールの hook_captcha() が何も返しませんでした。"
+
+#: captcha.module:344
+msgid "%form_id post blocked by CAPTCHA module: challenge \"%challenge\" (by module \"%module\"), user answered \"%response\", but the solution was \"%solution\"."
+msgstr "CAPTCHAモジュールにより %form_id への投稿がブロックされました： 認証問題「%challenge」（%module モジュール）／ ユーザの回答「%response」／正解「%solution」"
+
+#: captcha.module:54
+msgid "Administer how and where CAPTCHAs are used."
+msgstr "使用されるCAPTCHAのタイプや場所を管理します。"
+
+#: captcha.module:70
+msgid "General settings"
+msgstr "全般の設定"
+
+#: captcha.module:76
+msgid "Examples"
+msgstr "実例"
+
+#: captcha.module:77
+msgid "An overview of the available challenge types with examples."
+msgstr "利用可能な認証問題タイプを実例で表示します。"
+
+#: captcha.module:86
+msgid "CAPTCHA point adminstration"
+msgstr "CAPTCHAポイントの管理"
+
+#: captcha.module:0
+msgid "captcha"
+msgstr "CAPTCHA"
+
+#: captcha.install:41
+msgid "You can now <a href=\"!captcha_admin\">configure the CAPTCHA module</a> for your site."
+msgstr "ただちにサイト用の<a href=\"!captcha_admin\">CAPTCHAモジュールの設定</a>を行えます。"
+
+#: captcha.install:82
+msgid "Unsupported database."
+msgstr "サポートされていないデータベースです。"
+
+#: captcha.info:0
+msgid "Base CAPTCHA module for adding challenges to arbitrary forms."
+msgstr "任意のフォームへ認証問題を付加するためのベースとなるCAPTCHAモジュールです。"
+
+#: captcha.info:0 image_captcha/image_captcha.info:0
+#: text_captcha/text_captcha.info:0
+msgid "Spam control"
+msgstr "スパムコントロール"
+
+#: image_captcha/image_captcha.admin.inc:8
+msgid "Built-in font"
+msgstr "内蔵フォント"
+
+#: image_captcha/image_captcha.admin.inc:26
+msgid "Images cannot be generated, because your PHP installation's GD library has no JPEG support."
+msgstr "PHPのGDライブラリがJPEGをサポートしていないため、画像が生成できませんでした。"
+
+#: image_captcha/image_captcha.admin.inc:31
+msgid "Code settings"
+msgstr "コードの設定"
+
+#: image_captcha/image_captcha.admin.inc:35
+msgid "Characters to use in the code"
+msgstr "コードに使用する文字"
+
+#: image_captcha/image_captcha.admin.inc:40
+msgid "Code length"
+msgstr "コードの長さ"
+
+#: image_captcha/image_captcha.admin.inc:43
+msgid "The code length influences the size of the image. Note that larger values make the image generation more CPU intensive."
+msgstr "コードの長さは画像のサイズに影響を与えます。 値が大きいほど、画像生成時のCPU負荷が大きいことに注意してください。"
+
+#: image_captcha/image_captcha.admin.inc:49
+msgid "Font settings"
+msgstr "フォントの設定"
+
+#: image_captcha/image_captcha.admin.inc:55
+msgid "Font"
+msgstr "フォント"
+
+#: image_captcha/image_captcha.admin.inc:57
+msgid "The TrueType font (.ttf) to use for the text in the image CAPTCHA."
+msgstr "イメージCAPTCHAのテキストに使用するTrueTypeフォント（.ttf）を指定してください。"
+
+#: image_captcha/image_captcha.admin.inc:66
+msgid "Font size"
+msgstr "フォントサイズ"
+
+#: image_captcha/image_captcha.admin.inc:68
+msgid "tiny"
+msgstr "極小"
+
+#: image_captcha/image_captcha.admin.inc:69;84;117
+msgid "small"
+msgstr "小"
+
+#: image_captcha/image_captcha.admin.inc:70;85;141;179
+msgid "normal"
+msgstr "普通"
+
+#: image_captcha/image_captcha.admin.inc:71;86
+msgid "large"
+msgstr "大"
+
+#: image_captcha/image_captcha.admin.inc:74
+msgid "The font size influences the size of the image. Note that larger values make the image generation more CPU intensive."
+msgstr "フォントサイズは画像のサイズに影響を与えます。 値が大きいほど、画像生成時のCPU負荷が大きいことに注意してください。"
+
+#: image_captcha/image_captcha.admin.inc:80
+msgid "Character spacing"
+msgstr "文字間隔"
+
+#: image_captcha/image_captcha.admin.inc:81
+msgid "Define the average spacing between characters. Note that larger values make the image generation more CPU intensive."
+msgstr "文字間の平均間隔を定義してください。 値が大きいほど、画像生成時のCPU負荷が大きいことに注意してください。"
+
+#: image_captcha/image_captcha.admin.inc:93
+msgid "Color settings"
+msgstr "色の設定"
+
+#: image_captcha/image_captcha.admin.inc:94
+msgid "Configuration of the background and text colors in the image CAPTCHA."
+msgstr "イメージCAPTCHAの背景色とテキスト色を設定してください。"
+
+#: image_captcha/image_captcha.admin.inc:98
+msgid "Background color"
+msgstr "背景色"
+
+#: image_captcha/image_captcha.admin.inc:99
+msgid "Enter the hexadecimal code for the background color (e.g. #FFF or #FFCE90)."
+msgstr "背景色に使用する、16進のカラーコード（#FFF や #FFCE90 等）を入力してください。"
+
+#: image_captcha/image_captcha.admin.inc:106
+msgid "Text color"
+msgstr "テキスト色"
+
+#: image_captcha/image_captcha.admin.inc:107
+msgid "Enter the hexadecimal code for the text color (e.g. #000 or #004283)."
+msgstr "テキスト色に使用する、16進のカラーコード（#000 や #004283 等）を入力してください。"
+
+#: image_captcha/image_captcha.admin.inc:114
+msgid "Additional variation of text color"
+msgstr "テキスト色の付加的な変化"
+
+#: image_captcha/image_captcha.admin.inc:118;140
+msgid "moderate"
+msgstr "適度"
+
+#: image_captcha/image_captcha.admin.inc:119;142;180
+msgid "high"
+msgstr "高"
+
+#: image_captcha/image_captcha.admin.inc:120
+msgid "very high"
+msgstr "極高"
+
+#: image_captcha/image_captcha.admin.inc:123
+msgid "The different characters will have randomized colors in the specified range around the text color."
+msgstr "テキスト色を基準とした指定範囲内のランダムな色を、それぞれの文字に適用します。"
+
+#: image_captcha/image_captcha.admin.inc:130
+msgid "Distortion and noise"
+msgstr "ゆがみとノイズ"
+
+#: image_captcha/image_captcha.admin.inc:131
+msgid "With these settings you can control the degree of obfuscation by distortion and added noise. Do not exaggerate the obfuscation and assure that the code in the image is reasonably readable. For example, do not combine high levels of distortion and noise."
+msgstr "これらの設定で画像にゆがみやノイズを加えることで、読み取りにくさをコントロールできます。 読み取りにくさを強調しすぎず、画像のコードが適切に判読可能なようにしてください。 例えば、高レベルのゆがみとノイズを組み合わせないようにしてください。"
+
+#: image_captcha/image_captcha.admin.inc:136
+msgid "Distortion level"
+msgstr "ゆがみレベル"
+
+#: image_captcha/image_captcha.admin.inc:139;178
+msgid "low"
+msgstr "低"
+
+#: image_captcha/image_captcha.admin.inc:143;181
+msgid "severe"
+msgstr "極度"
+
+#: image_captcha/image_captcha.admin.inc:146
+msgid "Set the degree of wave distortion in the image."
+msgstr "画像の波状ゆがみの程度を設定してください。"
+
+#: image_captcha/image_captcha.admin.inc:150
+msgid "Smooth distortion"
+msgstr "滑らかなゆがみ"
+
+#: image_captcha/image_captcha.admin.inc:152
+msgid "This option enables bilineair interpolation of the distortion which makes the image look smoother, but it is more CPU intensive."
+msgstr "ここにチェックを入れると、画像の外見をより滑らかにするバイリニア補間法が有効になりますが、CPU負荷が増大します。"
+
+#: image_captcha/image_captcha.admin.inc:157
+msgid "Double vision"
+msgstr "二重表示"
+
+#: image_captcha/image_captcha.admin.inc:159
+msgid "When enabled, characters appear twice in the image, overlayed onto each other."
+msgstr "ここにチェックを入れると、文字が相互に重なり画像に二重表示されます。"
+
+#: image_captcha/image_captcha.admin.inc:164
+msgid "Add salt and peper noise"
+msgstr "ソルト＆ペッパーノイズの追加"
+
+#: image_captcha/image_captcha.admin.inc:166
+msgid "This option adds randomly colored point noise."
+msgstr "ここにチェックを入れると、ランダムな色付きの点状ノイズが付加されます。"
+
+#: image_captcha/image_captcha.admin.inc:170
+msgid "Add line noise"
+msgstr "線状ノイズの追加"
+
+#: image_captcha/image_captcha.admin.inc:172
+msgid "This option enables lines randomly drawn on top of the text code."
+msgstr "ここにチェックを入れると、テキストコード上にランダムなラインが描画されます。"
+
+#: image_captcha/image_captcha.admin.inc:176
+msgid "Noise level"
+msgstr "ノイズのレベル"
+
+#: image_captcha/image_captcha.admin.inc:194
+msgid "The image captcha module works best with a TrueType font file (TTF) for generating the images, but because of licencing issues it is not allowed to package fonts with the module. A simple built-in bitmap font is provided as default instead. You can install TrueType fonts yourself by putting them in the fonts directory of the image captcha module (directory \"%fontsdir\") or by uploading them to your Drupal file system (directory \"%filesdir\") with for example the upload module."
+msgstr "イメージCAPCHAモジュールは、画像生成にTrueTypeフォントファイル（TTF）を使用することで最適な動作をしますが、ライセンス問題の理由からフォントを同梱することができませんので、シンプルな内蔵ビットマップフォントがデフォルトとして提供されます。 TrueTypeフォントを使用したい場合は、それらをイメージCAPTCHAモジュールのディレクトリ（%fontsdir ディレクトリ）に置くか、uploadモジュールなどを利用し、Drupalファイルシステム（%filesdir ディレクトリ）に置くことでインストールすることができます。"
+
+#: image_captcha/image_captcha.admin.inc:197
+msgid "The usage of the built-in bitmap font it is not recommended because of its small size and missing UTF-8 support."
+msgstr "サイズが小さく、UTF-8 がサポートされないため、内蔵ビットマップフォントの使用はお勧めできません。"
+
+#: image_captcha/image_captcha.admin.inc:208
+msgid "The list of characters to use should not contain spaces."
+msgstr "使用する文字のリストには、空白文字を含むことはできません。"
+
+#: image_captcha/image_captcha.admin.inc:213
+msgid "You need to select a font"
+msgstr "フォントを選択する必要があります。"
+
+#: image_captcha/image_captcha.admin.inc:216
+msgid "Font does not exist or is not readable."
+msgstr "フォントが存在しないか、または読み込み可能ではありません。"
+
+#: image_captcha/image_captcha.admin.inc:221
+msgid "Background color is not a valid hexadecimal color value."
+msgstr "背景色が有効な16進のカラーコードではありません。"
+
+#: image_captcha/image_captcha.admin.inc:224
+msgid "Text color is not a valid hexadecimal color value."
+msgstr "テキスト色が有効な16進のカラーコードではありません。"
+
+#: image_captcha/image_captcha.user.inc:28
+msgid "Generation of image CAPTCHA failed. Check your image CAPTCHA configuration and especially the used font."
+msgstr "画像CAPTCHAの生成に失敗しました。 画像CAPTCHAの設定、特に使用フォントを確認してください。"
+
+#: image_captcha/image_captcha.module:16
+msgid "The image CAPTCHA is a popular challenge where a random textual code is obfuscated in an image. The image is generated on the fly for each request, which is rather CPU intensive for the server. Be carefull with the size and computation related settings."
+msgstr "画像CAPTCHAはランダムなテキストコードが画像で読み取りにくくされる、ポピュラーな認証問題です。 画像はリクエストごとに生成され、サーバのCPUには多少負荷がかかりますので、サイズや計算に関連する設定には注意を払ってください。"
+
+#: image_captcha/image_captcha.module:20
+msgid "<p>Example image, generated with the current settings:</p>!img"
+msgstr "<p>現在の設定で生成される画像の例：</p>!img"
+
+#: image_captcha/image_captcha.module:140;140;33
+#: image_captcha/image_captcha.info:0
+msgid "Image CAPTCHA"
+msgstr "画像CAPTCHA"
+
+#: image_captcha/image_captcha.module:145
+msgid "What code is in the image?"
+msgstr "画像内のコードを入力してください"
+
+#: image_captcha/image_captcha.module:146
+msgid "Copy the characters (respecting upper/lower case) from the image."
+msgstr "画像に表示されている文字をそのまま入力してください。（大文字・小文字は区別されます。）"
+
+#: image_captcha/image_captcha.module:92
+msgid "Encountered an illegal byte while splitting an utf8 string in characters."
+msgstr "UTF-8文字列を文字に分割中に、不正なバイトが見つかりました。"
+
+#: image_captcha/image_captcha.module:0
+msgid "image_captcha"
+msgstr "image_captcha"
+
+#: image_captcha/image_captcha.info:0
+msgid "Provides an image based CAPTCHA."
+msgstr "画像ベースのCAPTCHAを提供します。"
+
+#: text_captcha/text_captcha.admin.inc:13
+msgid "Kind of words to use in the phrase"
+msgstr "フレーズで使用するワードの種類"
+
+#: text_captcha/text_captcha.admin.inc:15
+msgid "Generate nonsense random words."
+msgstr "無意味なワードをランダムに生成"
+
+#: text_captcha/text_captcha.admin.inc:16
+msgid "Use user defined words."
+msgstr "ユーザ定義のワードを使用"
+
+#: text_captcha/text_captcha.admin.inc:23
+msgid "User defined words"
+msgstr "ユーザ定義のワード"
+
+#: text_captcha/text_captcha.admin.inc:25
+msgid "Enter a bunch of space separated words (at least @min)."
+msgstr "最低でも @min のワードを、空白文字で区切って入力してください。"
+
+#: text_captcha/text_captcha.admin.inc:30
+msgid "Number of words in the phrase"
+msgstr "フレーズに表示するワード数"
+
+#: text_captcha/text_captcha.admin.inc:48
+msgid "You need to enter at least @min words if you want to use user defined words."
+msgstr "ユーザ定義ワードを使用する場合、最低でも @min のワードを入力する必要があります。"
+
+#: text_captcha/text_captcha.admin.inc:57
+msgid "Number of words in the phrase should be between 4 and 10."
+msgstr "フレーズに表示するワード数は 4 ～ 10 である必要があります。"
+
+#: text_captcha/text_captcha.user.inc:51
+msgid "first"
+msgstr "1番目"
+
+#: text_captcha/text_captcha.user.inc:51
+msgid "second"
+msgstr "2番目"
+
+#: text_captcha/text_captcha.user.inc:51
+msgid "third"
+msgstr "3番目"
+
+#: text_captcha/text_captcha.user.inc:52
+msgid "fourth"
+msgstr "4番目"
+
+#: text_captcha/text_captcha.user.inc:52
+msgid "fifth"
+msgstr "5番目"
+
+#: text_captcha/text_captcha.user.inc:52
+msgid "sixth"
+msgstr "6番目"
+
+#: text_captcha/text_captcha.user.inc:52
+msgid "seventh"
+msgstr "7番目"
+
+#: text_captcha/text_captcha.user.inc:53
+msgid "eighth"
+msgstr "8番目"
+
+#: text_captcha/text_captcha.user.inc:53
+msgid "ninth"
+msgstr "9番目"
+
+#: text_captcha/text_captcha.user.inc:53
+msgid "tenth"
+msgstr "10番目"
+
+#: text_captcha/text_captcha.module:18
+msgid "In this challenge the visitor is asked for the n<sup>th</sup> word of a given phrase."
+msgstr "テキストCAPTCHAは、表示されたフレーズの n 番目のワードの入力を求める認証問題を提供します。"
+
+#: text_captcha/text_captcha.module:59
+msgid "What is the @nth word in the phrase \"@words\"?"
+msgstr "\"<strong>@words</strong>\" の中で<strong>@nth</strong>にあるワードを入力してください"
+
+#: text_captcha/text_captcha.module:28 text_captcha/text_captcha.info:0
+msgid "Text CAPTCHA"
+msgstr "テキストCAPTCHA"
+
+#: text_captcha/text_captcha.module:0
+msgid "text_captcha"
+msgstr "text_captcha"
+
+#: text_captcha/text_captcha.info:0
+msgid "Provides a simple text based CAPTCHA."
+msgstr "テキストベースの CAPTCHA を提供します。"

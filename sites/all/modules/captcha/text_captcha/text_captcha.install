@@ -1,0 +1,10 @@
+<?php
+// $Id: text_captcha.install,v 1.2 2007/10/27 14:44:16 robloach Exp $
+
+/**
+ * On uninstall: remove module variables and clear variable cache
+ */
+function text_captcha_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'text_captcha_%'");
+  cache_clear_all('variables', 'cache');
+}

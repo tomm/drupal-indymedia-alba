@@ -1,0 +1,79 @@
+# LANGUAGE translation of Drupal (captcha.module)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from file: captcha.module,v 1.24 2006/05/19 15:00:51 wundo
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2006-10-29 02:23+0100\n"
+"PO-Revision-Date: 2007-07-10 12:42+0100\n"
+"Last-Translator: olax <olax@olax.net>\n"
+"Language-Team: German <nf@fuerstentum.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: captcha.module:15
+msgid "Adds a Captcha to the registration form."
+msgstr "Legger til en Captcha på registreringsskjemaet."
+
+#: captcha.module:26
+msgid "Comment Form"
+msgstr "Kommentar felt"
+
+#: captcha.module:27
+msgid "User Login Form"
+msgstr "Pålogging"
+
+#: captcha.module:28
+msgid "User Login Form Block"
+msgstr "Blokk for pålogging"
+
+#: captcha.module:29
+msgid "User Edit Form"
+msgstr "Skjema for brukerinstillinger"
+
+#: captcha.module:30
+msgid "User Registration Form"
+msgstr "Skjema for å opprette ny konto"
+
+#: captcha.module:31
+msgid "User Forgot Password Form"
+msgstr "\"Bestill nytt passord\"-skjema"
+
+#: captcha.module:32
+msgid "User Contact Form"
+msgstr "Personlig kontaktskjema"
+
+#: captcha.module:33
+msgid "Sitewide Contact Form"
+msgstr "Webside-kontaktskjema"
+
+#: captcha.module:34
+msgid "Create a node"
+msgstr "Opprett innhold"
+
+#: captcha.module:59
+msgid "Type of captcha to use"
+msgstr "Type Captcha som skal brukes"
+
+#: captcha.module:62
+msgid "Select what kind of challenge you want to pose to the user"
+msgstr "Velg hva slags problem brukeren skal løse"
+
+#: captcha.module:141
+msgid "Math Question: What is %problem?"
+msgstr "Mattespørsmål: Hva er %problem?"
+
+#: captcha.module:143
+msgid "Please solve the math problem above and type in the result. e.g. for 1+1, type 2"
+msgstr "Vennligst løs mattespørsmålet over og skriv inn resultatet. F.eks. for 1+1 så skriver du inn 2"
+
+#: captcha.module:158
+msgid "The answer you entered to the math problem is incorrect."
+msgstr "Svaret du ga på mattesprøsmålet var feil."
+
+#: captcha.module:0
+msgid "captcha"
+msgstr "captcha"
+

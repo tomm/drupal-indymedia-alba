@@ -1,0 +1,67 @@
+<?php
+// $Id: text_captcha.module,v 1.3.2.2 2008/04/07 22:25:46 soxofaan Exp $
+
+/**
+ * Implementation of a simple text based CAPTCHA, for use with the CAPTCHA module
+ */
+
+define('TEXT_CAPTCHA_GENERATE_NONSENSE_WORDS', 0);
+define('TEXT_CAPTCHA_USER_DEFINED_WORDS', 1);
+define('TEXT_CAPTCHA_USER_DEFINED_WORD_MINIMUM', 20);
+
+/**
+ * Implementation of hook_help().
+ */
+function text_captcha_help($path, $arg) {
+  switch ($path) {
+    case 'admin/user/captcha/text_captcha':
+      return '<p>'. t('In this challenge the visitor is asked for the n<sup>th</sup> word of a given phrase.') .'</p>';
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function text_captcha_menu() {
+  $items['admin/user/captcha/text_captcha'] = array(
+   // add an administration tab for text_captcha
+    'title' => 'Text CAPTCHA',
+    'file' => 'text_captcha.admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('text_captcha_settings_form'),
+    'access arguments' => array('administer CAPTCHA settings'),
+    'type' => MENU_LOCAL_TASK,
+    );
+  return $items;
+}
+
+/**
+ * Implementation of hook_captcha
+ */
+function text_captcha_captcha($op, $captcha_type='') {
+  switch ($op) {
+    case 'list':
+      return array('Text');
+    case 'generate':
+      // Add in the necessary functions
+      require_once drupal_get_path('module', 'text_captcha') .'/text_captcha.user.inc';
+      if ($captcha_type == 'Text') {
+        // generate words
+        $words = _text_captcha_generate_words((int) variable_get('text_captcha_word_quantity', 5));
+        // pick a random word
+        $key = array_rand($words, 1);
+        $answer = $words[$key];
+        // store the answer and build the form elements
+        $result = array();
+        $result['solution'] = $answer;
+        $result['form']['captcha_response'] = array(
+          '#type' => 'textfield',
+          '#title' => t('What is the @nth word in the phrase "@words"?', array('@nth' => _text_captcha_ordinal($key+1), '@words' => implode(' ', $words))),
+          '#weight' => 0,
+          '#size' => 15,
+          '#required' => TRUE,
+        );
+        return $result;
+      }
+  }
+}

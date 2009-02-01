@@ -1,5 +1,5 @@
 <?php
-// $Id: image_captcha.admin.inc,v 1.12 2009/01/03 22:14:45 soxofaan Exp $
+// $Id: image_captcha.admin.inc,v 1.3.2.4 2008/06/04 08:20:01 soxofaan Exp $
 
 /**
  * function to get a list of available fonts
@@ -41,13 +41,6 @@ function image_captcha_settings_form() {
     '#options' => array(2 => 2, 3, 4, 5, 6, 7, 8, 9, 10),
     '#default_value' => (int) variable_get('image_captcha_code_length', 5),
     '#description' => t('The code length influences the size of the image. Note that larger values make the image generation more CPU intensive.'),
-  );
-  // Option fo case insensitive validation
-  $form['image_captcha_code_settings']['image_captcha_case_insensitive'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Case insensitive validation'),
-    '#description' => t('Enable this option to ignore uppercase/lowercase errors in the response. This can be usefull for certain target audiences or fonts.'),
-    '#default_value' => variable_get('image_captcha_case_insensitive', FALSE),
   );
 
   // font related stuff
@@ -94,7 +87,7 @@ function image_captcha_settings_form() {
     ),
   );
 
-    // color settings
+  // color settings
   $form['image_captcha_color_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Color settings'),
@@ -198,7 +191,7 @@ function image_captcha_settings_form() {
  */
 function image_captcha_settings_form_pre_render($form) {
   if (count($form['image_captcha_font_settings']['image_captcha_font']['#options']) == 1) {
-    drupal_set_message(t('The image CAPTCHA module works best with a TrueType font file (TTF) for generating the images, but because of licencing issues it is not allowed to package fonts with the module. A simple built-in bitmap font is provided as default instead. You can install TrueType fonts yourself by putting them in the fonts directory of the image CAPTCHA module (directory "%fontsdir") or by uploading them to your Drupal file system (directory "%filesdir") with for example the upload module.', array('%fontsdir' => drupal_get_path('module', 'image_captcha') .'/fonts', '%filesdir' => file_directory_path())), 'warning');
+    drupal_set_message(t('The image captcha module works best with a TrueType font file (TTF) for generating the images, but because of licencing issues it is not allowed to package fonts with the module. A simple built-in bitmap font is provided as default instead. You can install TrueType fonts yourself by putting them in the fonts directory of the image captcha module (directory "%fontsdir") or by uploading them to your Drupal file system (directory "%filesdir") with for example the upload module.', array('%fontsdir' => drupal_get_path('module', 'image_captcha') .'/fonts', '%filesdir' => file_directory_path())), 'warning');
   }
   if ($form['image_captcha_font_settings']['image_captcha_font']['#default_value'] == 'BUILTIN') {
     drupal_set_message(t('The usage of the built-in bitmap font it is not recommended because of its small size and missing UTF-8 support.'), 'warning');

@@ -1,5 +1,5 @@
 <?php
-// $Id: image_captcha.user.inc,v 1.14 2009/01/03 22:14:45 soxofaan Exp $
+// $Id: image_captcha.user.inc,v 1.3.2.4 2008/07/14 22:24:51 soxofaan Exp $
 
 /**
  * Implementation of image CAPTCHA for use with the CAPTCHA module
@@ -9,18 +9,17 @@
  */
 
 /**
- * Menu callback function that generates the CAPTCHA image.
+ * menu callback function that generates the CAPTCHA image
  */
-function image_captcha_image($captcha_sid=NULL) {
-  if (!$captcha_sid) {
-    exit();
+function image_captcha_image($seed=NULL) {
+  if (!$seed) {
+    return;
   }
-  
-  // Get solution (the code to show).
-  $code = db_result(db_query("SELECT solution FROM {captcha_sessions} WHERE csid = %d", (int)($captcha_sid)));
-
   // Only generate captcha if code exists in the session.
-  if ($code !== FALSE) {
+  if (isset($_SESSION['image_captcha'][$seed])) {
+    $code = $_SESSION['image_captcha'][$seed];
+    // Unset the code from $_SESSION to prevent rerendering the CAPTCHA.
+    unset($_SESSION['image_captcha'][$seed]);
     // generate the image
     $image = @_image_captcha_generate_image($code);
     // check of generation was successful
@@ -39,8 +38,8 @@ function image_captcha_image($captcha_sid=NULL) {
     imagejpeg($image);
     // Clean up
     imagedestroy($image);
+    exit();
   }
-  exit();
 }
 
 
@@ -224,7 +223,7 @@ function _image_captcha_image_generator_add_dots(&$image, $width, $height, $colo
   }
 }
 
-/**
+ /**
  * Helper function for drawing text on the image
  *
  * @param $background_mode if the text is for the background of the double vision mode
