@@ -16,6 +16,9 @@
 				<span id="moderate_hidden_reason"></span>
 				<div><button id="editor_moderate_unhide"><?php print t("Unhide"); ?></button></div>
 			</div>
+			<div>
+				<button id="editor_moderate_delete"><?php print t('Delete'); ?></button>
+			</div>
 		</div>
 		<div class="editor_ctrls_subheading"><?php print t("Feature promotion"); ?></div>
 		<div class="editor_ctrls_section">

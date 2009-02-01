@@ -31,7 +31,7 @@ $(document).ready(function() {
 		$("div#editor_moderate_ctrls").toggle("slow");
 
 	});
-	on_state_change(g_nodeIsHidden);
+	on_state_change();
 	$("div#editor_moderate_ctrls").hide();
 
 	$("button#editor_moderate_hide").click(function() {
@@ -39,8 +39,20 @@ $(document).ready(function() {
 		if (!reason) {
 			alert("You must specify why you are hiding this article");
 		} else {
-			$.getJSON(url_hide+"&nid="+g_nodeNid+"&reason="+escape(reason), function(data) {
-				//alert(data["status"]);
+			$.getJSON(editor_cpan['ajax_url']+"&op=hide&nid="+g_nodeNid+"&reason="+escape(reason), function(data) {
+				$("div#hidden-msg-"+g_nodeNid).html(data['hidden_msg']);
+				g_nodeHiddenReason = reason;
+				g_nodeIsHidden = true;
+				on_state_change();
+			});
+		}
+	});
+
+	$("button#editor_moderate_delete").click(function() {
+		var reason = $("input#moderate_hide_reason").attr("value");
+		if (window.confirm(Drupal.t("Are you sure you want to delete this article?\n"+
+			"Articles can be un-deleted by editors for a limited period"))) {
+			$.getJSON(editor_cpan['ajax_url']+"&op=delete&nid="+g_nodeNid+"&reason="+escape(reason), function(data) {
 				$("div#hidden-msg-"+g_nodeNid).html(data['hidden_msg']);
 				g_nodeHiddenReason = reason;
 				g_nodeIsHidden = true;
@@ -50,7 +62,7 @@ $(document).ready(function() {
 	});
 	
 	$("button#editor_moderate_unhide").click(function() {
-		$.getJSON(url_unhide+"&nid="+g_nodeNid, function(data) {
+		$.getJSON(editor_cpan['ajax_url']+"&op=unhide&nid="+g_nodeNid, function(data) {
 			//alert(data["status"]);
 			$("div#hidden-msg-"+g_nodeNid).html("");
 			g_nodeIsHidden = false;
@@ -61,7 +73,7 @@ $(document).ready(function() {
 	$("#make_feature_button").click(function() {
 		var comment = $("input#make_feature_comment").attr("value");
 		if (!comment) comment = "";
-		$.getJSON(url_propose_feature+"&nid="+g_nodeNid+"&comment="+escape(comment), function (data) {
+		$.getJSON(editor_cpan['ajax_url']+"&op=makefeature&nid="+g_nodeNid+"&comment="+escape(comment), function (data) {
 			if (data['stat']) {
 				update_msgs(data);
 				g_canPropose = false;
@@ -76,7 +88,7 @@ $(document).ready(function() {
 	});
 	
 	$("#unpropose_feature_button").click(function() {
-		$.getJSON(url_unpropose_feature+"&nid="+g_nodeNid, function (data) {
+		$.getJSON(editor_cpan['ajax_url']+"&op=unmakefeature&nid="+g_nodeNid, function (data) {
 			if (data['stat']) {
 				update_msgs(data);
 				g_canPropose = true;
@@ -93,7 +105,7 @@ $(document).ready(function() {
 	$("button#vote_for").click(function() {
 		var comment = $("input#vote_feature_comment").attr("value");
 		if (!comment) comment = "";
-		$.getJSON(url_vote_feature+"&nid="+g_nodeNid+"&vote=for&comment="+escape(comment), function(data) {
+		$.getJSON(editor_cpan['ajax_url']+"&op=votefeature&nid="+g_nodeNid+"&vote=for&comment="+escape(comment), function(data) {
 			update_msgs(data);
 			g_canVote = data['can_vote'];
 			g_canRetractVote = (data['stat'] == 1);
@@ -107,7 +119,7 @@ $(document).ready(function() {
 			alert("You must state a reason when blocking a feature proposal");
 			return;
 		}
-		$.getJSON(url_vote_feature+"&nid="+g_nodeNid+"&vote=block&comment="+escape(comment), function(data) {
+		$.getJSON(editor_cpan['ajax_url']+"&op=votefeature&nid="+g_nodeNid+"&vote=block&comment="+escape(comment), function(data) {
 			update_msgs(data);
 			g_canVote = data['can_vote'];
 			g_canRetractVote = !g_canVote;
@@ -116,7 +128,7 @@ $(document).ready(function() {
 	});
 
 	$("button#retract_vote").click(function() {
-		$.getJSON(url_retract_vote+"&nid="+g_nodeNid, function(data) {
+		$.getJSON(editor_cpan['ajax_url']+"&op=retractvote&nid="+g_nodeNid, function(data) {
 			update_msgs(data);
 			if (data['stat'] == 2) {
 				// retraction of block caused feature
