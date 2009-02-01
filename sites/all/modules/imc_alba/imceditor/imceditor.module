@@ -23,9 +23,9 @@ Title: !title
 
 ');
 define('IMCEDITOR_PROPOSALS_QUERY',
-	'SELECT nid FROM {node} n WHERE EXISTS (SELECT * FROM {imc_feature_proposal} p WHERE p.nid = n.nid AND p.active = 1) ORDER BY n.created DESC');
+	'SELECT n.nid FROM {node} n WHERE EXISTS (SELECT * FROM {imc_feature_proposal} p WHERE p.nid = n.nid AND p.active = 1) ORDER BY n.created DESC');
 define('IMCEDITOR_PENDING_QUERY',
-	sprintf('SELECT nid FROM {node} n INNER JOIN {imc_node_moderation} m ON
+	sprintf('SELECT n.nid FROM {node} n INNER JOIN {imc_node_moderation} m ON
 	m.nid=n.nid WHERE m.status=%d ORDER BY n.created DESC',
 	IMCEDITOR_NODE_STATUS_HIDDEN_PENDING_PROMOTION));
 
