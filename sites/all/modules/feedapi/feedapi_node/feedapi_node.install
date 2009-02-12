@@ -1,5 +1,5 @@
 <?php
-// $Id: feedapi_node.install,v 1.1.2.13.2.7 2008/10/10 13:30:44 aronnovak Exp $
+// $Id: feedapi_node.install,v 1.1.2.13.2.9 2009/02/03 11:04:29 aronnovak Exp $
 
 /**
  * Implementation of hook_schema().
@@ -62,6 +62,10 @@ function feedapi_node_schema() {
       ),
     ),
     'primary key' => array('feed_nid', 'feed_item_nid'),
+    'indexes' => array(
+      'feed_nid' => array('feed_nid'),
+      'feed_item_nid' => array('feed_item_nid'),
+    ),
   );
   
   return $schema;
@@ -111,4 +115,11 @@ function _feedapi_node_install_type_create() {
     $preset = array_merge($preset, variable_get('feedapi_settings_feed', FALSE));
   }
   variable_set('feedapi_settings_feed', $preset);
+}
+
+function feedapi_node_update_1() {
+  $ret = array();
+  db_add_index($ret, 'feedapi_node_item_feed', 'feed_nid', array('feed_nid'));
+  db_add_index($ret, 'feedapi_node_item_feed', 'feed_item_nid', array('feed_item_nid'));
+  return $ret;
 }

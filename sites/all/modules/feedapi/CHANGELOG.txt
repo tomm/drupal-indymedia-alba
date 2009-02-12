@@ -1,7 +1,11 @@
-// $Id: CHANGELOG.txt,v 1.1.2.4.2.10 2009/01/23 13:53:42 alexb Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.4.2.11 2009/02/03 20:02:15 aronnovak Exp $
 
-FeedAPI 1.x, 2009-xx-xx
+FeedAPI 1.x, 2009-02-03
 -----------------------
+- Better parsing in Parser Common Syndication
+- Now it's possible to delete old feed node items at cron time
+- Performance impovements (indeces on cross-nodes table)
+- Fix of bug that prevented parsers to consume their settings
 - Full views support. WARNING: if you upgrade from previous version, 
   you will have to reconfigure some feedapi based views.
 

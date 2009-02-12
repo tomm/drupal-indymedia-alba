@@ -5,9 +5,9 @@ dependencies[] = feedapi
 dependencies[] = feedapi_node
 package = "FeedAPI Add On"
 core = 6.x
-; Information added by drupal.org packaging script on 2009-01-24
-version = "6.x-1.x-dev"
+; Information added by drupal.org packaging script on 2009-02-03
+version = "6.x-1.6"
 core = "6.x"
 project = "feedapi"
-datestamp = "1232755593"
+datestamp = "1233692726"
 

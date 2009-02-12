@@ -1,5 +1,5 @@
 <?php
-// $Id: feedapi.module,v 1.23.2.119.2.35 2009/01/23 13:47:09 alexb Exp $
+// $Id: feedapi.module,v 1.23.2.119.2.36 2009/02/03 12:02:03 aronnovak Exp $
 
 /**
  * @file
@@ -980,13 +980,13 @@ function _feedapi_update(&$node, $teaser, $page) {
  * @return
  *  The object of the parser data
  */
-function _feedapi_call_parsers($feed, $parsers) {
+function _feedapi_call_parsers($feed, $parsers, $settings) {
   $nid = isset($feed->nid) ? $feed->nid : '';
   $parser_primary = array_shift($parsers);
   $parsers_secondary = $parsers;
   if (module_exists($parser_primary)) {
-    $feed->feed_type =  module_invoke($parser_primary, 'feedapi_feed', 'compatible', $feed);
-    $parser_output =  module_invoke($parser_primary, 'feedapi_feed', 'parse', $feed);
+    $feed->feed_type =  module_invoke($parser_primary, 'feedapi_feed', 'compatible', $feed, $settings[$parser_primary]);
+    $parser_output =  module_invoke($parser_primary, 'feedapi_feed', 'parse', $feed, $settings[$parser_primary]);
     if ($parser_output === FALSE) {
       return $parser_output;
     }
@@ -1168,7 +1168,7 @@ function _feedapi_invoke_refresh(&$feed, $param) {
   // Step 2: Get feed.
   $nid = $feed->nid;
   $hash_old = $feed->hash;
-  $feed = _feedapi_call_parsers($feed, $feed->parsers, $feed->half_done);
+  $feed = _feedapi_call_parsers($feed, $feed->parsers, $settings['parsers']);
   if (is_object($feed)) {
     $feed->hash = md5(serialize($feed->items));
   }
@@ -1292,7 +1292,7 @@ function _feedapi_build_feed_object($node_type, $url) {
   $feed->processors = _feedapi_format_settings($node_type_settings, 'processors');
   $feed->parsers = _feedapi_format_settings($node_type_settings, 'parsers');
   if (isset($feed->url)) {
-    $feed = _feedapi_call_parsers($feed, $feed->parsers);
+    $feed = _feedapi_call_parsers($feed, $feed->parsers, $node_type_settings['parsers']);
   }
   $feed->link = isset($feed->options->link) ? $feed->options->link : '';
   return $feed;

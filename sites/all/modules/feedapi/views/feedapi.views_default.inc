@@ -1,5 +1,5 @@
 <?php
-// $Id: feedapi.views_default.inc,v 1.1.2.1 2009/01/23 13:47:10 alexb Exp $
+// $Id: feedapi.views_default.inc,v 1.1.2.2 2009/02/03 10:18:16 aronnovak Exp $
 /**
  * @file
  * FeedAPI Views - Default Views
@@ -161,6 +161,7 @@ function feedapi_views_default_views() {
   $handler->override_option('menu', array(
     'type' => 'normal',
     'title' => 'Feeds',
+    'description' => 'View, edit and delete feeds that your site aggregates.',
     'weight' => '0',
     'name' => 'navigation',
   ));
