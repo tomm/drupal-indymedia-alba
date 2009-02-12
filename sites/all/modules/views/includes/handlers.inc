@@ -1,5 +1,5 @@
 <?php
-// $Id: handlers.inc,v 1.101 2008/12/02 16:04:59 merlinofchaos Exp $
+// $Id: handlers.inc,v 1.105 2009/01/30 00:01:41 merlinofchaos Exp $
 /**
  * @file handlers.inc
  * Defines the various handler objects to help build and display views.
@@ -473,6 +473,19 @@ class views_handler extends views_object {
   }
 
   /**
+   * Validates the handler against the complete View.
+   *
+   * This is called when the complete View is being validated. For validating
+   * the handler options form use options_validate().
+   *
+   * @see views_handler::options_validate()
+   *
+   * @return
+   *   Empty array if the handler is valid; an array of error strings if it is not.
+   */
+  function validate() { return array(); }
+
+  /**
    * Determine if the handler is considered 'broken', meaning it's a
    * a placeholder used when a handler can't be found.
    */
@@ -907,7 +920,7 @@ function views_date_sql_format($format, $field, $field_type = 'int', $set_offset
       return "DATE_FORMAT($field, '$format')";
     case 'pgsql':
       $replace = array(
-        'Y' => 'YY',
+        'Y' => 'YYYY',
         'm' => 'MM',
         'd' => 'DD',
         'H' => 'HH24',
@@ -1047,6 +1060,9 @@ function views_views_handlers() {
         'parent' => 'views_handler_field',
       ),
       'views_handler_field_numeric' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'views_handler_field_custom' => array(
         'parent' => 'views_handler_field',
       ),
 
@@ -1299,6 +1315,8 @@ function views_views_api() {
     'path' => drupal_get_path('module', 'views') . '/modules',
   );
 }
+
+function aggregator_views_api() { return views_views_api(); }
 
 function book_views_api() { return views_views_api(); }
 

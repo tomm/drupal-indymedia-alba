@@ -1,5 +1,5 @@
 <?php
-// $Id: cache.inc,v 1.21 2008/11/19 22:33:55 merlinofchaos Exp $
+// $Id: cache.inc,v 1.23 2009/01/31 18:08:48 merlinofchaos Exp $
 /**
  * @file cache.inc
  *
@@ -113,6 +113,8 @@ function _views_discover_default_views() {
       foreach ($defaults as $name => $view) {
         // Only views with a sufficiently high api version are eligible.
         if (isset($view->api_version) && $view->api_version >= 2) {
+          // Do not cache dead handlers.
+          $view->destroy();
           $cache[$name] = $view;
         }
       }
@@ -209,7 +211,7 @@ function views_object_cache_get($obj, $name, $skip_cache = FALSE) {
   if (!array_key_exists($key, $cache)) {
     $data = db_fetch_object(db_query("SELECT * FROM {views_object_cache} WHERE sid = '%s' AND obj = '%s' AND name = '%s'", session_id(), $obj, $name));
     if ($data) {
-      $cache[$key] = unserialize(db_decode_blob($data->data));
+      $cache[$key] = unserialize($data->data);
     }
   }
   return isset($cache[$key]) ? $cache[$key] : NULL;

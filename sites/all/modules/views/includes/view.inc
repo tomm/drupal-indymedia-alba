@@ -1,5 +1,5 @@
 <?php
-// $Id: view.inc,v 1.143 2008/12/16 19:03:48 merlinofchaos Exp $
+// $Id: view.inc,v 1.150 2009/01/31 19:48:31 merlinofchaos Exp $
 /**
  * @file view.inc
  * Provides the view object type and associated methods.
@@ -504,6 +504,9 @@ class view extends views_db_object {
       $this->build_info['title'] = str_replace(array_keys($substitutions), $substitutions, $title);
     }
 
+    // Store the arguments for later use.
+    $this->build_info['substitutions'] = $substitutions;
+
     return $status;
   }
 
@@ -620,6 +623,9 @@ class view extends views_db_object {
     $this->build_info['query_args'] = $this->query->get_where_args();
     $this->built = TRUE;
     $this->build_time = views_microtime() - $start;
+
+    // Attach displays
+    $this->attach_displays();
     return TRUE;
   }
 
@@ -790,9 +796,25 @@ class view extends views_db_object {
   }
 
   /**
+   * Render a specific field via the field ID and the row #.
+   */
+  function render_field($field, $row) {
+    if (isset($this->field[$field]) && isset($this->result[$row])) {
+      return $this->field[$field]->advanced_render($this->result[$row]);
+    }
+  }
+
+  /**
    * Execute the given display, with the given arguments.
    * To be called externally by whatever mechanism invokes the view,
    * such as a page callback, hook_block, etc.
+   *
+   * This function should NOT be used by anything external as this
+   * returns data in the format specified by the display. It can also
+   * have other side effects that are only intended for the 'proper'
+   * use of the display, such as setting page titles and breadcrumbs.
+   *
+   * If you simply want to view the display, use view::preview() instead.
    */
   function execute_display($display_id = NULL, $args = array()) {
     if (empty($this->current_display) || $this->current_display != $this->choose_display($display_id)) {
@@ -840,6 +862,7 @@ class view extends views_db_object {
   function pre_execute($args = array()) {
     $this->old_view[] = views_get_current_view();
     views_set_current_view($this);
+    $display_id = $this->current_display;
 
     // Let modules modify the view just prior to executing it.
     foreach (module_implements('views_pre_view') as $module) {
@@ -853,7 +876,7 @@ class view extends views_db_object {
       $this->set_arguments($args);
     }
 
-    $this->attach_displays();
+//    $this->attach_displays();
 
     // Allow the display handler to set up for execution
     $this->display_handler->pre_execute();
@@ -872,20 +895,27 @@ class view extends views_db_object {
 
     views_set_current_view(isset($old_view) ? $old_view : FALSE);
   }
+
   /**
    * Run attachment displays for the view.
    */
   function attach_displays() {
+    if (!empty($this->is_attachment)) {
+      return;
+    }
+
     if (!$this->display_handler->accept_attachments()) {
       return;
     }
 
+    $this->is_attachment = TRUE;
     // Give other displays an opportunity to attach to the view.
     foreach ($this->display as $id => $display) {
       if (!empty($this->display[$id]->handler)) {
         $this->display[$id]->handler->attach_to($this->current_display);
       }
     }
+    $this->is_attachment = FALSE;
   }
 
   /**
@@ -1073,7 +1103,9 @@ class view extends views_db_object {
           $base = FALSE;
           $title = t('Home');
         }
-        $breadcrumb[] = l($title, $path, array('html' => true));
+        if ($title) {
+          $breadcrumb[] = l($title, $path, array('html' => true));
+        }
       }
 
       if ($set) {
@@ -1393,7 +1425,7 @@ class view extends views_db_object {
   function clone_view() {
     $clone = version_compare(phpversion(), '5.0') < 0 ? $this : clone($this);
 
-    $keys = array('current_display', 'display_handler', 'build_info', 'built', 'executed', 'attachment_before', 'attachment_after');
+    $keys = array('current_display', 'display_handler', 'build_info', 'built', 'executed', 'attachment_before', 'attachment_after', 'field', 'argument', 'filter', 'sort', 'relationship', 'query', 'result', 'inited', 'style_plugin', 'plugin_name', 'exposed_data', 'exposed_input');
     foreach ($keys as $key) {
       if (isset($clone->$key)) {
         unset($clone->$key);

@@ -1,5 +1,5 @@
 <?php
-// $Id: query.inc,v 1.32 2008/10/28 20:08:10 merlinofchaos Exp $
+// $Id: query.inc,v 1.36 2009/01/07 23:34:32 merlinofchaos Exp $
 /**
  * @file query.inc
  * Defines the query object which is the underlying layer in a View.
@@ -452,8 +452,14 @@ class views_query {
       return FALSE;
     }
 
+    // If we do not have join info, fetch it.
     if (!isset($join)) {
       $join = $this->get_join_data($table, $this->relationships[$relationship]['base']);
+    }
+    
+    // If it can't be fetched, this won't work.
+    if (empty($join)) {
+      return FALSE;
     }
 
     // Does a table along this path exist?
@@ -591,7 +597,7 @@ class views_query {
    * @return $name
    *   The name that this field can be referred to as. Usually this is the alias.
    */
-  function add_field($table, $field, $alias = '') {
+  function add_field($table, $field, $alias = '', $params = NULL) {
     // We check for this specifically because it gets a special alias.
     if ($table == $this->base_table && $field == $this->base_field && empty($alias)) {
       $alias = $this->base_field;
@@ -607,6 +613,7 @@ class views_query {
 
     $name = $alias ? $alias : $field;
 
+    // @todo FIXME -- $alias, then $name is inconsistent
     if (empty($this->fields[$alias])) {
       $this->fields[$name] = array(
         'field' => $field,
@@ -614,6 +621,11 @@ class views_query {
         'alias' => $alias,
       );
     }
+    
+    foreach ((array)$params as $key => $value) {
+      $this->fields[$name][$key] = $value;
+    }
+
     return $name;
   }
 
@@ -854,7 +866,6 @@ class views_query {
    *   Provide a countquery if this is true, otherwise provide a normal query.
    */
   function query($get_count = FALSE) {
-
     // Check query distinct value.
     if (empty($this->no_distinct) && $this->distinct && !empty($this->fields)) {
       if (!empty($this->fields[$this->base_field])) {
@@ -890,6 +901,8 @@ class views_query {
       }
     }
 
+    $has_aggregate = FALSE;
+    $non_aggregates = array();
 
     foreach ($fields_array as $field) {
       if ($fields) {
@@ -900,11 +913,18 @@ class views_query {
         $string .= $field['table'] . '.';
       }
       $string .= $field['field'];
+      // store for use with non-aggregates below
+      $fieldname = (!empty($field['alias']) ? $field['alias'] : $string);
+
       if (isset($field['distinct'])) {
         $string = "DISTINCT($string)";
       }
       if (isset($field['count'])) {
         $string = "COUNT($string)";
+        $has_aggregate = TRUE;
+      }
+      else {
+        $non_aggregates[] = $fieldname;
       }
       if ($field['alias']) {
         $string .= " AS $field[alias]";
@@ -917,8 +937,8 @@ class views_query {
       }
     }
 
-    if ($this->groupby) {
-      $groupby = "GROUP BY " . implode(', ', $this->groupby) . "\n";
+    if ($has_aggregate || $this->groupby) {
+      $groupby = "GROUP BY " . implode(', ', array_unique(array_merge($this->groupby, $non_aggregates))) . "\n";
       if ($this->having) {
         $having = $this->condition_sql('having');
       }
