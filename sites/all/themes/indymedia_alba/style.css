@@ -32,9 +32,14 @@ blockquote {
 *  Header
 */
 #header {
-  background: black;
+  background: white;
   border: 0px solid #aaa;
   border-bottom: none;
+}
+#search-theme-form {
+  position: absolute;
+  top: 0px;
+  right: 0px;
 }
 #search input {
   color: #000;

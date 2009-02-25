@@ -29,6 +29,7 @@ $language->language ?>" xmlns="http://www.w3.org/1999/xhtml">
   </div>
 
   <?php if($search_box) { ?>
+    <!-- IE hack --><div style="position: static;"></div>
     <?php print $search_box ?>
   <?php } ?>
 
