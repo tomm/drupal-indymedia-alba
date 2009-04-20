@@ -28,6 +28,10 @@ blockquote {
   background: #fff;
 }
 
+#content > tbody {
+  border: none;
+}
+
 /*
 *  Header
 */
@@ -45,6 +49,7 @@ blockquote {
   color: #000;
   background: #fff;
   border: 1px solid #999;
+  opacity: 0.8;
 }
 #search input.form-submit {
   color: #000;  
@@ -57,9 +62,6 @@ blockquote {
 /*
 *  Menus
 */
-.primary_menu {
-  background: #000 url(bg1.png) top left repeat-x;
-}
 .primary_menu a,
 .primary_menu a:link,
 .primary_menu a:active,
@@ -76,13 +78,16 @@ blockquote {
 .primary_menu  a.active:focus {
   color: white;
 }
-#menu .secondary_menu {
-  background: #ccc;
-}
 .secondary_menu a,
 .secondary_menu a:link,
 .secondary_menu a:active,
 .secondary_menu a:visited {
+  font-weight: bold;
+  font-size: 110%;
+  background-color: #fcc;
+  opacity: 0.5;
+  padding-left: 20px;
+  padding-right: 20px;
   color: black;
   border-bottom: none;
 }
@@ -269,10 +274,8 @@ td.front-node-teaser-right {
 .headline-node h2 {
 }
 td#col-left {
-  border-left: 1px solid #ccc;
 }
 td#col-right {
-  border-left: 1px solid #ccc;
 }
 /* blocks put in centre column */
 td.col-center-left {
