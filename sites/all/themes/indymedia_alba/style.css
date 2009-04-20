@@ -50,6 +50,7 @@ blockquote {
   background: #fff;
   border: 1px solid #999;
   opacity: 0.8;
+  font-size: 80%;
 }
 #search input.form-submit {
   color: #000;  
