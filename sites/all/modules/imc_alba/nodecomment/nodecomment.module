@@ -499,9 +499,9 @@ function nodecomment_theme() {
 }*/
 
 function theme_nodecomment_view($node, $cnum) {
-	return '<a id="comment-'.$cnum.'"></a>
+	return '<div class="comment"><a id="comment-'.$cnum.'"></a>
 		<a id="comment-nid-'.$node->nid.'"></a>'.
-		node_view($node, TRUE, FALSE, TRUE);
+		node_view($node, TRUE, FALSE, TRUE).'</div>';
 }
 
 function theme_nodecomment_quickview($ninfo, $cnum) {

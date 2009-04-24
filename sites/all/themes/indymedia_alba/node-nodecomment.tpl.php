@@ -1,4 +1,4 @@
-<div class="comment"><div id="node-<?php print $nid ?>" class="node<?php print ($sticky && $page == 0) ? " sticky" : ""; ?><?php print ($page == 0) ? " teaser" : " "; ?><?php print ' ' . ($node->type); ?>">
+<div id="node-<?php print $nid ?>" class="node<?php print ($sticky && $page == 0) ? " sticky" : ""; ?><?php print ($page == 0) ? " teaser" : " "; ?><?php print ' ' . ($node->type); ?>">
 <?php print $picture ?>
 <?php if ($page) { ?>
 	<?php if ($terms) { ?>
@@ -15,7 +15,6 @@
 <?php if ($links && $page == 0){ ?>
 	<div class="links">&raquo; <?php print $links ?></div>
 <?php } ?>
-</div>
 <?php if ($page) { ?>
 	<div class="meta">
 	<?php if ($links){ ?>
