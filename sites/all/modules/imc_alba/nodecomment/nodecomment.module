@@ -213,6 +213,14 @@ function nodecomment_form(&$node) {
       if (!$parent_node) $errorRedirect = '<front>';
       if ($parent_node->comment != COMMENT_NODE_READ_WRITE) $errorRedirect = '<front>';
       else if ($parent_node->type == 'nodecomment') $errorRedirect = 'node/'.$parent_node->nid;
+      if (isset($_GET['replynid'])) {
+	/* take title and quote body of this node */
+	$reply2node = node_load($_GET['replynid']);
+	if ($reply2node && node_access('view', $reply2node)) {
+	  $node->title = $reply2node->title;
+	  $node->body = '<blockquote>' . $reply2node->body . '</blockquote>';
+	}
+      }
     }
     if ($errorRedirect) {
       drupal_set_message('Cannot make a comment to an invalid content type', 'error');
@@ -428,6 +436,11 @@ function nodecomment_link($type, $node=NULL, $teaser=FALSE) {
         'href' => url('node/'.$node->parent_nid, array('absolute' => TRUE)),
       );
     }
+    $links['reply_to'] = array(
+    'title' => t('Reply'),
+    'href' => url('node/add/nodecomment', array('absolute' => true,
+        'query' => array('parentnid' => $node->parent_nid, 'replynid' => $node->nid)))
+    );
   }
   else if ($type == 'node' && $node->comment) {
     $num = reset(db_fetch_array(db_query('SELECT COUNT(*) FROM {nodecomment} nc 
@@ -486,9 +499,9 @@ function nodecomment_theme() {
 }*/
 
 function theme_nodecomment_view($node, $cnum) {
-	return '<div class="comment"><a id="comment-'.$cnum.'"></a>
+	return '<a id="comment-'.$cnum.'"></a>
 		<a id="comment-nid-'.$node->nid.'"></a>'.
-		node_view($node, TRUE, FALSE, TRUE).'</div>';
+		node_view($node, TRUE, FALSE, TRUE);
 }
 
 function theme_nodecomment_quickview($ninfo, $cnum) {
