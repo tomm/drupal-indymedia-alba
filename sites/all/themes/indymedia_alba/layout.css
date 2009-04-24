@@ -2,6 +2,14 @@
   margin: 0 auto 0 auto;
   min-width: 780px;
   max-width: 1000px;
+  position: relative;
+  top: 0px;
+  left: 0px;
+}
+#header {
+  position: relative;
+  top: 0px;
+  left: 0px;
 }
 #header #logo, #branding, #main, .sidebar {
   float: left;
@@ -10,8 +18,23 @@
   float: right;
 }
 #search {
-	padding: 5px;
-	margin: 0px;
+  padding: 3px;
+  margin: 0px;
+}
+.primary_menu {
+  position: absolute;
+  top: 96px;
+  left: 0px;
+}
+.secondary_menu {
+  position: absolute;
+  top: 96px;
+  right: 0px;
+}
+#menu {
+  position: absolute;
+  top: 0px;
+  left: 0px;
 }
 #menu, #content, #footer {
   clear: both;
@@ -38,5 +61,5 @@ td#col-right {
 }
 table#content {
   padding: 0px;
-  margin: 0px;
+  margin: 5px 0 0 0;
 }

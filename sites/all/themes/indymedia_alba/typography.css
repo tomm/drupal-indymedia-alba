@@ -98,7 +98,7 @@ td {
 } #wrapper > #header #header-additional { margin-right: 2em; }
 #search {
   margin: 0.5em 0.5em 0.5em 0.5em; /* for IE */
-} #wrapper > #header #search { margin-right: 2em; }
+} #wrapper > #header #search { margin-right: 0.5em; }
 #search input { 
   font-size: 1em;
   padding: 0.2em 0.4em

@@ -10,6 +10,26 @@ $poll_candidatetype = array('User election', 'Proposition choice');
 include 'edemocracy.model.inc';
 
 
+function edemocracy_block($op='list', $delta=0) {
+	// listing of blocks, eg admin page
+	if ($op == 'list') {
+		$block[0]["info"] = t("Polls");
+		$block[0]["cache"] = BLOCK_CACHE_PER_ROLE;
+		
+		return $block;
+	} else if ($op == 'view') {
+		if (!user_access('vote on polls')) return;
+		$out = "";
+		$q = db_query("SELECT COUNT(*) FROM {edemocracy_poll} WHERE state = %d", POLL_STATE_OPEN);
+		$num_polls_open = db_result($q);
+		$out .= l(t('%polls polls open for voting', array('%polls' => $num_polls_open)),
+			'edemocracy/polls/open', array('html' => true));
+		$block['subject'] = t("Polls");
+		$block['content'] = '<div class="contributor-msg">'.$out.'</div>';
+		return $block;
+	}
+}
+
 
 function edemocracy_form_alter(&$form, $form_state, $form_id) {
 
@@ -119,8 +139,65 @@ function edemocracy_menu() {
 		'page arguments' => array('edemocracy_admin'),
 		'access arguments' => array('administer edemocracy'),
 	);
+	$items['edemocracy/polls'] = array(
+		'title' => 'Polls',
+		'page callback' => 'edemocracy_list_polls',
+		'access arguments' => array('vote on polls'),
+	);
+	$items['edemocracy/polls/open'] = array(
+		'title' => t('Open for voting'),
+		'type' => MENU_LOCAL_TASK,
+		'weight' => -5,
+		'access arguments' => array('vote on polls'),
+	);
+	$items['edemocracy/polls/creating'] = array(
+		'title' => t('Open for candidates/propositions'),
+		'type' => MENU_LOCAL_TASK,
+		'weight' => -2,
+		'access arguments' => array('vote on polls'),
+	);
+	$items['edemocracy/polls/closed'] = array(
+		'title' => t('Closed polls'),
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 0,
+		'access arguments' => array('vote on polls'),
+	);
 	
 	return $items;
+}
+
+define('EDEMOCRACY_SQL_LIST_OPEN',
+	'SELECT n.nid FROM {node} n INNER JOIN edemocracy_poll p ON p.nid=n.nid WHERE p.state=%d AND n.status = 1 ORDER BY CREATED DESC');
+
+function edemocracy_list_polls() {
+	//return "Hello " . arg
+	$out = '<p>' . t("You are able to vote in polls because you have
+contributed useful content to the site.") . '</p>';
+	switch (arg(2)) {
+		case 'creating':
+			$state = POLL_STATE_GETCANDIDATES; break;
+		case 'closed':
+			$state = POLL_STATE_CLOSED; break;
+		case 'open':
+		default:
+			$state = POLL_STATE_VOTING; break;
+	}
+	$q = pager_query(db_rewrite_sql(sprintf(EDEMOCRACY_SQL_LIST_OPEN, $state), 10, 0));
+
+	$results = '';
+	while ($nid = db_fetch_array($q)) {
+		$node = node_load(array('nid'=>$nid['nid']));
+		$results .= node_view($node, TRUE, FALSE, TRUE);
+	}
+	$results .= theme('pager', NULL, 10);
+
+	if ($results) $out .= $results;
+	else {
+		$out .= '<p>' . t('There are no polls in this category yet') . '</p>';
+	}
+	
+	return $out;
+(2);
 }
 
 function edemocracy_admin() {
@@ -131,7 +208,7 @@ function edemocracy_admin() {
 		$types = node_get_types('types');
 		foreach ($types as $type) {
 			$is_poll = _edemocracy_is_nodetype_a_poll($type->type);
-			$rows[] = array($type->type, ($is_poll ? 'Poll' : 'Not a poll'), l('edit', '/admin/content/node-type/' . $type->type));
+			$rows[] = array($type->type, ($is_poll ? 'Poll' : 'Not a poll'), l('edit', 'admin/content/node-type/' . $type->type));
 		}
 		$form['wank'] = array('#value' => theme('table', $header, $rows));
 	}

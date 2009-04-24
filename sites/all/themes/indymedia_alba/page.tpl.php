@@ -7,6 +7,12 @@ $language->language ?>" xmlns="http://www.w3.org/1999/xhtml">
 <?php print $head ?>
 <?php print $styles ?>
 <?php print $scripts ?>
+<!--[if lte IE 6]>
+<style>
+#header { position: static; }
+#wrapper { position: static; }
+</style>
+<![endif]-->
 </head>
 
 <body class="<?php print $body_classes ?>">
@@ -29,6 +35,7 @@ $language->language ?>" xmlns="http://www.w3.org/1999/xhtml">
   </div>
 
   <?php if($search_box) { ?>
+    <!-- IE hack --><div style="position: static;"></div>
     <?php print $search_box ?>
   <?php } ?>
 
@@ -47,6 +54,12 @@ $language->language ?>" xmlns="http://www.w3.org/1999/xhtml">
   <?php } ?>
   </div>
 </div>
+
+<!--[if lte IE 6]> <div class="messages warning">
+<a href="http://www.mozilla.com/">
+Your web browser is old and insecure.
+Please upgrade it so that you can take
+advantage of the latest features of Indymedia Scotland</a> </div> <![endif]-->
 
 <table id="content">
 	<tr>
