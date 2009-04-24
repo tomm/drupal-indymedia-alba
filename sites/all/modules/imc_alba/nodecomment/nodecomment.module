@@ -255,8 +255,48 @@ function nodecomment_validate($node, &$form) {
 	nodecomment_ensure_valid_parent_nid($node->parent_nid);
 }
 
+/**
+ * Updates the comment statistics for a given node. This should be called any
+ * time a comment is added, deleted, or updated.
+ *
+ * The following fields are contained in the node_comment_statistics table.
+ * - last_comment_timestamp: the timestamp of the last comment for this node or the node create stamp if no comments exist for the node.
+ * - last_comment_name: the name of the anonymous poster for the last comment
+ * - last_comment_uid: the uid of the poster for the last comment for this node or the node authors uid if no comments exists for the node.
+ * - comment_count: the total number of approved/published comments on this node.
+ */
+function _nodecomment_update_node_statistics($nid) {
+	$count = db_result(db_query(
+'SELECT COUNT(nc.comment_nid)
+FROM {nodecomment} nc
+INNER JOIN node c ON c.nid = nc.comment_nid
+WHERE nc.parent_nid = %d AND c.status = 1', $nid));
+//  $count = db_result(db_query('SELECT COUNT(cid) FROM {comments} WHERE nid = %d AND status = %d', $nid, COMMENT_PUBLISHED));
+
+  // comments exist
+	if ($count > 0) {
+		$last_reply = db_fetch_array(db_query('SELECT n.nid, n.uid, n.created FROM {node} n INNER JOIN {nodecomment} nc ON nc.comment_nid = n.nid AND nc.parent_nid = %d WHERE n.status = 1 ORDER BY n.created DESC LIMIT 1', $nid));
+   // $last_reply = db_fetch_object(db_query_range('SELECT cid, name, timestamp, uid FROM {comments} WHERE nid = %d AND status = %d ORDER BY cid DESC', $nid, COMMENT_PUBLISHED, 0, 1));
+		db_query("UPDATE {node_comment_statistics} SET comment_count = %d, last_comment_timestamp = %d, last_comment_name = '%s', last_comment_uid = %d WHERE nid = %d", $count, $last_reply['created'], $last_reply['uid'] ? '' : $last_reply['uid'], $last_reply['uid'], $nid);
+	}
+
+  // no comments
+	else {
+		$node = db_fetch_object(db_query("SELECT uid, created FROM {node} WHERE nid = %d", $nid));
+		db_query("UPDATE {node_comment_statistics} SET comment_count = 0, last_comment_timestamp = %d, last_comment_name = '', last_comment_uid = %d WHERE nid = %d", $node->created, $node->uid, $nid);
+	}
+}
+
+/**
+ * Just to get the forum module sort-of working...
+ */
+function comment_new_page_count($num_comments, $new_replies, $node) {
+	return 0;
+}
+
 function nodecomment_insert($node) {
 	db_query('INSERT INTO {nodecomment} (comment_nid, parent_nid) VALUES (%d, %d)', $node->nid, $node->parent_nid);
+	_nodecomment_update_node_statistics($node->parent_nid);
 }
       
 function nodecomment_load($node) {
@@ -271,7 +311,48 @@ function nodecomment_nodeapi(&$node, $op, $a3=NULL, $a4=NULL) {
 				$node->comment = variable_get("comment_$node->type", COMMENT_NODE_READ_WRITE);
 			}
 			break;
+		
+		case 'insert':
+			db_query('INSERT INTO {node_comment_statistics} (nid, last_comment_timestamp, last_comment_name, last_comment_uid, comment_count) VALUES (%d, %d, NULL, %d, 0)', $node->nid, $node->changed, $node->uid);
+			break;
+
+		case 'delete':
+			//db_query('DELETE FROM {comments} WHERE nid = %d', $node->nid);
+			db_query('DELETE FROM {node_comment_statistics} WHERE nid = %d', $node->nid);
+			break;
+
 	}
+}
+
+/**
+ * Get number of new comments for current user and specified node.
+ *
+ * @param $nid
+ *   node-id to count comments for
+ * @param $timestamp
+ *   time to count from (defaults to time of last user access
+ *   to node)
+ */
+function comment_num_new($nid, $timestamp = 0) {
+  global $user;
+
+  if ($user->uid) {
+    // Retrieve the timestamp at which the current user last viewed the
+    // specified node.
+    if (!$timestamp) {
+      $timestamp = node_last_viewed($nid);
+    }
+    $timestamp = ($timestamp > NODE_NEW_LIMIT ? $timestamp : NODE_NEW_LIMIT);
+
+    // Use the timestamp to retrieve the number of new comments.
+    //$result = db_result(db_query('SELECT COUNT(c.cid) FROM {node} n INNER JOIN {comments} c ON n.nid = c.nid WHERE n.nid = %d AND timestamp > %d AND c.status = %d', $nid, $timestamp, COMMENT_PUBLISHED));
+    $result = db_result(db_query('SELECT COUNT(nc.comment_nid) FROM {nodecomment} nc INNER JOIN {node} n ON n.nid = nc.comment_nid WHERE nc.parent_nid = %d AND n.created > %d AND n.status = 1', $nid, $timestamp));
+
+    return $result;
+  }
+  else {
+    return 0;
+  }
 }
 
 /* More node.module dirty hook */

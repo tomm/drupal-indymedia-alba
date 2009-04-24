@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * Implementation of hook_enable().
+ */
+function nodecomment_enable() {
+	// Insert records into the node_comment_statistics for nodes that are missing.
+	db_query("INSERT INTO {node_comment_statistics} (nid, last_comment_timestamp, last_comment_name, last_comment_uid, comment_count) SELECT n.nid, n.changed, NULL, n.uid, 0 FROM {node} n LEFT JOIN {node_comment_statistics} c ON n.nid = c.nid WHERE c.comment_count IS NULL");
+}
+
 function nodecomment_schema() {
 	$schema['nodecomment'] = array(
 		'fields' => array(
