@@ -1,0 +1,5 @@
+; $Id: comment.info
+name = Comment
+description = A content type used to comment on other node content.
+version = "6.9-imcalba"
+core = 6.x
