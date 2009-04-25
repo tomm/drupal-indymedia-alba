@@ -179,88 +179,99 @@ function nodecomment_form_alter(&$form, $form_state, $form_id) {
 }
 
 function nodecomment_perm() {
-	return array('administer comments',
+	$perms = array('administer comments',
 		'create nodecomment content',
 		'delete any nodecomment content',
 		'delete own nodecomment content',
 		'edit any nodecomment content',
 		'edit own nodecomment content');
+
+	$types = node_get_types('types');
+	foreach ($types as $type) {
+		if ($type->type == 'nodecomment') continue;
+		$perms[] = 'comment on ' . $type->type;
+	}
+	return $perms;
 }
 
 function nodecomment_access($op, $node) {
 	return imceditor_generic_access($op, $node, 'nodecomment');
 } 
 
-function nodecomment_ensure_valid_parent_nid($parent_nid) {
+function nodecomment_user_can_comment_on($nid)
+{
+	static $can_comment = array();
+	if (isset($can_comment[$nid])) {
+		return $can_comment[$nid];
+	} else {
+		$node = node_load($nid);
+		$can_comment[$nid] = (($node->comment == COMMENT_NODE_READ_WRITE) &&
+				(user_access('comment on ' . $node->type)));
+		return $can_comment[$nid];
+	}
+}
+
+function nodecomment_ensure_valid_parent($parent_node) {
   $errorRedirect = false;
-  $parent_node = node_load($parent_nid);
   if (!$parent_node) $errorRedirect = '<front>';
-  if ($parent_node->comment != COMMENT_NODE_READ_WRITE) $errorRedirect = '<front>';
+  if (!nodecomment_user_can_comment_on($parent_node->nid)) $errorRedirect = '<front>';
   else if ($parent_node->type == 'nodecomment') $errorRedirect = 'node/'.$parent_node->nid;
   if ($errorRedirect) {
-    drupal_set_message('Cannot make a comment to an invalid content type', 'error');
+    drupal_set_message('You do not have permission to comment on this content', 'error');
     drupal_goto($errorRedirect);
   }
 }
 
 function nodecomment_form(&$node) {
-  if (!isset($node->parent_nid)) {
-    // Parent node must be set, valid, not nodecomment.
-    $errorRedirect = false;
-    if (!isset($_GET['parentnid'])) $errorRedirect = '<front>';
-    else {
-      $parent_node = node_load($_GET['parentnid']);
-      if (!$parent_node) $errorRedirect = '<front>';
-      if ($parent_node->comment != COMMENT_NODE_READ_WRITE) $errorRedirect = '<front>';
-      else if ($parent_node->type == 'nodecomment') $errorRedirect = 'node/'.$parent_node->nid;
-      if (isset($_GET['replynid'])) {
-	/* take title and quote body of this node */
-	$reply2node = node_load($_GET['replynid']);
-	if ($reply2node && node_access('view', $reply2node)) {
-	  $node->title = $reply2node->title;
-	  $node->body = '<blockquote>' . $reply2node->body . '</blockquote>';
+	if (isset($node->parent_nid)) {
+		// must remember parent nid.
+		$form['parent_nid'] = array(
+			'#type' => 'hidden',
+			'#default_value' => $node->parent_nid,
+		);
+	} else {
+		// Parent node must be set, valid, not nodecomment.
+		if (!isset($_GET['parentnid'])) {
+			drupal_set_message('Comments can only be posted in response to other content.');
+			drupal_goto('<front>');
+		} else {
+			$parent_node = node_load($_GET['parentnid']);
+			nodecomment_ensure_valid_parent($parent_node);
+			if (isset($_GET['replynid'])) {
+				/* take title and quote body of this node */
+				$reply2node = node_load($_GET['replynid']);
+				if ($reply2node && node_access('view', $reply2node)) {
+					$node->title = $reply2node->title;
+					$node->body = '<blockquote>' . $reply2node->body . '</blockquote>';
+				}
+			}
+		}
+		// must remember parent nid.
+		$form['parent_nid'] = array(
+			'#type' => 'hidden',
+			'#default_value' => $_GET['parentnid'],
+		);
 	}
-      }
-    }
-    if ($errorRedirect) {
-      drupal_set_message('Cannot make a comment to an invalid content type', 'error');
-      drupal_goto($errorRedirect);
-    } else {
-      // must remember parent nid.
-      $form['parent_nid'] = array(
-	'#type' => 'hidden',
-	'#default_value' => $_GET['parentnid'],
-      );
-    }
-  } else {
-    // must remember parent nid.
-    $form['parent_nid'] = array(
-      '#type' => 'hidden',
-      '#default_value' => $node->parent_nid,
-    );
-  }
 
-  $type = node_get_types('type', $node);
+	$type = node_get_types('type', $node);
 
-  // We need to define form elements for the node's title and body.
-  $form['title'] = array(
-    '#type' => 'textfield',
-    '#title' => check_plain($type->title_label),
-    '#required' => TRUE,
-    '#default_value' => !empty($node->title) ? $node->title : 'Re: '.$parent_node->title,
-    '#weight' => -5
-  );
-  $form['body_field'] = node_body_field($node, $type->body_label, 0);
-/*  if (!$form['body_field']['body']['#default_value']) {
-    $form['body_field']['body']['#default_value'] = "<p></p><!--break-->";
-  }*/
+	// We need to define form elements for the node's title and body.
+	$form['title'] = array(
+		'#type' => 'textfield',
+		'#title' => check_plain($type->title_label),
+		'#required' => TRUE,
+		'#default_value' => !empty($node->title) ? $node->title : 'Re: '.$parent_node->title,
+		'#weight' => -5
+	);
+	$form['body_field'] = node_body_field($node, $type->body_label, 0);
 
-  return $form;
+	return $form;
 }
 
 function nodecomment_validate($node, &$form) {
 	if (!isset($node->parent_nid)) $node->parent_nid = db_result(db_query('SELECT parent_nid FROM {nodecomment} WHERE comment_nid = %d', $node->nid));
-	nodecomment_ensure_valid_parent_nid($node->parent_nid);
+	$parent_node = node_load($node->parent_nid);
+	nodecomment_ensure_valid_parent($parent_node);
 }
 
 /**
@@ -314,6 +325,10 @@ function nodecomment_load($node) {
 
 function nodecomment_nodeapi(&$node, $op, $a3=NULL, $a4=NULL) {
 	switch ($op) {
+		case 'load':
+			return db_fetch_array(db_query("SELECT last_comment_timestamp, last_comment_name, comment_count FROM {node_comment_statistics} WHERE nid = %d", $node->nid));
+			break;
+
 		case 'prepare':
 			if (!isset($node->comment)) {
 				$node->comment = variable_get("comment_$node->type", COMMENT_NODE_READ_WRITE);
@@ -421,51 +436,53 @@ function nodecomment_help($section) {
 }
 
 function nodecomment_link($type, $node=NULL, $teaser=FALSE) {
-  $links = array();
-  
-  if ($type == 'node' && $node->type == 'nodecomment') {
-    if (!$teaser) {
-      $links['go_back'] = array(
-        'title' => t('Go back'),
-        'href' => url('node/'.$node->parent_nid, array('absolute' => TRUE,
-	  'query' => 'showcomments',
-	  'fragment' => 'comment-nid-'.$node->nid)),
-      );
-      $links['parent_node'] = array(
-        'title' => t('Original article'),
-        'href' => url('node/'.$node->parent_nid, array('absolute' => TRUE)),
-      );
-    }
-    $links['reply_to'] = array(
-    'title' => t('Reply'),
-    'href' => url('node/add/nodecomment', array('absolute' => true,
-        'query' => array('parentnid' => $node->parent_nid, 'replynid' => $node->nid)))
-    );
-  }
-  else if ($type == 'node' && $node->comment) {
-    $num = reset(db_fetch_array(db_query('SELECT COUNT(*) FROM {nodecomment} nc 
-      INNER JOIN {node} n ON n.nid = nc.comment_nid 
-      WHERE nc.parent_nid = %d AND n.status = 1', $node->nid)));
-    /* Only want that get argument if default view doesn't show teasers... */
-    $vis = variable_get('comment_default_visible_'. $node->type, NODECOMMENT_VISIBLE_TEASERS);
-    $args = array('absolute' => TRUE, 'fragment' => 'comments');
-    if ($vis != NODECOMMENT_VISIBLE_TEASERS) $args['query'] = 'showcomments';
+	$links = array();
 
-    if ($num) {
-      $links['num_comments'] = array(
-	'title' => t('!num', array('!num' => format_plural($num, 'View 1 comment', 'View @count comments'))),
-	'href' => url('node/'.$node->nid, $args),
-      );
-    }
-    if ($node->comment == COMMENT_NODE_READ_WRITE && !$teaser) {
-      $links['add_comment'] = array(
-        'title' => t('Add a comment'),
-        'href' => url('node/add/nodecomment', array('absolute' => TRUE,
-	'query' => 'parentnid='.$node->nid)),
-      );
-    }
-  }
-  return $links;
+	if ($type == 'node' && $node->type == 'nodecomment') {
+		if (!$teaser) {
+			$links['go_back'] = array(
+				'title' => t('Go back'),
+				'href' => url('node/'.$node->parent_nid, array('absolute' => TRUE,
+				  'query' => 'showcomments',
+				  'fragment' => 'comment-nid-'.$node->nid)),
+			);
+			$links['parent_node'] = array(
+				'title' => t('Original article'),
+				'href' => url('node/'.$node->parent_nid, array('absolute' => TRUE)),
+			);
+		}
+		if (nodecomment_user_can_comment_on($node->parent_nid)) {
+			$links['reply_to'] = array(
+				'title' => t('Reply'),
+				'href' => url('node/add/nodecomment', array('absolute' => true,
+				'query' => array('parentnid' => $node->parent_nid, 'replynid' => $node->nid)))
+			);
+		}
+	}
+	else if ($type == 'node' && $node->comment) {
+		$num = reset(db_fetch_array(db_query('SELECT COUNT(*) FROM {nodecomment} nc 
+		INNER JOIN {node} n ON n.nid = nc.comment_nid 
+		WHERE nc.parent_nid = %d AND n.status = 1', $node->nid)));
+		/* Only want that get argument if default view doesn't show teasers... */
+		$vis = variable_get('comment_default_visible_'. $node->type, NODECOMMENT_VISIBLE_TEASERS);
+		$args = array('absolute' => TRUE, 'fragment' => 'comments');
+		if ($vis != NODECOMMENT_VISIBLE_TEASERS) $args['query'] = 'showcomments';
+
+		if ($num) {
+			$links['num_comments'] = array(
+			'title' => t('!num', array('!num' => format_plural($num, 'View 1 comment', 'View @count comments'))),
+			'href' => url('node/'.$node->nid, $args),
+			);
+		}
+		if (nodecomment_user_can_comment_on($node->nid) && !$teaser) {
+			$links['add_comment'] = array(
+			'title' => t('Add a comment'),
+			'href' => url('node/add/nodecomment', array('absolute' => TRUE,
+			'query' => 'parentnid='.$node->nid)),
+			);
+		}
+	}
+	return $links;
 }
 
 function nodecomment_theme() {
