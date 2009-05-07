@@ -289,6 +289,9 @@ td {
   margin: 0 0 2em 0;
   clear: left;
 }
+.nodecomment.node.teaser {
+  margin: 0 0 1em 0;
+}
 .node.teaser .calendar {
   float: left;
   width: 3.5em;
@@ -351,7 +354,7 @@ node.teaser .submitted {
   padding: 1em;
 }
 .comment {
-  margin: 1em 0 0.5em 0;
+  margin: 0.5em 0 0.25em 0;
   padding: 1em;
 }
 .comment .id {

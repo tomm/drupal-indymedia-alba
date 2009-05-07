@@ -21,7 +21,7 @@ h6 a, h6 a:link, h6 a:visited, h6 a:hover, h6 a:active {
   color: #999;
 }
 blockquote {
-  border-left: 1em solid #eee;
+  border-left: 1em solid #ddd;
 }
 
 #wrapper {
@@ -342,3 +342,50 @@ div.block h2.title {
 div.block h2.title a {
 	color: white;
 }
+
+/* Forum comments */
+
+.forum-comment.zebra1 {
+	background-color: #fefefa;
+}
+
+.forum-comment {
+	background-color: #fafaf8;
+	border: 1px solid #dad7cb;
+	margin-bottom: 8px;
+	padding: 0px 10px;
+}
+
+.node-type-forum h2#comments-intro {
+	display: none;
+}
+
+.forum-comment .nodecomment h2.title {
+	float: left;
+	margin-bottom: 0.75em;
+}
+.node-type-forum .submitted {
+	float: right;
+	border-left: 1px solid #dad7cb;
+	padding: 5px 0 0 10px;
+	margin-left: 10px;
+	width: 150px;
+	font-size: 90%;
+	color: #777;
+}
+
+.node-type-forum .taxonomy {
+	background: #ebebeb;
+	border: 1px solid #cec7bd;
+	padding: 0 10px;
+	margin: 20px 0;
+}
+
+.forum-topic-navigation {
+	display: none;
+}
+
+.node-type-forum .content {
+	clear: left;
+}
+

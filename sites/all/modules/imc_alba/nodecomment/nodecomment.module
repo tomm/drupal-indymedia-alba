@@ -64,6 +64,14 @@ function _nodecomment_get_visible() {
 	);
 }
 
+/**
+ * Return an array of "comments per page" settings from which the user
+ * can choose.
+ */
+function _nodecomment_per_page() {
+  return drupal_map_assoc(array(10, 30, 50, 70, 90, 150, 200, 250, 300));
+}
+
 function nodecomment_form_alter(&$form, $form_state, $form_id) {
 	// Ulla wants :)
 	if ($form_id == 'nodecomment_node_form') {
@@ -84,34 +92,35 @@ function nodecomment_form_alter(&$form, $form_state, $form_id) {
 			'#options' => array(t('Disabled'), t('Read only'), t('Read/Write')),
 			'#description' => t('Users with the <em>administer comments</em> permission will be able to override this setting.'),
 		);/*
-    $form['comment']['comment_default_mode'] = array(
-      '#type' => 'radios',
-      '#title' => t('Default display mode'),
-      '#default_value' => variable_get('comment_default_mode_'. $form['#node_type']->type, COMMENT_MODE_THREADED_EXPANDED),
-      '#options' => _comment_get_modes(),
-      '#description' => t('The default view for comments. Expanded views display the body of the comment. Threaded views keep replies together.'),
-    );*/
-    $form['comment']['comment_default_order'] = array(
-      '#type' => 'radios',
-      '#title' => t('Default display order'),
-      '#default_value' => variable_get('comment_default_order_'. $form['#node_type']->type, COMMENT_ORDER_NEWEST_FIRST),
-      '#options' => __comment_get_orders(),
-      '#description' => t('The default sorting for new users and anonymous users while viewing comments. These users may change their view using the comment control panel. For registered users, this change is remembered as a persistent user preference.'),
-    );
-	$form['comment']['comment_default_visible'] = array(
-		'#type' => 'radios',
-		'#title' => t('Default visibility'),
-		'#default_value' => variable_get('comment_default_visible_'. $form['#node_type']->type, NODECOMMENT_VISIBLE_TEASERS),
-		'#options' => _nodecomment_get_visible(),
-		'#description' => t('Default visibility of comments when a node is first viewed.'),
-	);/*
-    $form['comment']['comment_default_per_page'] = array(
-      '#type' => 'select',
-      '#title' => t('Default comments per page'),
-      '#default_value' => variable_get('comment_default_per_page_'. $form['#node_type']->type, 50),
-      '#options' => _comment_per_page(),
-      '#description' => t('Default number of comments for each page: more comments are distributed in several pages.'),
-    );
+		$form['comment']['comment_default_mode'] = array(
+			'#type' => 'radios',
+			'#title' => t('Default display mode'),
+			'#default_value' => variable_get('comment_default_mode_'. $form['#node_type']->type, COMMENT_MODE_THREADED_EXPANDED),
+			'#options' => _comment_get_modes(),
+			'#description' => t('The default view for comments. Expanded views display the body of the comment. Threaded views keep replies together.'),
+		);*/
+		$form['comment']['comment_default_order'] = array(
+			'#type' => 'radios',
+			'#title' => t('Default display order'),
+			'#default_value' => variable_get('comment_default_order_'. $form['#node_type']->type, COMMENT_ORDER_NEWEST_FIRST),
+			'#options' => __comment_get_orders(),
+			'#description' => t('The default sorting for new users and anonymous users while viewing comments. These users may change their view using the comment control panel. For registered users, this change is remembered as a persistent user preference.'),
+		);
+		$form['comment']['comment_default_visible'] = array(
+			'#type' => 'radios',
+			'#title' => t('Default visibility'),
+			'#default_value' => variable_get('comment_default_visible_'. $form['#node_type']->type, NODECOMMENT_VISIBLE_TEASERS),
+			'#options' => _nodecomment_get_visible(),
+			'#description' => t('Default visibility of comments when a node is first viewed.'),
+		);
+		$form['comment']['comment_default_per_page'] = array(
+			'#type' => 'select',
+			'#title' => t('Default comments per page'),
+			'#default_value' => variable_get('comment_default_per_page_'. $form['#node_type']->type, 50),
+			'#options' => _nodecomment_per_page(),
+			'#description' => t('Default number of comments for each page: more comments are distributed in several pages.'),
+		);
+    /*
     $form['comment']['comment_controls'] = array(
       '#type' => 'radios',
       '#title' => t('Comment controls'),
@@ -311,6 +320,11 @@ WHERE nc.parent_nid = %d AND c.status = 1', $nid));
  */
 function comment_new_page_count($num_comments, $new_replies, $node) {
 	return 0;
+/*	$comments_per_page = variable_get('comment_default_per_page_'. $node->type, 50);
+	$comments_per_page = 3;
+	drupal_set_message("This doesn't work yet! FIX ME!");
+	return intval(($num_comments - $new_replies - 1) / $comments_per_page);
+*/
 }
 
 function nodecomment_insert($node) {
@@ -385,14 +399,15 @@ function comment_render($node, $cid = 0) {
 	
 	if ($vis == NODECOMMENT_VISIBLE_NONE) return;
 	
+	$comments_per_page = variable_get('comment_default_per_page_'. $node->type, 50);
 	$order = variable_get('comment_default_order_'.$node->type, COMMENT_ORDER_NEWEST_FIRST);
-	$q = db_query('SELECT nc.comment_nid FROM {nodecomment} nc
+	$q = pager_query('SELECT nc.comment_nid FROM {nodecomment} nc
 		  INNER JOIN {node} n ON n.nid=nc.comment_nid
 		  WHERE n.status=1 AND nc.parent_nid=%d
-		  ORDER BY n.created %s', $node->nid,
-		  ($order == COMMENT_ORDER_NEWEST_FIRST) ? 'DESC' : 'ASC');
+		  ORDER BY n.created %s', $comments_per_page, 0, null,
+		  $node->nid, ($order == COMMENT_ORDER_NEWEST_FIRST) ? 'DESC' : 'ASC');
 	$out = '<a id="comments"></a>';
-	$out .= '<h2>'.t("Comments").'</h2>';
+	$out .= '<h2 id="comments-intro">'.t("Comments").'</h2>';
 	$i=1;
 
 	if ($vis == NODECOMMENT_VISIBLE_TITLES) {
@@ -403,7 +418,7 @@ function comment_render($node, $cid = 0) {
 	} else {
 		while ($comment_nid = db_result($q)) {
 			$cnode = node_load($comment_nid);
-			$out .= theme('nodecomment_view', $cnode, $i++);
+			$out .= theme('nodecomment_view', $cnode, $i++, $node->type);
 		}
 		/* Avoiding the nodeapi for performance reasons... */
 		/*
@@ -424,6 +439,7 @@ function comment_render($node, $cid = 0) {
 			$out .= theme('nodecomment_quickview', $comment, $i++);
 		}*/
 	}
+	$out .= theme('pager', null, $comments_per_page, 0);
 	return $out;
 }
 
@@ -488,7 +504,8 @@ function nodecomment_link($type, $node=NULL, $teaser=FALSE) {
 function nodecomment_theme() {
 	return array(
 		'nodecomment_view' => array(
-			'arguments' => array('node' => NULL, 'cnum' => NULL),
+			'arguments' => array('node' => NULL, 'cnum' => NULL,
+				'parent_type' => NULL),
 //			'template' => 'nodecomment-view',
 		),
 		'nodecomment_quickview' => array(
@@ -515,8 +532,9 @@ function nodecomment_theme() {
 	return $node;
 }*/
 
-function theme_nodecomment_view($node, $cnum) {
-	return '<div class="comment"><a id="comment-'.$cnum.'"></a>
+function theme_nodecomment_view($node, $cnum, $parent_type) {
+	$node->parent_type = $parent_type;
+	return '<div class="comment '.$parent_type.'-comment zebra'.($cnum&1).'"><a id="comment-'.$cnum.'"></a>
 		<a id="comment-nid-'.$node->nid.'"></a>'.
 		node_view($node, TRUE, FALSE, TRUE).'</div>';
 }
