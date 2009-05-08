@@ -22,6 +22,12 @@ h6 a, h6 a:link, h6 a:visited, h6 a:hover, h6 a:active {
 }
 blockquote {
   border-left: 1em solid #ddd;
+  font-style: normal;
+}
+
+blockquote cite {
+  background: url('quote.gif') no-repeat;
+  padding-left: 18px;
 }
 
 #wrapper {

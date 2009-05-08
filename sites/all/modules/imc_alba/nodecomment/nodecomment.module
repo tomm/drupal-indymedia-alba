@@ -231,6 +231,19 @@ function nodecomment_ensure_valid_parent($parent_node) {
   }
 }
 
+/**
+ * Isn't there an API function to do this... duplicated in nodextradata also
+ */
+function _nodecomment_username($node) {
+	global $user;
+	if (!$node->uid) return variable_get('anonymous', 'Anonymous');
+	else if ($node->uid == $user->uid) return $user->name;
+	else {
+		$u = user_load($node->uid);
+		return $u->name;
+	}
+}
+
 function nodecomment_form(&$node) {
 	if (isset($node->parent_nid)) {
 		// must remember parent nid.
@@ -251,7 +264,8 @@ function nodecomment_form(&$node) {
 				$reply2node = node_load($_GET['replynid']);
 				if ($reply2node && node_access('view', $reply2node)) {
 					$node->title = $reply2node->title;
-					$node->body = '<blockquote>' . $reply2node->body . '</blockquote>';
+					$author = _nodecomment_username($reply2node);
+					$node->body = theme('nodecomment_quote', $reply2node->body, $author);
 				}
 			}
 		}
@@ -319,12 +333,8 @@ WHERE nc.parent_nid = %d AND c.status = 1', $nid));
  * Just to get the forum module sort-of working...
  */
 function comment_new_page_count($num_comments, $new_replies, $node) {
-	return 0;
-/*	$comments_per_page = variable_get('comment_default_per_page_'. $node->type, 50);
-	$comments_per_page = 3;
-	drupal_set_message("This doesn't work yet! FIX ME!");
-	return intval(($num_comments - $new_replies - 1) / $comments_per_page);
-*/
+	$comments_per_page = variable_get('comment_default_per_page_' . $node->type, 50);
+	return intval(($num_comments - $new_replies)/$comments_per_page);
 }
 
 function nodecomment_insert($node) {
@@ -335,6 +345,22 @@ function nodecomment_insert($node) {
 function nodecomment_load($node) {
 	$node->teaser = $node->body;
 	return db_fetch_object(db_query('SELECT parent_nid FROM {nodecomment} WHERE comment_nid = %d', $node->nid));
+}
+
+function nodecomment_get_url($node) {
+	if ($node->type == 'nodecomment') {
+		$parent_type = db_result(db_query("SELECT type FROM {node} WHERE nid=%d", $node->parent_nid));
+		$comments_per_page = variable_get('comment_default_per_page_'. $parent_type, 50);
+		$order = variable_get('comment_default_order_'.$node->type, COMMENT_ORDER_NEWEST_FIRST);
+		// get position of this comment
+		$pos = db_result(db_query('SELECT COUNT(*) FROM {nodecomment} nc INNER JOIN {node} n ON n.nid = nc.comment_nid '.
+				'WHERE nc.parent_nid = %d AND n.created %s %d', $node->parent_nid,
+				($order == COMMENT_ORDER_NEWEST_FIRST ? '<' : '>'), $node->created));
+		$page = intval($pos / $comments_per_page);
+		return url('node/' . $node->parent_nid, array('absolute' => TRUE,
+				  'query' => 'showcomments&page='.$page,
+				  'fragment' => 'comment-nid-'.$node->nid));
+	}
 }
 
 function nodecomment_nodeapi(&$node, $op, $a3=NULL, $a4=NULL) {
@@ -348,7 +374,11 @@ function nodecomment_nodeapi(&$node, $op, $a3=NULL, $a4=NULL) {
 				$node->comment = variable_get("comment_$node->type", COMMENT_NODE_READ_WRITE);
 			}
 			break;
-		
+		case 'view':
+			if (($node->type == 'nodecomment') && $a4 /* page */) {
+				drupal_goto(nodecomment_get_url($node));
+			}
+			break;
 		case 'insert':
 			db_query('INSERT INTO {node_comment_statistics} (nid, last_comment_timestamp, last_comment_name, last_comment_uid, comment_count) VALUES (%d, %d, NULL, %d, 0)', $node->nid, $node->changed, $node->uid);
 			break;
@@ -406,6 +436,7 @@ function comment_render($node, $cid = 0) {
 		  WHERE n.status=1 AND nc.parent_nid=%d
 		  ORDER BY n.created %s', $comments_per_page, 0, null,
 		  $node->nid, ($order == COMMENT_ORDER_NEWEST_FIRST) ? 'DESC' : 'ASC');
+	/* should do comment-wrapper theme like in comment module... */
 	$out = '<a id="comments"></a>';
 	$out .= '<h2 id="comments-intro">'.t("Comments").'</h2>';
 	$i=1;
@@ -420,24 +451,6 @@ function comment_render($node, $cid = 0) {
 			$cnode = node_load($comment_nid);
 			$out .= theme('nodecomment_view', $cnode, $i++, $node->type);
 		}
-		/* Avoiding the nodeapi for performance reasons... */
-		/*
-		while ($comment_nid = db_result($q)) {
-			$comment = db_fetch_array(db_query('SELECT n.nid,n.title,n.created,n.uid,nr.body,nr.format,u.name AS username FROM {node} n
-						INNER JOIN {node_revisions} nr ON nr.nid = n.nid AND nr.vid = n.vid
-						LEFT OUTER JOIN {users} u ON n.uid = u.uid
-						WHERE n.nid = %d',
-						$comment_nid));
-			$comment['nid'] = $comment_nid;
-			// Must be very careful to filter everything properly,
-			// since the safety of the nodeapi has been dispensed with
-			$comment['body'] = check_markup($comment['body'], $comment['format']);
-			$comment['title'] = check_plain($comment['title']);
-			if (!$comment['username']) $comment['username'] = variable_get('anonymous', 'Anonymous');
-			else $comment['username'] = '<a href="/user/'.$comment['uid'].'">'.$comment['username'].'</a>';
-
-			$out .= theme('nodecomment_quickview', $comment, $i++);
-		}*/
 	}
 	$out .= theme('pager', null, $comments_per_page, 0);
 	return $out;
@@ -458,9 +471,7 @@ function nodecomment_link($type, $node=NULL, $teaser=FALSE) {
 		if (!$teaser) {
 			$links['go_back'] = array(
 				'title' => t('Go back'),
-				'href' => url('node/'.$node->parent_nid, array('absolute' => TRUE,
-				  'query' => 'showcomments',
-				  'fragment' => 'comment-nid-'.$node->nid)),
+				'href' => nodecomment_get_url($node)
 			);
 			$links['parent_node'] = array(
 				'title' => t('Original article'),
@@ -511,6 +522,10 @@ function nodecomment_theme() {
 		'nodecomment_quickview' => array(
 			'arguments' => array('ninfo' => NULL, 'cnum' => NULL),
 //			'template' => 'nodecomment-quickview',
+		),
+		'nodecomment_quote' => array(
+			'arguments' => array('content' => NULL, 'author' => NULL),
+			'template' => 'nodecomment-quote',
 		),
 	);
 }
