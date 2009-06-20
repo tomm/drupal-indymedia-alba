@@ -53,6 +53,13 @@ function feedapi_node_nodeapi(&$node, $op, $teaser) {
         $node->feedapi_node->timestamp = $feed_item->options->timestamp;
         $node->feedapi_node->nid = $node->nid;
       }
+      // INDYALBA EVENT HACK
+      if (isset($node->event) && $node->feedapi_node && $node->feedapi_node->feed_item) {
+        $hack_feeditem = $node->feedapi_node->feed_item->options;
+        $hack_startdate = $hack_feeditem->VEVENT['DATE']['DTSTART']['datetime'];
+        $hack_enddate = $hack_feeditem->VEVENT['DATE']['DTEND']['datetime'];
+        db_query("UPDATE {event} SET event_start = '%s', event_end = '%s', timezone = %d, has_time = %d, has_end_date = %d WHERE nid = %d", $hack_startdate, $hack_enddate, '348', '1', '1', $node->nid);
+      }
       break;
     case 'update':
       if (isset($node->feedapi_node)) {
