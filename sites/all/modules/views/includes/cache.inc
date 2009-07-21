@@ -1,5 +1,5 @@
 <?php
-// $Id: cache.inc,v 1.23 2009/01/31 18:08:48 merlinofchaos Exp $
+// $Id: cache.inc,v 1.25 2009/06/01 23:33:37 merlinofchaos Exp $
 /**
  * @file cache.inc
  *
@@ -118,6 +118,10 @@ function _views_discover_default_views() {
           $cache[$name] = $view;
         }
       }
+
+      // Allow modules to modify default views before they are cached.
+      drupal_alter('views_default_views', $cache);
+
       views_cache_set('views_default_views', $cache, TRUE);
     }
   }
@@ -230,7 +234,7 @@ function views_object_cache_get($obj, $name, $skip_cache = FALSE) {
  */
 function views_object_cache_set($obj, $name, $cache) {
   views_object_cache_clear($obj, $name);
-  db_query("INSERT INTO {views_object_cache} (sid, obj, name, data, updated) VALUES ('%s', '%s', '%s', %b, %d)", session_id(), $obj, $name, serialize($cache), time());
+  db_query("INSERT INTO {views_object_cache} (sid, obj, name, data, updated) VALUES ('%s', '%s', '%s', '%s', %d)", session_id(), $obj, $name, serialize($cache), time());
 }
 
 /**

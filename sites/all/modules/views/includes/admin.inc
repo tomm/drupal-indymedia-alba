@@ -1,5 +1,5 @@
 <?php
-// $Id: admin.inc,v 1.151 2009/01/30 00:20:34 merlinofchaos Exp $
+// $Id: admin.inc,v 1.160 2009/06/10 22:01:31 merlinofchaos Exp $
 /**
  * @file admin.inc
  * Provides the Views' administrative interface.
@@ -552,6 +552,7 @@ function views_ui_add_form(&$form_state) {
     '#required' => TRUE,
     '#maxlength' => 32,
     '#default_value' => $view ? $view->name : '',
+    '#attributes' => array('dir'=>'ltr'),
   );
 
   $form['description'] = array(
@@ -744,6 +745,7 @@ function views_ui_import_page(&$form_state) {
   $form['view'] = array(
     '#type' => 'textarea',
     '#title' => t('Paste view code here'),
+    '#required' => TRUE,
   );
 
   $form['submit'] = array(
@@ -759,13 +761,14 @@ function views_ui_import_page(&$form_state) {
  * Validate handler to import a view
  */
 function views_ui_import_validate($form, &$form_state) {
+  $view = '';
   views_include('view');
   ob_start();
   eval($form_state['values']['view']);
   ob_end_clean();
 
   if (!is_object($view)) {
-    form_error($form['view'], t('Unable to interpret view code.'));
+    return form_error($form['view'], t('Unable to interpret view code.'));
   }
 
   if (empty($view->api_version) || $view->api_version < 2) {
@@ -1019,7 +1022,7 @@ function template_preprocess_views_ui_edit_view(&$vars) {
       $path = $display->handler->get_path();
       if (strpos($path, '%') === FALSE && !isset($paths[$path])) {
         $vars['quick_links_raw'][] = array(
-          'title' => t('View "!display"', array('!display' => $display->display_title)),
+          'title' => t('View "@display"', array('@display' => $display->display_title)),
           'alt' => t("Go to the real page for this display"),
           'href' => $path,
         );
@@ -1313,7 +1316,7 @@ function views_ui_regenerate_tabs(&$view, $display_id = NULL, $object = NULL) {
   foreach ($displays as $id) {
     list($title, $body) = views_ui_display_tab($view, $view->display[$id]);
     $object->replace['#views-tab-' . $id] = $body;
-    $object->replace['#views-tab-title-' . $id] = $title;
+    $object->replace['#views-tab-title-' . $id] = check_plain($title);
   }
 
   if (!empty($view->changed)) {
@@ -2170,18 +2173,28 @@ function views_ui_add_item_form(&$form_state) {
       '#default_value' => 'all',
     );
 
+    // Group options first to simplify the DOM objects that Views
+    // dependent JS will act upon.
+    $grouped_options = array();
     foreach ($options as $key => $option) {
       $group = preg_replace('/[^a-z0-9]/', '-', strtolower($option['group']));
       $groups[$group] = $option['group'];
-      $form['name'][$key] = array(
-        '#prefix' => '<div class="views-dependent-all views-dependent-' . $group . '">',
-        '#suffix' => '</div>',
-        '#type' => 'checkbox',
-        '#title' => t('!group: !field', array('!group' => $option['group'], '!field' => $option['title'])),
-        '#description' => $option['help'],
-        '#return_value' => $key,
-      );
+      $grouped_options[$group][$key] = $option;
     }
+
+    foreach ($grouped_options as $group => $group_options) {
+      $form['name'][$group . '_start'] = array('#type' => 'markup', '#value' => '<div class="views-dependent-all views-dependent-' . $group . '">');
+      foreach ($group_options as $key => $option) {
+        $form['name'][$key] = array(
+          '#type' => 'checkbox',
+          '#title' => t('!group: !field', array('!group' => $option['group'], '!field' => $option['title'])),
+          '#description' => $option['help'],
+          '#return_value' => $key,
+        );
+      }
+      $form['name'][$group . '_end'] = array('#type' => 'markup', '#value' => '</div>');
+    }
+
     $form['group']['#options'] = $groups;
   }
   else {
@@ -2292,7 +2305,8 @@ function views_ui_config_item_form(&$form_state) {
           // We want this relationship option to get saved even if the user
           // skips submitting the form.
           $view->set_item_option($display_id, $type, $id, 'relationship', $rel);
-          views_ui_cache_set($view);
+          $temp_view = $view->clone_view();
+          views_ui_cache_set($temp_view);
         }
 
         $form['options']['relationship'] = array(
@@ -2728,12 +2742,20 @@ function views_ui_admin_tools() {
   );
 
   $regions = system_region_list(variable_get('theme_default', 'garland'));
+  $regions['watchdog'] = t('Watchdog');
 
   $form['views_devel_region'] = array(
     '#type' => 'select',
     '#title' => t('Page region to output performance statistics'),
     '#default_value' => variable_get('views_devel_region', 'footer'),
     '#options' => $regions,
+  );
+
+  $form['views_exposed_filter_any_label'] = array(
+    '#type' => 'select',
+    '#title' => t('Label for "Any" value on optional single-select exposed filters'),
+    '#options' => array('old_any' => t('<Any>'), 'new_any' => t('- Any -')),
+    '#default_value' => variable_get('views_exposed_filter_any_label', 'old_any'),
   );
 
   return system_settings_form($form);
@@ -2752,8 +2774,6 @@ function views_ui_tools_clear_cache() {
  * a templates rescan).
  */
 function views_ui_config_item_form_rescan($form, &$form_state) {
-  // Clear *all* theme registry entries:
-  cache_clear_all('theme_registry:', 'cache', TRUE);
   drupal_rebuild_theme_registry();
 
   // The 'Theme: Information' page is about to be shown again. That page
@@ -2765,6 +2785,18 @@ function views_ui_config_item_form_rescan($form, &$form_state) {
   unset($GLOBALS['theme']);
   init_theme();
 
+  $form_state['rerender'] = TRUE;
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Override handler for views_ui_edit_display_form
+ */
+function views_ui_edit_display_form_change_theme($form, &$form_state) {
+  // This is just a temporary variable.
+  $form_state['view']->theme = $form_state['values']['theme'];
+
+  views_ui_cache_set($form_state['view']);
   $form_state['rerender'] = TRUE;
   $form_state['rebuild'] = TRUE;
 }

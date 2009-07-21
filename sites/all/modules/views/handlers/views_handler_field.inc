@@ -1,5 +1,5 @@
 <?php
-// $Id: views_handler_field.inc,v 1.7 2009/01/30 19:21:12 merlinofchaos Exp $
+// $Id: views_handler_field.inc,v 1.19 2009/06/03 19:55:52 merlinofchaos Exp $
 /**
  * @defgroup views_field_handlers Views' field handlers
  * @{
@@ -149,12 +149,14 @@ class views_handler_field extends views_handler {
         'make_link' => array('default' => FALSE),
         'path' => array('default' => '', 'translatable' => TRUE),
         'alt' => array('default' => '', 'translatable' => TRUE),
+        'link_class' => array('default' => ''),
         'prefix' => array('default' => '', 'translatable' => TRUE),
         'suffix' => array('default' => '', 'translatable' => TRUE),
         'trim' => array('default' => FALSE),
         'max_length' => array('default' => ''),
         'word_boundary' => array('default' => TRUE),
         'ellipsis' => array('default' => TRUE),
+        'strip_tags' => array('default' => FALSE),
         'html' => array('default' => FALSE),
       ),
     );
@@ -191,7 +193,7 @@ class views_handler_field extends views_handler {
 
       $form['alter']['text'] = array(
         '#title' => t('Text'),
-        '#type' => 'textfield',
+        '#type' => 'textarea',
         '#default_value' => $this->options['alter']['text'],
         '#description' => t('The text to display for this field. You may include HTML. You may enter data from this view as per the "Replacement patterns" below.'),
         '#process' => array('views_process_dependency'),
@@ -211,6 +213,16 @@ class views_handler_field extends views_handler {
         '#type' => 'textfield',
         '#default_value' => $this->options['alter']['path'],
         '#description' => t('The Drupal path or absolute URL for this link. You may enter data from this view as per the "Replacement patterns" below.'),
+        '#process' => array('views_process_dependency'),
+        '#dependency' => array(
+          'edit-options-alter-make-link' => array(1)
+        ),
+      );
+      $form['alter']['link_class'] = array(
+        '#title' => t('Link class'),
+        '#type' => 'textfield',
+        '#default_value' => $this->options['alter']['link_class'],
+        '#description' => t('The CSS class to apply to the link.'),
         '#process' => array('views_process_dependency'),
         '#dependency' => array(
           'edit-options-alter-make-link' => array(1)
@@ -332,6 +344,17 @@ class views_handler_field extends views_handler {
         ),
       );
 
+      $form['alter']['strip_tags'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Strip HTML tags'),
+        '#description' => t('If checked, all HTML tags will be stripped.'),
+        '#default_value' => $this->options['alter']['strip_tags'],
+        '#process' => array('views_process_dependency'),
+        '#dependency' => array(
+          'edit-options-alter-trim' => array(1)
+        ),
+      );
+
       $form['alter']['html'] = array(
         '#type' => 'checkbox',
         '#title' => t('Field can contain HTML'),
@@ -384,26 +407,28 @@ class views_handler_field extends views_handler {
     $this->last_render = $value = $this->render($values);
     $this->original_value = $value;
 
-    $tokens = NULL;
-    if (!empty($this->options['alter']['alter_text']) && !empty($this->options['alter']['text'])) {
-      $tokens = $this->get_render_tokens();
-      $value = $this->render_altered($tokens);
-    }
-
-    if (!empty($this->options['alter']['trim']) && !empty($this->options['alter']['max_length'])) {
-      $value = $this->render_trim_text($value);
-    }
-
-    if (!empty($this->options['alter']['make_link']) && !empty($this->options['alter']['path'])) {
-      if (!isset($tokens)) {
-       $tokens = $this->get_render_tokens();
+    if ($this->allow_advanced_render()) {
+      $tokens = NULL;
+      if (!empty($this->options['alter']['alter_text']) && !empty($this->options['alter']['text'])) {
+        $tokens = $this->get_render_tokens();
+        $value = $this->render_altered($tokens);
       }
-      $value = $this->render_as_link($value, $tokens);
-    }
 
-    // This happens here so that render_as_link can get the unaltered value of
-    // this field as a token rather than the altered value.
-    $this->last_render = $value;
+      if (!empty($this->options['alter']['trim']) && !empty($this->options['alter']['max_length'])) {
+        $value = $this->render_trim_text($value);
+      }
+
+      if (!empty($this->options['alter']['make_link']) && !empty($this->options['alter']['path'])) {
+        if (!isset($tokens)) {
+         $tokens = $this->get_render_tokens();
+        }
+        $value = $this->render_as_link($value, $tokens);
+      }
+
+      // This happens here so that render_as_link can get the unaltered value of
+      // this field as a token rather than the altered value.
+      $this->last_render = $value;
+    }
 
     return $this->last_render;
   }
@@ -423,6 +448,14 @@ class views_handler_field extends views_handler {
    * Trim the field down to the specified length.
    */
   function render_trim_text($value) {
+    if (!empty($this->options['alter']['strip_tags'])) {
+      $value = strip_tags($value);
+      // NOTE: It's possible that some external fields might override the
+      // element type so if someone from, say, CCK runs into a bug here,
+      // this may be why =)
+      $this->definition['element type'] = 'span';
+    }
+
     if (drupal_strlen($value) <= $this->options['alter']['max_length']) {
       return $value;
     }
@@ -430,12 +463,12 @@ class views_handler_field extends views_handler {
     $value = drupal_substr($value, 0, $this->options['alter']['max_length']);
 
     if (!empty($this->options['alter']['word_boundary'])) {
-      if (preg_match ("/(.*)\b.+/u", $value, $matches)) {
+      if (preg_match("/(.*)\b.+/us", $value, $matches)) {
         $value = $matches[1];
-        // Strip spare space at the end.
-        $value = rtrim($value);
       }
     }
+    // Remove scraps of HTML entities from the end of a strings
+    $value = rtrim(preg_replace('/(?:<(?!.+>)|&(?!.+;)).*$/us', '', $value));
 
     if (!empty($this->options['alter']['ellipsis'])) {
       $value .= '...';
@@ -453,14 +486,6 @@ class views_handler_field extends views_handler {
    * the user.
    */
   function render_as_link($text, $tokens) {
-    // $path will be run through check_url() by l() so we do not need to
-    // sanitize it ourselves.
-    $path = $this->options['alter']['path'];
-    $path = strtr($path, $tokens);
-
-    $alt = $this->options['alter']['alt'];
-    $alt = strtr($alt, $tokens);
-
     $value = '';
 
     if (!empty($this->options['alter']['prefix'])) {
@@ -471,12 +496,38 @@ class views_handler_field extends views_handler {
       'html' => 'true',
     );
 
+    // $path will be run through check_url() by l() so we do not need to
+    // sanitize it ourselves.
+    $path = $this->options['alter']['path'];
+
+    // Use strip tags as there should never be HTML in the path.
+    $path = strip_tags(strtr($path, $tokens));
+
+    // Parse the URL and move any query and fragment parameters out of the path.
+    $url = parse_url($path);
+    if (isset($url['query'])) {
+      $path = strtr($path, array('?' . $url['query'] => ''));
+      $options['query'] = $url['query'];
+    }
+    if (isset($url['fragment'])) {
+      $path = strtr($path, array('#' . $url['fragment'] => ''));
+      $options['fragment'] = $url['fragment'];
+    }
+
+    $alt = $this->options['alter']['alt'];
+    $alt = strtr($alt, $tokens);
     if ($alt) {
       $options['attributes']['title'] = $alt;
       $options['attributes']['alt'] = $alt;
     }
 
-    // These can only be set internally at this time.
+    $class = $this->options['alter']['link_class'];
+    if ($class) {
+      $options['attributes']['class'] = $class;
+    }
+
+    // If the query and fragment were programatically assigned overwrite any
+    // parsed values.
     if (isset($this->options['alter']['query'])) {
       $options['query'] = $this->options['alter']['query'];
     }
@@ -593,9 +644,35 @@ class views_handler_field_broken extends views_handler_field {
  * Render a numeric value as a size.
  */
 class views_handler_field_file_size extends views_handler_field {
+  function option_definition() {
+    $options = parent::option_definition();
+
+    $options['file_size_display'] = array('default' => 'formatted');
+
+    return $options;
+  }
+
+  function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
+    $form['file_size_display'] = array(
+      '#title' => t('File size display'),
+      '#type' => 'select',
+      '#options' => array(
+        'formatted' => t('Formatted (in KB or MB)'),
+        'bytes' => t('Raw bytes'),
+      ),
+    );
+  }
+
   function render($values) {
     if ($values->{$this->field_alias}) {
-      return format_size($values->{$this->field_alias});
+      switch ($this->options['file_size_display']) {
+        case 'bytes':
+          return $values->{$this->field_alias};
+        case 'formatted':
+        default:
+          return format_size($values->{$this->field_alias});
+      }
     }
     else {
       return '';
