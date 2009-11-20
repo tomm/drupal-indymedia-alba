@@ -395,7 +395,7 @@ node.teaser .submitted {
  * Images
  */
 .node .content img {
-  padding: 5px;
+  margin: 0 0.5em 0 0.5em;
 }
 a.image:after {
   display: none;

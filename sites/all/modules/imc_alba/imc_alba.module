@@ -52,7 +52,7 @@ function imc_alba_show_user_articles($arg) {
 	
 	// show visible but not front page articles
 	$q = pager_query(db_rewrite_sql(
-		'SELECT n.nid, n.created, n.status, n.title, n.promote FROM {node} n WHERE n.type = "article" AND n.uid='.intval($uid).' ORDER BY n.created DESC'),
+		'SELECT n.nid, n.created, n.status, n.title, n.promote FROM {node} n WHERE n.type = "article" AND n.status=1 AND n.uid='.intval($uid).' ORDER BY n.created DESC'),
 				ARTICLES_DEFAULT_ITEMS, 0);
 	$out = "<h3>" . t('Articles authored by this user'). "</h3>\n";
 	$out .= "<p>" . t('Featured articles <strong>emphasized</strong>.'). "</p>\n";

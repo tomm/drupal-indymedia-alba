@@ -226,6 +226,7 @@ blockquote cite {
 }
 .node img {
 	max-width: 600px;
+	border: 1px solid black;
 }
 .imgcaption {
 	font-size: 0.8em;
