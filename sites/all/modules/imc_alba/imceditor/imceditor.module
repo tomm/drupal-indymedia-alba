@@ -38,10 +38,11 @@ function imceditor_block($op='list', $delta=0) {
 	} else if ($op == 'view') {
 		if (!user_access('moderate content')) return;
 		$num_proms = db_result(db_query("SELECT COUNT(*) FROM {imc_feature_proposal} WHERE active = 1"));
-		$num_to_moderate = db_result(db_query("SELECT COUNT(*) FROM
+		$num_rss_to_moderate = db_result(db_query("SELECT COUNT(*) FROM
 					{imc_node_moderation} WHERE
 					status=%d",
 					IMCEDITOR_NODE_STATUS_HIDDEN_PENDING_PROMOTION));
+		$num_to_moderate = db_result(db_query("SELECT COUNT(*) FROM {node} WHERE moderate=0"));
 		$out = '';
 
 		if ($num_proms) {
@@ -49,9 +50,14 @@ function imceditor_block($op='list', $delta=0) {
 				l(sprintf(t("There are %d feature proposals"), $num_proms), 'imceditor/proposals')
 				. '</div>';
 		}
+		if ($num_rss_to_moderate) {
+			$out .= '<div>' .
+				l(sprintf(t("There are %d articles imported from RSS feeds awaiting editing or deletion"), $num_rss_to_moderate), 'imceditor/pending')
+				. '</div>';
+		}
 		if ($num_to_moderate) {
 			$out .= '<div>' .
-				l(sprintf(t("There are %d articles imported from RSS feeds awaiting editing or deletion"), $num_to_moderate), 'imceditor/pending')
+				l(sprintf(t("There are %d items awaiting moderation"), $num_to_moderate), 'admin/content/imceditor/unmoderated')
 				. '</div>';
 		}
 
