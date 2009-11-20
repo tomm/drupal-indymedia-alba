@@ -10,6 +10,11 @@ function imceditor_moderation_operations($status) {
 		case 'deleted':
 			$ops['undelete'] = array(t('Un-delete'));
 			break;
+		case 'unmoderated':
+			$ops['markmoderated'] = array(t('Mark as moderated'));
+			$ops['hide'] = array(t('Hide'));
+			$ops['delete'] = array(t('Delete'));
+			break;
 		default:
 			$ops['hide'] = array(t('Hide'));
 			$ops['delete'] = array(t('Delete'));
@@ -25,6 +30,7 @@ function _imceditor_mod_op_gerund($op) {
 		case 'unhide': return 'unhiding';
 		case 'delete': return 'deleting';
 		case 'undelete': return 'undeleting';
+		case 'markmoderated': return 'marking as moderated';
 		default: return '??BUG??';
 	}
 }
@@ -62,17 +68,22 @@ function imceditor_admin_action_confirm_submit($form, &$form_state) {
 function imceditor_admin_action_confirm(&$form_state) {
 	$nids = &$form_state['nids'];
 	$form = array();
-	drupal_set_message($form_state['values']['operation']);
 
 	if (sizeof($nids) == 0) {
 		drupal_set_message(t("You did not select any articles."));
-		drupal_goto('admin/content/imceditor');
+		drupal_goto($_GET['q']);
 	} else {
 		$form['#nids'] = array();
 		foreach ($nids as $nid) {
 			$form['#nids'][] = $nid;
 		}
 		$form['#operation'] = $form_state['values']['operation'];
+		if ($form['#operation'] == 'markmoderated') {
+			imceditor_markmoderated($form['#nids']);
+			drupal_set_message(t('The articles have been marked as moderated.'));
+			drupal_goto('admin/content/imceditor/unmoderated');
+			return;
+		}
 		$gerund = _imceditor_mod_op_gerund($form['#operation']);
 		$form['reason'] = array(
 			'#title' => t('Reason for %%gerund_verb%%',
@@ -135,6 +146,7 @@ function imceditor_admin_overview($form_state) {
 	));
 	$filter = '';
 	switch ($visibility) {
+		case 'unmoderated': $filter = ' n.moderate = 0 '; break;
 		case 'deleted': $filter = sprintf(" imc_mod.status = %d ", IMCEDITOR_NODE_STATUS_DELETED); break;
 		case 'hidden': $filter = sprintf(" ( imc_mod.status = %d OR ( n.status = 0 AND imc_mod.status = NULL)) ", IMCEDITOR_NODE_STATUS_HIDDEN); break;
 		case 'promoted': $filter = ' n.status = 1 AND n.promote = 1 '; break;

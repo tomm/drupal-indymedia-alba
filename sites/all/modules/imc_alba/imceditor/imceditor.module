@@ -192,6 +192,13 @@ function imceditor_menu() {
 		'file' => 'imceditor.admin.inc',
 	);
 	// Tabs:
+	$items['admin/content/imceditor/unmoderated'] = array(
+		'title' => t('Awaiting moderation'),
+		'type' => MENU_LOCAL_TASK,
+		'weight' => -15,
+		'access arguments' => array('moderate content'),
+		'file' => 'imceditor.admin.inc',
+	);
 	$items['admin/content/imceditor/promoted'] = array(
 		'title' => t('Promoted'),
 		'type' => MENU_LOCAL_TASK,
@@ -421,6 +428,7 @@ function imceditor_propose_feature($nid, $comment) {
 		}
 	}
 	if ($do_propose) {
+		db_query("UPDATE {node} SET moderate = 1 WHERE nid = %d", $nid);
 		db_query("DELETE FROM {imc_feature_proposal} WHERE nid = %d", $nid);
 		db_query("INSERT INTO {imc_feature_proposal} (nid, active, comment, uid, timestamp) VALUES (%d,%d,'%s',%d,%d)",
 			$nid, 1, $comment, $user->uid, time());
@@ -459,7 +467,7 @@ function imceditor_unhide($nids, $reason) {
 	global $user;
 	foreach ($nids as $nid) {
 		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
-		db_query("UPDATE {node} SET status = 1 WHERE nid = %d", $nid);
+		db_query("UPDATE {node} SET status = 1, moderate = 1 WHERE nid = %d", $nid);
 		watchdog('imceditor', 'Hidden article unhidden with message \'%reason\'', 
 			array('%reason' => $reason),
 			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
@@ -473,18 +481,27 @@ function imceditor_hide($nids, $reason) {
 		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
 		db_query("INSERT INTO {imc_node_moderation} (nid, status, comment, uid, timestamp) VALUES (%d,%d,'%s',%d,%d)",
 			$nid, IMCEDITOR_NODE_STATUS_HIDDEN, $reason, $user->uid, time());
-		db_query("UPDATE {node} SET status = 0 WHERE nid = %d", $nid);
+		db_query("UPDATE {node} SET status = 0, moderate = 1 WHERE nid = %d", $nid);
 		watchdog('imceditor', 'Hidden article with message \'%reason\'', 
 			array('%reason' => $reason),
 			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
 	}
 	cache_clear_all();
 }
+function imceditor_markmoderated($nids) {
+	global $user;
+	foreach ($nids as $nid) {
+		db_query("UPDATE {node} SET moderate = 1 WHERE nid = %d", $nid);
+		watchdog('imceditor', 'User %username marked content as moderated', 
+			array('%username' => $user->name),
+			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
+	}
+}
 function imceditor_undelete($nids, $reason) {
 	global $user;
 	foreach ($nids as $nid) {
 		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
-		db_query("UPDATE {node} SET status = 1 WHERE nid = %d", $nid);
+		db_query("UPDATE {node} SET status = 1, moderate = 1 WHERE nid = %d", $nid);
 		watchdog('imceditor', 'Deleted article undeleted with message \'%reason\'', 
 			array('%reason' => $reason),
 			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
@@ -498,7 +515,7 @@ function imceditor_delete($nids, $reason) {
 		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
 		db_query("INSERT INTO {imc_node_moderation} (nid, status, comment, uid, timestamp) VALUES (%d,%d,'%s',%d,%d)",
 			$nid, IMCEDITOR_NODE_STATUS_DELETED, $reason, $user->uid, time());
-		db_query("UPDATE {node} SET status = 0 WHERE nid = %d", $nid);
+		db_query("UPDATE {node} SET status = 0, moderate = 1 WHERE nid = %d", $nid);
 		watchdog('imceditor', 'Deleted article with message \'%reason\'', 
 			array('%reason' => $reason),
 			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
