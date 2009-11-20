@@ -192,27 +192,27 @@ function imceditor_menu() {
 		'file' => 'imceditor.admin.inc',
 	);
 	// Tabs:
-	$items['admin/content/imceditor/promoted/%'] = array(
+	$items['admin/content/imceditor/promoted'] = array(
 		'title' => t('Promoted'),
 		'type' => MENU_LOCAL_TASK,
 		'weight' => -15,
 		'access arguments' => array('moderate content'),
 		'file' => 'imceditor.admin.inc',
 	);
-	$items['admin/content/imceditor/visible/%'] = array(
+	$items['admin/content/imceditor/visible'] = array(
 		'title' => t('Published'),
 		'type' => MENU_LOCAL_TASK,
 		'access arguments' => array('moderate content'),
 		'weight' => -10,
 	);
-	$items['admin/content/imceditor/hidden/%'] = array(
+	$items['admin/content/imceditor/hidden'] = array(
 		'title' => t('Hidden'),
 		'type' => MENU_LOCAL_TASK,
 		'weight' => -5,
 		'access arguments' => array('moderate content'),
 		'file' => 'imceditor.admin.inc',
 	);
-	$items['admin/content/imceditor/deleted/%'] = array(
+	$items['admin/content/imceditor/deleted'] = array(
 		'title' => t('Deleted'),
 		'type' => MENU_LOCAL_TASK,
 		'access arguments' => array('moderate content'),

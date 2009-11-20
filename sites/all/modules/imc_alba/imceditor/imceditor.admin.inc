@@ -108,7 +108,7 @@ function imceditor_admin_overview($form_state) {
 		return imceditor_admin_action_confirm($form_state);
 	}
 
-	// /admin/content/imceditor/$nodetype/$visibility
+	// /admin/content/imceditor/$visibility/$nodetype
 	$nodetype = arg(4);
 	$visibility = arg(3);
 

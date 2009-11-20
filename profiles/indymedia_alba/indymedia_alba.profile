@@ -180,10 +180,7 @@ function indymedia_alba_profile_tasks(&$task, $url) {
 	// menu_link_save's behaviour is very odd.
 	$model_link = array('options' => array("attributes" => array('title'=>'')));
 	$link = $model_link + array('plid'=>0,'mlid'=>0, 'weight' => 1,
-			'link_path' => 'admin/content/imceditor/visible/nodecomment', 'link_title' => t('Moderate Comments'));
-	menu_link_save($link);
-	$link = $model_link + array('plid'=>0,'mlid'=>0, 'weight' => 2,
-			'link_path' => 'admin/content/imceditor/visible/article', 'link_title' => t('Moderate Articles'));
+			'link_path' => 'admin/content/imceditor/visible', 'link_title' => t('Moderate Content'));
 	menu_link_save($link);
 	$link = $model_link + array('menu_name' => 'primary-links', 'weight' => 0, 'link_path' => '<front>', 'link_title' => t('Front Page'));
 	menu_link_save($link);
