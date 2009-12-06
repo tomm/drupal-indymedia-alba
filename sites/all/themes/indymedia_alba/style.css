@@ -396,3 +396,11 @@ div.block h2.title a {
 	clear: left;
 }
 
+.front-node-teaser-right h2.title,
+.front-node-teaser-left h2.title {
+	font-size: 120%;
+}
+
+.node-type-article #title {
+	font-size: 200%;
+}
