@@ -1,0 +1,215 @@
+<?php
+// $Id: similarterms.install,v 1.5 2009/01/27 02:18:36 rmiddle Exp $
+
+/**
+ * @file
+ * Similar By Terms install file
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function similarterms_install() {
+  $result = drupal_install_schema('similarterms');
+
+  if (count($result) > 0) {
+    drupal_set_message(t('similarterms module installed.'));
+  }
+  else {
+    drupal_set_message(t('similarterms table creation failed. Please "uninstall" the module and retry.'));
+  }
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function similarterms_schema() {
+  $schema['cache_similarterms'] = array(
+    'module' => 'similarterms',
+    'description' => t('Cache table for the Similar by Terms Module.'),
+    'fields' => array(
+      'cid' => array(
+        'description' => t('Primary Key: Unique cache ID.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''),
+      'data' => array(
+        'description' => t('A collection of data to cache.'),
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big'),
+      'expire' => array(
+        'description' => t('A Unix timestamp indicating when the cache entry should expire, or 0 for never.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0),
+      'created' => array(
+        'description' => t('A Unix timestamp indicating when the cache entry was created.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0),
+      'headers' => array(
+        'description' => t('Any custom HTTP headers to be added to cached data.'),
+        'type' => 'text',
+        'not null' => FALSE),
+      'serialized' => array(
+        'description' => t('A flag to indicate whether content is serialized (1) or not (0).'),
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'default' => 0)
+    ),
+    'indexes' => array('expire' => array('expire')),
+    'primary key' => array('cid'),
+  );
+  $schema['similarterms_override'] = array(
+    'module' => 'similarterms',
+    'description' => 'Override information for the similarterms blocks implemented as node type.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'Node identifier',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'vid' => array(
+        'description' => 'Version identifier',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'path' => array(
+        'description' => 'Node Id to point to of overide',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+      ),
+      'weight' => array(
+        'description' => 'Node weight',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+      ),
+    ),
+    'indexes' => array(
+      'nid' => array('nid'),
+      'vid' => array('vid'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function similarterms_uninstall() {
+  // Get the variables that have a tid at the end.
+  // @@@ I'm not crazy about this, but it works.
+  $result = db_query("SELECT v.name FROM {variable} v WHERE v.name LIKE ('simterms_%') OR v.name LIKE ('similarterms_%')");
+  while ($name = db_result($result)) {
+    variable_del($name);
+  }
+  drupal_uninstall_schema('similarterms');
+  drupal_set_message(t('similarterms module uninstalled.'));
+}
+
+/**
+ * Implementation of hook_update().
+ */
+function similarterms_update_6102() {
+  $schema['cache_similarterms'] = array(
+    'module' => 'similarterms',
+    'description' => t('Cache table for the Similar by Terms Module.'),
+    'fields' => array(
+      'cid' => array(
+        'description' => t('Primary Key: Unique cache ID.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''),
+      'data' => array(
+        'description' => t('A collection of data to cache.'),
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big'),
+      'expire' => array(
+        'description' => t('A Unix timestamp indicating when the cache entry should expire, or 0 for never.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0),
+      'created' => array(
+        'description' => t('A Unix timestamp indicating when the cache entry was created.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0),
+      'headers' => array(
+        'description' => t('Any custom HTTP headers to be added to cached data.'),
+        'type' => 'text',
+        'not null' => FALSE),
+      'serialized' => array(
+        'description' => t('A flag to indicate whether content is serialized (1) or not (0).'),
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'default' => 0)
+    ),
+    'indexes' => array('expire' => array('expire')),
+    'primary key' => array('cid'),
+  );
+  $schema['similarterms_override'] = array(
+    'module' => 'similarterms',
+    'description' => 'Override information for the similarterms blocks implemented as node type.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'Node identifier',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'vid' => array(
+        'description' => 'Version identifier',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'path' => array(
+        'description' => 'Node Id to point to of overide',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+      ),
+      'weight' => array(
+        'description' => 'Node weight',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+      ),
+    ),
+    'indexes' => array(
+      'nid' => array('nid'),
+      'vid' => array('vid'),
+    ),
+  );
+  $ret = array();
+  db_create_table($ret, 'cache_similarterms', $schema['cache_similarterms']);
+  db_create_table($ret, 'similarterms_override', $schema['similarterms_override']);
+  return $ret;
+}
+
+/**
+ * Implementation of hook_update().
+ */
+function similarterms_update_6101() {
+  $ret = array();
+  cache_clear_all('*', 'cache_block', TRUE);
+  return $ret;
+}
