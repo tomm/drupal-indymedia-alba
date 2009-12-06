@@ -221,7 +221,7 @@ function similarterms_list($vocid = 0, $nid = NULL) {
       }
 
       $sql .= 'AND n.status = 1 ';
-      $sql .= 'AND n.moderate = 0 ';
+      //$sql .= 'AND n.moderate = 0 ';
       $sql .= "AND (n.language = '' OR n.language = '%s') ";
       $args[] = $node_obj->language;
       $sql .= 'GROUP BY n.nid, n.title, n.created ';
