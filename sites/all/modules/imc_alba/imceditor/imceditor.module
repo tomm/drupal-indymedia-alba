@@ -82,6 +82,9 @@ function imceditor_cron()
 				WHERE m.status=%d AND n.created < %d",
 				IMCEDITOR_NODE_STATUS_DELETED,
 				time() - 60*60*24*$days_to_expire_deleted);
+		// need to be superuser to delete stuff
+		global $user;
+		$user->uid = 1;
 		while ($a = db_fetch_array($r)) {
 			node_delete($a['nid']);
 		}

@@ -22,6 +22,15 @@ function imc_alba_menu() {
 
 function imc_alba_admin() {
 	$form = array();
+	$form["imc_alba_days_to_close_commenting"] = array(
+		'#type' => 'select',
+		'#title' => t('Close commenting to items after how long'),
+		'#default_value' => variable_get("imc_alba_days_to_close_commenting", 0),
+		'#options' => array(
+			0 => t('Never'), 7 => t('1 week'), 30 => t('1 month'),
+			60 => t('2 months'), 90 => t('3 months'), 180 => t('6 months'),
+			),
+		);
 	$form['members'] = array(
 		'#type' => 'fieldset',
 		'#title' => t('Members'),
@@ -83,5 +92,10 @@ function imc_alba_cron() {
 			db_query("INSERT INTO {users_roles} (uid, rid) VALUES (%d, %d)",
 					$a['uid'], $member_rid);
 		}	
+	}
+	$days_to_close_commenting = variable_get("imc_alba_days_to_close_commenting", 0);
+	if ($days_to_close_commenting) {
+		$time_ago = time() - 60*60*24*$days_to_close_commenting;
+		db_query("UPDATE {node} SET comment=1 WHERE created < %d AND comment=2", $time_ago);
 	}
 }
