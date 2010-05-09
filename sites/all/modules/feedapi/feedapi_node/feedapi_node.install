@@ -1,5 +1,10 @@
 <?php
-// $Id: feedapi_node.install,v 1.1.2.13.2.9 2009/02/03 11:04:29 aronnovak Exp $
+// $Id: feedapi_node.install,v 1.1.2.13.2.11 2009/07/02 16:38:16 aronnovak Exp $
+
+/**
+ * @file
+ * Install file for FeedAPI Node module.
+ */
 
 /**
  * Implementation of hook_schema().
@@ -44,7 +49,7 @@ function feedapi_node_schema() {
       'guid' => array(array('guid', 255)),
     ),
   );
-  
+
   $schema['feedapi_node_item_feed'] = array(
     'description' => t('Bridge table; maps feed items to feeds.'),
     'fields' => array(
@@ -67,7 +72,7 @@ function feedapi_node_schema() {
       'feed_item_nid' => array('feed_item_nid'),
     ),
   );
-  
+
   return $schema;
 }
 
@@ -92,6 +97,9 @@ function feedapi_node_uninstall() {
   menu_rebuild();
 }
 
+/**
+ * Create feedapi content-type with sane default values.
+ */
 function _feedapi_node_install_type_create() {
   // Create an additional node type.
   $feed_node_type = array(
@@ -108,7 +116,7 @@ function _feedapi_node_install_type_create() {
   node_type_save($feed_node_type);
   // Default to not promoted.
   variable_set('node_options_feed', array('status'));
-  
+
   // Adding default FeedAPI settings.
   $preset = unserialize('a:3:{s:7:"enabled";s:1:"1";s:12:"items_delete";s:1:"0";s:10:"processors";a:1:{s:12:"feedapi_node";a:7:{s:7:"enabled";s:1:"1";s:6:"weight";s:1:"0";s:12:"content_type";s:5:"story";s:9:"node_date";s:4:"feed";s:7:"promote";s:1:"0";s:9:"list_feed";s:1:"3";s:4:"user";s:5:"admin";}}}');
   if (is_array(variable_get('feedapi_settings_feed', FALSE))) {

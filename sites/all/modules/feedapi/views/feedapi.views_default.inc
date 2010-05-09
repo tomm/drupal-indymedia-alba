@@ -1,5 +1,5 @@
 <?php
-// $Id: feedapi.views_default.inc,v 1.1.2.2 2009/02/03 10:18:16 aronnovak Exp $
+// $Id: feedapi.views_default.inc,v 1.1.2.3 2009/06/05 13:32:48 aronnovak Exp $
 /**
  * @file
  * FeedAPI Views - Default Views
@@ -30,14 +30,14 @@ function feedapi_views_default_views() {
       'field' => 'title',
       'relationship' => 'none',
     ),
-    'checked' => array(
-      'label' => 'Last refresh',
-      'date_format' => 'time ago',
+    'next_refresh_time' => array(
+      'label' => 'Scheduled refresh',
+      'date_format' => 'small',
       'custom_date_format' => '',
       'exclude' => 0,
-      'id' => 'checked',
+      'id' => 'next_refresh_time',
       'table' => 'feedapi',
-      'field' => 'checked',
+      'field' => 'next_refresh_time',
       'relationship' => 'none',
     ),
     'delete_node' => array(
@@ -84,12 +84,12 @@ function feedapi_views_default_views() {
     ),
   ));
   $handler->override_option('sorts', array(
-    'checked' => array(
+    'next_refresh_time' => array(
       'order' => 'DESC',
       'granularity' => 'second',
-      'id' => 'checked',
+      'id' => 'next_refresh_time',
       'table' => 'feedapi',
-      'field' => 'checked',
+      'field' => 'next_refresh_time',
       'relationship' => 'none',
     ),
   ));
@@ -126,7 +126,7 @@ function feedapi_views_default_views() {
     'order' => 'asc',
     'columns' => array(
       'title' => 'title',
-      'checked' => 'checked',
+      'next_refresh_time' => 'next_refresh_time',
       'delete_node' => 'delete_node',
       'purge_node' => 'delete_node',
       'refresh_node' => 'delete_node',
@@ -137,7 +137,7 @@ function feedapi_views_default_views() {
         'sortable' => 0,
         'separator' => '',
       ),
-      'checked' => array(
+      'next_refresh_time' => array(
         'sortable' => 0,
         'separator' => '',
       ),

@@ -1,5 +1,10 @@
 <?php
-// $Id: parser_common_syndication.install,v 1.1.2.4.2.6 2008/09/10 08:27:51 aronnovak Exp $
+// $Id: parser_common_syndication.install,v 1.1.2.4.2.10 2009/08/04 13:41:20 aronnovak Exp $
+
+/**
+ * @file
+ * Adds it to the content-type configuration
+ */
 
 /**
  * Implementation of hook_schema().
@@ -8,10 +13,10 @@ function parser_common_syndication_schema() {
   $schema['parser_common_syndication'] = array(
     'fields' => array(
       'url' => array(
-        'description' => t('The URL of the feed'),
+        'description' => t('The MD5 hash of feed URL'),
         'type' => 'varchar',
         'not null' => TRUE,
-        'length' => '255'),
+        'length' => '32'),
       'etag' => array(
         'type' => 'text',
         'not null' => FALSE),
@@ -29,7 +34,7 @@ function parser_common_syndication_schema() {
  */
 function parser_common_syndication_install() {
   drupal_install_schema('parser_common_syndication');
-  
+
   // Set the parser of defaultly shipped processors if it's not done previously.
   $default_processors = array('feed');
   $set_common = array("parsers" => array("parser_common_syndication" => array("enabled" => TRUE, "weight" => 0)));
@@ -47,7 +52,7 @@ function parser_common_syndication_install() {
  */
 function parser_common_syndication_uninstall() {
   drupal_uninstall_schema('parser_common_syndication');
-  
+
   // Empty cache directory.
   $cache_dir = variable_get('parser_common_syndication_cache', FALSE);
   if (is_dir($cache_dir)) {
@@ -60,6 +65,20 @@ function parser_common_syndication_uninstall() {
     closedir($dp);
     rmdir($cache_dir);
   }
-  
+
   variable_del('parser_common_syndication_cache');
+}
+
+/**
+ * Instead of textual URL, store MD5 in the parser_common_syndication table
+ */
+function parser_common_syndication_update_6101() {
+  $ret = array();
+  db_query('DELETE FROM {parser_common_syndication}');
+  db_change_field($ret, 'parser_common_syndication', 'url', 'url', array(
+        'description' => t('The MD5 hash of feed URL'),
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'length' => '32'));
+  return $ret;
 }

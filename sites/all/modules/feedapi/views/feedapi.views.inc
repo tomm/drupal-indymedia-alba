@@ -1,5 +1,5 @@
 <?php
-// $Id: feedapi.views.inc,v 1.1.2.4 2009/01/23 13:47:10 alexb Exp $
+// $Id: feedapi.views.inc,v 1.1.2.7 2009/06/05 13:32:48 aronnovak Exp $
 
 /**
  * @file
@@ -34,9 +34,9 @@ function feedapi_views_data() {
       'click sortable' => TRUE,
      ),
   );
-  $data['feedapi']['checked'] = array(
-    'title' => t('Last refresh'),
-    'help' => t('The date when the feed was last refreshed.'),
+  $data['feedapi']['next_refresh_time'] = array(
+    'title' => t('Next refresh'),
+    'help' => t('The date when the feed is scheduled to be refreshed earliest.'),
     'field' => array(
       'handler' => 'views_handler_field_date',
       'click sortable' => TRUE,
@@ -57,7 +57,7 @@ function feedapi_views_data() {
     ),
   );
   $data['feedapi']['url_unique'] = array(
-    'field' => 'url',
+    'real field' => 'url',
     'title' => t('Unique URL'),
     'help' => t('The feed that generated this node'),
     'filter' => array(
@@ -98,7 +98,7 @@ function feedapi_views_data() {
 function feedapi_views_handlers() {
   return array(
     'info' => array(
-      'path' => drupal_get_path('module', 'feedapi') . '/views/handlers',
+      'path' => drupal_get_path('module', 'feedapi') .'/views/handlers',
     ),
     'handlers' => array(
       // field handlers

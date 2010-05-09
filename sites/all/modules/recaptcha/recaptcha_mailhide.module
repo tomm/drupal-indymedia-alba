@@ -1,5 +1,5 @@
 <?php
-/* $Id: recaptcha_mailhide.module,v 1.1.2.7.2.1 2007/12/03 16:38:56 robloach Exp $ */
+/* $Id: recaptcha_mailhide.module,v 1.1.2.7.2.5 2009/09/29 02:51:30 robloach Exp $ */
 
 /**
  * @file
@@ -7,9 +7,7 @@
  */
 
 /**
-* Display help and module information
-* @param section which section of the site we're displaying help
-* @return help text for section
+* Implementation of hook_help().
 */
 function recaptcha_mailhide_help($path, $arg) {
   $output = '';
@@ -31,10 +29,10 @@ function recaptcha_mailhide_help($path, $arg) {
       break;
   }
   return $output;
-} // function recaptcha_mailhide_help
+}
 
 /**
- * reCAPTCHA implementation of hook_filter
+ * Implementation of hook_filter().
  */ 
 function recaptcha_mailhide_filter($op, $delta = 0, $format = -1, $text = '') {
   switch ($op) {
@@ -45,8 +43,7 @@ function recaptcha_mailhide_filter($op, $delta = 0, $format = -1, $text = '') {
       return recaptcha_mailhide_filter_tips($delta, $format);
 
     case 'settings':
-        require_once('recaptcha.inc');
-        @(include_once('recaptcha/recaptchalib.php')) or _recaptcha_library_not_found();
+        _recaptcha_mailhide_load_library();
         $form['filter_recaptcha'] = array('#type' => 'fieldset', '#title' => t('reCAPTCHA Mailhide Keys'), '#collapsible' => TRUE, '#collapsed' => FALSE);
         $form['filter_recaptcha']['recaptcha_mailhide_public_key'] = array(
           '#type' => 'textfield',
@@ -66,16 +63,15 @@ function recaptcha_mailhide_filter($op, $delta = 0, $format = -1, $text = '') {
       break;
 
     case 'process':
-      require_once('recaptcha.inc');
       global $_recaptcha_mailhide_public_key, $_recaptcha_mailhide_private_key, $_recaptcha_mailhide_nokey_warn;
-      @(include_once('recaptcha/recaptchalib.php')) or _recaptcha_library_not_found();
+      _recaptcha_mailhide_load_library();
       $_recaptcha_mailhide_public_key = variable_get('recaptcha_mailhide_public_key', '');
       $_recaptcha_mailhide_private_key = variable_get('recaptcha_mailhide_private_key', '');
 
       $text   = ' '. $text .' ';
       $text = preg_replace_callback("!(<p>|<li>|<br\s*/?>|[ \n\r\t\(])([A-Za-z0-9._-]+@[A-Za-z0-9._+-]+\.[A-Za-z]{2,4})([.,?]?)(?=(</p>|</li>|<br\s*/?>|[ \n\r\t\)]))!i", '_recaptcha_replace', $text);
       $text = substr($text, 1, -1);
-      
+
       unset($_recaptcha_mailhide_public_key);
       unset($_recaptcha_mailhide_private_key);
       unset($_recaptcha_mailhide_nokey_warn);
@@ -87,7 +83,7 @@ function recaptcha_mailhide_filter($op, $delta = 0, $format = -1, $text = '') {
 }
 
 /**
- * reCAPTCHA implementation of hook_filter_tips
+ * Implementation of hook_filter_tips().
  */
 function recaptcha_mailhide_filter_tips($delta, $format, $long = false) {
   return t('E-Mail addresses are hidden with <a href="@url" target="_blank">reCAPTCHA Mailhide</a>.', array('@url' => 'http://mailhide.recaptcha.net/'));
@@ -95,7 +91,7 @@ function recaptcha_mailhide_filter_tips($delta, $format, $long = false) {
 
 /**
  * Private reCAPTCHA function to replace an email regex match
- */ 
+ */
 function _recaptcha_replace($match) {
   global $_recaptcha_mailhide_public_key, $_recaptcha_mailhide_private_key, $_recaptcha_mailhide_nokey_warn;
   // recaptchalib will die if we invoke without setting the keys. Fail gracefully in this case.
@@ -110,4 +106,11 @@ function _recaptcha_replace($match) {
     $email = recaptcha_mailhide_html($_recaptcha_mailhide_public_key, $_recaptcha_mailhide_private_key, $match[2]);
   }
   return $match[1] . $email . $match[3];
+}
+
+/**
+ * Load the recaptcha library.
+ */
+function _recaptcha_mailhide_load_library() {
+  module_load_include('php', 'recaptcha', 'recaptcha/recaptchalib');
 }

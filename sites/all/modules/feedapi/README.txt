@@ -1,4 +1,4 @@
-; $Id: README.txt,v 1.1.2.6.2.7 2008/11/10 10:46:54 aronnovak Exp $
+; $Id: README.txt,v 1.1.2.6.2.8 2009/07/02 16:38:15 aronnovak Exp $
 
 FeedAPI
 -------
@@ -77,14 +77,14 @@ items.
 Developers
 ----------
 
-parser_simplepie.module contains a stop gap patch that won't be necessary for most 
+parser_simplepie.module contains a stop gap patch that won't be necessary for most
 installations (issue http://drupal.org/node/205706). If you would like to use automatic
 feed type detection, please remove the lines
 
 // Stop gap for simplefeed.inc version <= 1.1
 return "XML feed";
 
-from your parser_simplepie.module and use simplepie > 1.1 version, if you experience 
+from your parser_simplepie.module and use simplepie > 1.1 version, if you experience
 a whitescreen on refreshing feeds.
 
 Author/credits

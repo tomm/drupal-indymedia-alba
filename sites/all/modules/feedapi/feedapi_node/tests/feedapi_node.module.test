@@ -1,16 +1,27 @@
 <?php
-// $Id: feedapi_node.module.test,v 1.1.4.13 2008/12/04 21:35:20 aronnovak Exp $
+// $Id: feedapi_node.module.test,v 1.1.4.26 2009/08/11 07:05:13 aronnovak Exp $
 
 /**
  * Class for testing feedapi_node.
  * It also tests FeedAPI and SimplePie parsers.
  */
-class FeedAPI_Node_Tests extends DrupalTestCase {
+class FeedAPITestsCase extends DrupalWebTestCase {
   
   var $info;
 
-  function get_info() {
-    return array('name' => 'FeedAPI Node basic functions', 'desc' => "Refresh a feed and find out if it's okay. Uses normal node submit form and simplified too. Uses both parsers." , 'group' => 'FeedAPI');
+  /**
+   * Implementation of getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('FeedAPI Node basic functions'),
+      'description' => t('Refresh a feed and find out if it\'s okay. Uses normal node submit form and simplified too. Uses both parsers.'),
+      'group' => t('FeedAPI'),
+    );
+  }
+  
+  function setUp() {
+    parent::setUp('feedapi', 'feedapi_node', 'parser_common_syndication', 'parser_simplepie', 'upload');
   }
   
   /**
@@ -24,15 +35,15 @@ class FeedAPI_Node_Tests extends DrupalTestCase {
     if ($type_edit == TRUE) {
       $perms = array_merge($perms, array('administer content types', 'access administration pages'));
     }
-    $user = $this->drupalCreateUserRolePerm($perms);
+    $user = $this->drupalCreateUser($perms);
     $this->drupalGet('logout');
-    $this->drupalLoginUser($user);
+    $this->drupalLogin($user);
   }
   
   /**
    * Create a new content-type for creating the feed node
    */
-  function create_type($parser) {
+  function create_type($parser, $file_upload = FALSE) {
     $this->info->type = 'test'. str_replace('_', '', $this->randomName());
     $this->info->name = 'Feed'. str_replace('_', ' ', $this->randomName());
     $this->info->description = t('Aggregates RSS or Atom feeds. Items from these feeds will be turned into nodes.');
@@ -43,21 +54,15 @@ class FeedAPI_Node_Tests extends DrupalTestCase {
     $this->info->body_label = t('Body');
     $this->info->min_word_count = 0;
     $this->info->custom = TRUE;
-    $type_ret = node_type_save($this->info);
-    $this->assertEqual($type_ret, SAVED_NEW, 'The temporary content-type is created. The content-type name is: '. $this->info->type);
-    node_types_rebuild();
-    menu_rebuild();
+    $type = $this->drupalCreateContentType((array) $this->info);
+    $this->assertTrue(is_object($type), 'The temporary content-type is created. The content-type name is: '. $this->info->type);
     // Adding default FeedAPI settings
-    variable_set('feedapi_settings_'. $this->info->type, unserialize('a:3:{s:7:"enabled";s:1:"1";s:7:"parsers";a:1:{s:'. strlen($parser) .':"'. $parser .'";a:3:{s:7:"enabled";s:1:"1";s:6:"weight";s:1:"0";s:4:"test";s:1:"3";}}s:10:"processors";a:2:{s:12:"feedapi_node";a:5:{s:6:"weight";s:1:"0";s:12:"content_type";s:5:"story";s:9:"node_date";s:4:"feed";s:7:"promote";s:1:"3";s:7:"enabled";s:1:"1";}s:18:"feedapi_aggregator";a:2:{s:6:"weight";s:1:"0";s:5:"block";s:1:"3";}}}'));
-  }
-  
-  /**
-   * Deletes the previously created content-type.
-   */
-  function delete_type() {
-    node_types_rebuild();
-    // Remove temporary content-type
-    node_type_delete($this->info->type);
+    if ($file_upload) {
+      variable_set('feedapi_settings_'. $this->info->type, unserialize('a:4:{s:7:"enabled";s:1:"1";s:13:"upload_method";s:6:"upload";s:7:"parsers";a:1:{s:'. strlen($parser) .':"'. $parser .'";a:3:{s:7:"enabled";s:1:"1";s:6:"weight";s:1:"0";s:4:"test";s:1:"3";}}s:10:"processors";a:2:{s:12:"feedapi_node";a:4:{s:6:"weight";s:1:"0";s:12:"content_type";s:5:"story";s:9:"node_date";s:4:"feed";s:7:"enabled";s:1:"1";}s:18:"feedapi_aggregator";a:2:{s:6:"weight";s:1:"0";s:5:"block";s:1:"3";}}}'));
+    }
+    else {
+      variable_set('feedapi_settings_'. $this->info->type, unserialize('a:3:{s:7:"enabled";s:1:"1";s:7:"parsers";a:1:{s:'. strlen($parser) .':"'. $parser .'";a:3:{s:7:"enabled";s:1:"1";s:6:"weight";s:1:"0";s:4:"test";s:1:"3";}}s:10:"processors";a:2:{s:12:"feedapi_node";a:4:{s:6:"weight";s:1:"0";s:12:"content_type";s:5:"story";s:9:"node_date";s:4:"feed";s:7:"enabled";s:1:"1";}s:18:"feedapi_aggregator";a:2:{s:6:"weight";s:1:"0";s:5:"block";s:1:"3";}}}'));
+    }
   }
   
   /**
@@ -108,6 +113,7 @@ class FeedAPI_Node_Tests extends DrupalTestCase {
 
       // Check if the entry is in the DB
       $nid = db_result(db_query("SELECT nid FROM {feedapi} WHERE url = '%s'", $feed_url));
+      $vid = db_result(db_query_range("SELECT vid FROM {feedapi} WHERE nid = %d ORDER by vid DESC", $nid, 1, 1));
       $this->assertEqual(is_numeric($nid), TRUE, 'The feed node is in the database');
       $feed_node = node_load(array('nid' => $nid));
       $this->assertEqual(is_object($feed_node->feed), TRUE, 'The feed can be loaded.');
@@ -119,7 +125,7 @@ class FeedAPI_Node_Tests extends DrupalTestCase {
       // Disable feed item expiring
       $settings = feedapi_get_settings($this->info->type, $nid);
       $settings['items_delete'] = FEEDAPI_NEVER_DELETE_OLD;
-      _feedapi_store_settings(array('nid' => $nid), $settings);
+      _feedapi_store_settings(array('vid' => $vid), $settings);
 
       // Refresh the feed
       $this->drupalGet("node/$nid/refresh");
@@ -186,7 +192,6 @@ class FeedAPI_Node_Tests extends DrupalTestCase {
       db_query("UPDATE {blocks} SET status = 0 WHERE status = 1");
       $region = array_pop(array_keys(system_region_list(variable_get('theme_default', FALSE)))); // First region which is ok for the current theme
       db_query("UPDATE {blocks} SET status = 1, region='%s' WHERE module = 'feedapi' AND delta = '%s'", $region, $this->info->type);
-      cache_clear_all();
       
       // Check for existing block showing up
       $this->drupalGet('node');
@@ -195,7 +200,7 @@ class FeedAPI_Node_Tests extends DrupalTestCase {
       // Submit feed via simplified block
       $feed_url = "http://novaak.net/test_feed.rss?". $this->randomName();
       $edit = array(
-      'url' => $feed_url,
+        'url' => $feed_url,
       );
       $this->drupalPost('node', $edit, 'Add');
       $this->assertText(t('Link to site'), 'The node is created via the simplified form block.');
@@ -205,11 +210,11 @@ class FeedAPI_Node_Tests extends DrupalTestCase {
       $this->assertEqual(is_numeric($nid), TRUE, 'The feed node is in the database');
 
       if (is_numeric($nid)) {
-        $values = db_fetch_array(db_query("SELECT settings, feed_type, checked, half_done FROM {feedapi} WHERE nid = %d", $nid));
+        $values = db_fetch_array(db_query("SELECT settings, feed_type, next_refresh_time, half_done FROM {feedapi} WHERE nid = %d", $nid));
         $sane_default = TRUE;
         $sane_default = $sane_default || (is_array($values['settings']) && count($values['settings']) > 1);
         $sane_default = $sane_default || ($values['feed_type'] == 'XML feed');
-        $sane_default = $sane_default || ($values['checked'] == 0);
+        $sane_default = $sane_default || ($values['next_refresh_time'] == 0);
         $sane_default = $sane_default || ($values['half_done'] == 0);
         $this->assertIdentical($sane_default, TRUE, "The feed has sane default values in the database table");
         node_delete($nid);
@@ -221,12 +226,10 @@ class FeedAPI_Node_Tests extends DrupalTestCase {
         db_query("UPDATE {blocks} SET status = 1 WHERE module = '%s' AND delta ='%s'", $to_enable_block['module'], $to_enable_block['delta']);
       }
       
-      // Test refresh on feed creation and promoted items
-      $to_promote = rand(1, 20);
+      // Test refresh on feed creation
       $edit = array(
         'feedapi[feedapi_url]' => $feed_url,
         'feedapi[refresh_on_create]' => TRUE,
-        'feedapi[processors][feedapi_node][promote]' => $to_promote,
       );
       $this->drupalPost('node/add/'. $this->info->type, $edit, 'Save');
       
@@ -234,33 +237,78 @@ class FeedAPI_Node_Tests extends DrupalTestCase {
       $nid = db_result(db_query("SELECT nid FROM {feedapi} WHERE url = '%s'", $feed_url));
       $this->assertEqual(is_numeric($nid), TRUE, 'The feed node is in the database');
       
-      // Test promoted value
-      $sum = db_result(db_query("SELECT COUNT(*) FROM {feedapi_node_item_feed} WHERE feed_nid = %d", $nid));
-      $promoted = db_result(db_query("SELECT COUNT(*) FROM node n LEFT JOIN feedapi_node_item_feed f ON n.nid = f.feed_item_nid WHERE promote = 1 and feed_nid = %d", $nid));
-      $this->assertEqual(min($sum, $to_promote), $promoted, t('The proper number of items are promoted to the frontpage'));
-      
       $this->drupalPost("node/$nid/purge", array(), "Yes");
       // Remove the unwanted rubbish
       node_delete($nid);
 
-      $this->delete_type();
-      // Check if the type deletion occurs variable deletion
-      $this->assertIdentical(FALSE, variable_get('feedapi_settings_'. $this->info->type, FALSE), 'The content-type\'s setting variable is successfully deleted.');
-
-      // Make sure that the variables are loaded from the DB
-      variable_init();
-
-      // Restore blocks - according to the deleted content-type
-      _block_rehash();
       $this->drupalGet('admin/build/block');
     }
     menu_rebuild();
   }
   
   /**
+   * Checks if the revision support works correctly
+   */
+  function testFeedAPI_Node_Revisions() {
+    $parsers_ok = $this->get_parsers();
+    // Create a new content-type for creating the feed node
+    $this->create_type(array_pop($parsers_ok));
+    // Login with a user who has FeedAPI rights
+    $this->feedapi_user();
+
+    $settings = feedapi_get_settings($this->info->type);
+    
+    // Create the initial revision, first submission
+    $feed_url = "http://novaak.net/test_feed.rss?". $this->randomName();
+    $edit = array(
+      'feedapi[processors][feedapi_node][node_date]' => 'current',
+      'feedapi[feedapi_url]' => $feed_url,
+    );
+    $this->drupalPost('node/add/'. $this->info->type, $edit, 'Save');
+    $this->assertText(t('Link to site'), 'The node is created.');
+    $nid = db_result(db_query("SELECT nid FROM {feedapi} WHERE url = '%s'", $feed_url));
+    $vids = array();
+    // Get the current vid
+    $vids[] = db_result(db_query("SELECT vid FROM {node} WHERE nid = %d", $nid));
+    
+    // Edit the node, change a setting, create a new revision
+    $edit = array(
+      'feedapi[processors][feedapi_node][node_date]' => 'feed',
+      'revision' => TRUE,
+      'log' => 'changelog blabla',
+    );
+    $this->drupalPost('node/'. $nid .'/edit', $edit, 'Save');
+    $vids[] = db_result(db_query("SELECT vid FROM {node} WHERE nid = %d", $nid));
+    
+    $this->assertTrue($vids[0] != $vids[1], 'Node has two separate revisions now.');
+    $num = db_result(db_query('SELECT COUNT(*) FROM {feedapi} WHERE nid = %d', $nid));
+    $this->assertTrue($num == 2, 'Feed table contains the two revision entries.');
+    
+    $settings = array();
+    $settings[] = feedapi_get_settings(NULL, $vids[0], TRUE);
+    $settings[] = feedapi_get_settings(NULL, $vids[1], TRUE);
+    $this->assertTrue($settings[0]['processors']['feedapi_node']['node_date'] == 'current', 'The initial revision has correct setting');
+    $this->assertTrue($settings[1]['processors']['feedapi_node']['node_date'] == 'feed', 'The first revision has correct setting');
+    
+    // Do a revert to the initial revision
+    $this->drupalPost('node/'. $nid .'/revisions/'. $vids[0] .'/revert', array(), 'Revert');
+    $vids[] = db_result(db_query("SELECT vid FROM {node} WHERE nid = %d", $nid));
+    $settings[] = feedapi_get_settings(NULL, $vids[2]);
+    $this->assertTrue($settings[2]['processors']['feedapi_node']['node_date'] == 'current', 'The reverted revision has correct setting.');
+    
+    $this->drupalPost("node/$nid/edit", $edit, t('Delete'));
+    $this->drupalPost("node/$nid/delete", array(), t('Delete'));
+    $num = db_result(db_query('SELECT COUNT(*) FROM {feedapi} WHERE nid = %d', $nid));
+    $this->assertTrue($num == 0, 'All revision entries were deleted from FeedAPI table');
+  }
+  
+  /**
    * Checks if the OPML export page is basically sane.
    */
   function testFeedAPI_Node_Export_OPML() {
+    $parsers_ok = $this->get_parsers();
+    // Create a new content-type for creating the feed node
+    $this->create_type(array_pop($parsers_ok));
     $this->feedapi_user();
     $this->drupalGet('admin/content/feed/export_opml');
     $this->assertResponse(200, 'The export OPML path returns good status code.');
@@ -302,7 +350,7 @@ EOT;
       $this->drupalGet('admin/content/feed/import_opml');
       $this->assertResponse(200, 'The OPML import form is accessible.');
       $this->assertText(t('OPML File'), 'The retrieved page contains the OPML form.');
-      $this->drupalPost('admin/content/feed/import_opml', array(), 'Submit');
+      $this->drupalPost('admin/content/feed/import_opml', array(), 'Import');
       $this->assertText(t('Data could not be retrieved, invalid or empty file.'), 'The error message appears when the empty OPML import form is submitted.');
       $opml_filename = file_directory_temp() .'/'. md5($opml);
       file_put_contents($opml_filename, $opml);
@@ -310,18 +358,32 @@ EOT;
       $edit['feed_type'] = $this->info->type;
       $edit['override_title'] = TRUE;
       $edit['override_body'] = FALSE;
-      $this->drupalPost('admin/content/feed/import_opml', $edit, 'Submit');
+      $this->drupalPost('admin/content/feed/import_opml', $edit, 'Import');
       
       $nid = db_result(db_query("SELECT n.nid FROM {node} n LEFT JOIN {feedapi} f ON n.nid = f.nid WHERE f.url = '%s' ORDER BY nid DESC", 'http://www.scripting.com/rss.xml'));
       $node = node_load($nid);
       $this->assertTrue(is_object($node), 'The first entry of OPML can be loaded as a node.');
       node_delete($nid);
-      $nid = db_result(db_query("SELECT n.nid FROM {node} n LEFT JOIN {feedapi} f ON n.nid = f.nid WHERE f.url = '%s' ORDER BY nid DESC", 'http://www.wired.com/news_drop/netcenter/netcenter.rdf'));
-      $node = node_load($nid);
-      $this->assertTrue(is_object($node), 'The first entry of OPML can be loaded as a node.');
-      node_delete($nid);
       unlink($opml_filename);
-      $this->delete_type();
+    }
+  }
+  
+  function testFeedAPI_Feed_Delete_By_UI() {
+    $parsers = $this->get_parsers();
+    foreach ($parsers as $parser) {
+      $this->create_type($parser);
+      $this->feedapi_user();
+      $feed_url = "http://novaak.net/test_feed.rss?". $this->randomName();
+      $edit = array(
+        'feedapi[feedapi_url]' => $feed_url,
+      );
+      $this->drupalPost('node/add/'. $this->info->type, $edit, 'Save');
+      $node = db_fetch_object(db_query("SELECT nid FROM {feedapi} WHERE url = '%s'", $feed_url));
+      $this->drupalPost("node/{$node->nid}/edit", $edit, t('Delete'));
+      $this->assertText(t('This action cannot be undone.'), 'The feed node can be deleted via the user interface.');
+      $this->drupalPost("node/{$node->nid}/delete", array(), t('Delete'));
+      $nid = db_result(db_query("SELECT nid FROM {feedapi} WHERE url = '%s'", $feed_url));
+      $this->assertTrue(empty($nid), 'The feed node is deleted via the user interface.');
     }
   }
   
@@ -329,13 +391,124 @@ EOT;
    * Checks basic content-type form.
    */
   function testContentType_Setting_Page() {
+    $this->create_type(array_pop($this->get_parsers()));
     $this->feedapi_user(TRUE);
     $parsers_ok = $this->get_parsers();
     $this->create_type(array_shift($parsers_ok));
     $this->drupalGet('admin/content/node-type/'. $this->info->type);
     $this->assertText(t('FeedAPI'), 'The FeedAPI group appears at content-type edit page.');
     $this->assertText(t('Created date of item nodes'), 'FeedAPI Node settings at content-type edit page.');
-    $this->delete_type();
   }
   
+  /**
+   * Checks cron feed scheduling functionality
+   */
+  function testFeedAPICron() {
+    $this->create_type(array_pop($this->get_parsers()));
+    $this->feedapi_user();
+    $feed_urls = array();
+    $feed_urls[0] = "http://novaak.net/test_feed.rss?". $this->randomName();
+    $edit = array(
+      'feedapi[feedapi_url]' => $feed_urls[0],
+      'feedapi[refresh_time]' => 1,
+    );
+    $this->drupalPost('node/add/'. $this->info->type, $edit, 'Save');
+    $feed_urls[1] = "http://novaak.net/test_feed_2.rss?". $this->randomName();
+    $edit = array(
+      'feedapi[feedapi_url]' => $feed_urls[1],
+      'feedapi[refresh_time]' => FEEDAPI_CRON_NEVER_REFRESH,
+    );
+    $this->drupalPost('node/add/'. $this->info->type, $edit, 'Save');
+    $this->drupalGet('cron.php');
+    $refreshed = db_result(db_query("SELECT COUNT(*) FROM {feedapi_node_item} fi JOIN {feedapi_node_item_feed} fif ON fi.nid = fif.feed_item_nid JOIN {feedapi} f ON fif.feed_nid = f.nid WHERE f.url = '%s'", $feed_urls[0]));
+    $not_refreshed = db_result(db_query("SELECT COUNT(*) FROM {feedapi_node_item} fi JOIN {feedapi_node_item_feed} fif ON fi.nid = fif.feed_item_nid JOIN {feedapi} f ON fif.feed_nid = f.nid WHERE f.url = '%s'", $feed_urls[1]));
+    $this->assertTrue($refreshed > 0, 'The feed with immediate refresh setting was refreshed.');
+    $this->assertTrue($not_refreshed == 0, 'The feed with never refresh setting wasn\'t refreshed.');
+  }
+  
+  /**
+   * Test the file upload form
+   */
+  function testFileUploadAbility() {
+    $this->create_type(array_pop($this->get_parsers()), TRUE);
+    $settings = feedapi_get_settings($this->info->type);
+    $this->feedapi_user();
+    $feed_url = "http://novaak.net/test_feed.rss?". $this->randomName();
+    $edit = array(
+      'files[feedapi]' => drupal_get_path('module', 'feedapi_node'). '/tests/files/feed',
+    );
+    $this->drupalPost('node/add/'. $this->info->type, $edit, 'Save');
+    $this->assertText('drupal.org', 'The feed title is on the saved node.');
+    $status = db_result(db_query('SELECT status FROM {files}'));
+    $this->assertEqual($status, FILE_STATUS_PERMANENT, 'The uploaded file is permanent');
+  }
+  
+  /**
+   * Checks if the node updates by feedapi_node do not alter basic node options
+   */
+  function testKeepNodeSettingsAtUpdate() {
+    $this->create_type(array_pop($this->get_parsers()));
+    $settings = feedapi_get_settings($this->info->type);
+    $this->feedapi_user();
+    $feed_url = "http://novaak.net/test_feed.rss?". $this->randomName();
+    $edit = array(
+      'feedapi[feedapi_url]' => $feed_url,
+    );
+    $this->drupalPost('node/add/'. $this->info->type, $edit, 'Save');
+    $node = db_fetch_object(db_query("SELECT nid FROM {feedapi} WHERE url = '%s'", $feed_url));
+    $this->drupalGet("node/{$node->nid}/refresh");
+    $notification = t("%new new item(s) were saved. %updated existing item(s) were updated.", array("%new" => 10, "%updated" => 0));
+    $notification = str_replace('<em>', '', $notification);
+    $notification = str_replace('</em>', '', $notification);
+    $this->assertText($notification, 'The proper number of items were created');
+    
+    // Get one item's nid and guid
+    $existing_item = db_fetch_array(db_query_range('SELECT nid, guid, url from {feedapi_node_item} fi join {feedapi_node_item_feed} fif ON fi.nid = fif.feed_item_nid WHERE fif.feed_nid = %d', $node->nid, 1, 1));
+    
+    
+    $sticky = db_result(db_query("SELECT sticky FROM {node} WHERE nid = %d", $existing_item['nid']));
+    $this->assertTrue(!$sticky, 'The sticky bit is off by default.');
+    
+    // Set the sticky to 1 on the item
+    db_query("UPDATE {node} SET sticky = 1 WHERE nid = %d", $existing_item['nid']);
+    
+    $item = new stdClass();
+    $item->nid = 
+    $item->title = $this->randomName(59);
+    $item->description = $this->randomName(666);
+    $item->options = new stdClass();
+    $item->options->guid = $existing_item['guid'];
+    $item->options->original_url = $existing_item['url'];
+    $item->options->timestamp = time();
+    module_invoke('feedapi_node', 'feedapi_item', 'update', $item, $node->nid, $settings['processors']['feedapi_node'], $existing_item['nid']);
+    
+    $sticky = db_result(db_query("SELECT sticky FROM {node} WHERE nid = %d", $existing_item['nid']));
+    $this->assertTrue($sticky, 'The sticky bit remained the same just as before the update');
+    
+    $this->drupalGet('node/'. $existing_item['nid']);
+    $this->assertText($item->title, 'The item node update was successful');
+    $this->assertText($item->description, 'The item node update was successful');
+    
+    $this->drupalGet('/');
+    $this->assertText($item->title, 'The item node really appears on the first page.');
+    
+  }
+
+  /**
+   * Checks FeedAPI saves invalid feed URLs (e. g. if parser cannot parse at the moment).
+   * d.o. #260670
+   */
+  function testParserFalseResult() {
+    $this->create_type(array_pop($this->get_parsers()));
+    $settings = feedapi_get_settings($this->info->type);
+    $this->feedapi_user();
+    $feedapi_url = "http://". $this->randomName(20, '') .".". $this->randomName(2, '');
+    $edit = array(
+      'feedapi[feedapi_url]' => $feedapi_url,
+      'title' => $this->randomName(10),
+    );
+    $this->drupalPost('node/add/'. $this->info->type, $edit, 'Save');
+    $node = db_result(db_query("SELECT nid FROM {feedapi} WHERE url = '%s'", $edit['feedapi[feedapi_url]']));
+    $this->assertTrue(($node != FALSE), 'The inaccessible feed URL was inserted in the database.');
+  }
 }

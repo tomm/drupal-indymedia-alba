@@ -1,5 +1,5 @@
 <?php
-// $Id: feedapi_node.module,v 1.1.2.18.2.22 2008/12/30 10:23:06 aronnovak Exp $
+// $Id: feedapi_node.module,v 1.1.2.18.2.36 2009/08/12 09:11:50 aronnovak Exp $
 
 /**
  * @file
@@ -109,7 +109,7 @@ function feedapi_node_link($type, $node = NULL) {
           'href' => $node->feedapi_node->url,
         );
       }
-      
+
     }
   }
   return $links;
@@ -157,17 +157,23 @@ function feedapi_node_feedapi_settings_form($type) {
         '#options' => $ct_options,
         '#description' => t('Choose the node type for feed item nodes created by this feed.'),
       );
+      $format_options = array();
+      $formats = filter_formats();
+      foreach ($formats as $format) {
+        $format_options[$format->format] = $format->name;
+      }
+      $form['input_format'] = array(
+        '#type' => 'select',
+        '#title' => t('Input format for feed items'),
+        '#default_value' => FILTER_FORMAT_DEFAULT,
+        '#options' => $format_options,
+        '#description' => t('Choose the input format for feed item nodes created by this feed.'),
+      );
       $form['node_date'] = array(
         '#type' => 'radios',
         '#title' => t('Created date of item nodes'),
         '#options' => array('feed' => t('Retrieve from feed'), 'current' => t('Use time of download')),
         '#default_value' => 'feed',
-      );
-      $form['promote'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Promoted items'),
-        '#description' => t('The newest N items per feed will be promoted to front page. Leave empty and FeedAPI does not alter the promote property of the feed items.'),
-        '#default_value' => 3,
       );
       $form['x_dedupe'] = array(
         '#type' => 'radios',
@@ -188,6 +194,12 @@ function feedapi_node_feedapi_item($op) {
   switch ($op) {
     case 'type':
       return array("XML feed");
+    case 'save':
+    case 'expire':
+    case 'update':
+    case 'delete':
+    case 'purge':
+    case 'unique':
     default:
       if (function_exists('_feedapi_node_'. $op)) {
         $args = array_slice(func_get_args(), 1);
@@ -197,45 +209,12 @@ function feedapi_node_feedapi_item($op) {
 }
 
 /**
- * Implements hook_feedapi_after_refresh($feed).
- * Handle the promote N items to the frontpage setting
- */
-function feedapi_node_feedapi_after_refresh($feed) {
-  if (is_numeric($feed->settings['processors']['feedapi_node']['promote'])) {
-    $promote = $feed->settings['processors']['feedapi_node']['promote'];
-    $result = db_query("SELECT n.nid FROM {node} n JOIN {feedapi_node_item_feed} ff  ON ff.feed_item_nid = n.nid  WHERE ff.feed_nid = %d AND n.promote = 1", $feed->nid);
-    $nids_promoted_now = array();
-    $nids_top_n = array();
-    while ($item = db_fetch_array($result)) {
-      $nids_promoted_now[] = $item['nid'];
-    }
-    if ($promote > 0) {
-      $result = pager_query("SELECT n.nid FROM {node} n JOIN {feedapi_node_item_feed} ff  ON ff.feed_item_nid = n.nid  WHERE ff.feed_nid = %d ORDER BY n.created DESC", $promote, 0, NULL, $feed->nid);
-      while ($item = db_fetch_array($result)) {
-        $nids_top_n[] = $item['nid'];
-      }
-    }
-    else {
-      $nids_top_n = array();
-    }
-    $to_promote = array_diff($nids_top_n, $nids_promoted_now);
-    $to_demote = array_diff($nids_promoted_now, $nids_top_n);
-    if (count($to_promote) > 0) {
-      db_query("UPDATE {node} SET promote = 1 WHERE nid IN (%s)", implode(',', $to_promote));
-    }
-    if (count($to_demote) > 0) {
-      db_query("UPDATE {node} SET promote = 0 WHERE nid IN (%s)", implode(',', $to_demote));
-    }
-  }
-}
-
-/**
  * Check for expired items, pass them to the item_expire function
- * 
+ *
  * @TO DO Add cron timeout checking here, there may be too many items (nodes) to delete
- * 
+ *
  * We implement the same logic as a db query. The old code is
- * 
+ *
  *     if (isset($item->arrived) || isset($item->timestamp)) {
  *       $diff = abs(time() - (isset($item->timestamp) ? $item->timestamp : $item->timestamp));
  *       if ($diff > $settings['items_delete']) {
@@ -265,7 +244,7 @@ function _feedapi_node_expire($feed, $settings) {
 function _feedapi_node_save($feed_item, $feed_nid, $settings = array()) {
   // Avoid error message flood when creating tons of items.
   static $error_msg = FALSE;
-  
+
   module_load_include('inc', 'node', 'node.pages');
   // Don't save anything if neither url nor guid given.
   if (!$feed_item->options->original_url) {
@@ -285,9 +264,7 @@ function _feedapi_node_save($feed_item, $feed_nid, $settings = array()) {
     $ct_options = array();
     if (is_array($ct_types)) {
       foreach ($ct_types as $key => $data) {
-        if (!feedapi_enabled_type($key)) {
-          $ct_options[$key] = $data->name;
-        }
+        $ct_options[$key] = $data->name;
       }
     }
     if (array_key_exists('story', $ct_options)) {
@@ -300,7 +277,7 @@ function _feedapi_node_save($feed_item, $feed_nid, $settings = array()) {
   else {
     $node->type = $settings['content_type'];
   }
-  
+
   if (feedapi_enabled_type($node->type)) {
     if ($error_msg !== TRUE) {
       drupal_set_message(t('Please disable FeedAPI for !item content-type.', array('!item' => $node->type)), 'error');
@@ -308,7 +285,7 @@ function _feedapi_node_save($feed_item, $feed_nid, $settings = array()) {
     }
     return FALSE;
   }
-  
+
   // Get the default options from the cont
   $options = variable_get('node_options_'. $node->type, FALSE);
   if (is_array($options)) {
@@ -320,8 +297,20 @@ function _feedapi_node_save($feed_item, $feed_nid, $settings = array()) {
     $node->status = 1;
   }
   $feed_node = node_load($feed_nid);
-  $node->title = $feed_item->title;
-  $node->body = $feed_item->description;
+  // Only call feedapi_mapper_map() directly in the case of FeedAPI Mapper 2.x
+  if (function_exists('feedapi_mapper_map') && function_exists('feedapi_mapper_unique')) {
+    $node = feedapi_mapper_map($feed_node, 'feedapi_node', $feed_item, $node);
+  }
+  else {
+    $type = node_get_types('type', $node->type);
+    if ($type->has_title) {
+      $node->title = $feed_item->title;
+    }
+    if ($type->has_body) {
+      $node->body = $feed_item->description;
+    }
+  }
+  $node->format = isset($settings['input_format']) ? $settings['input_format'] : FILTER_FORMAT_DEFAULT;
   $node->teaser = node_teaser($feed_item->description);
   // Stick feed item on node so that add on modules can act on it.
   // A feed item can come in from more than one feed.
@@ -330,6 +319,7 @@ function _feedapi_node_save($feed_item, $feed_nid, $settings = array()) {
   // For backwards compatibility - todo: move to using feedapi_node->feed_nids and feedapi_node->feed_item.
   $node->feedapi->feed_nid = $feed_nid;
   $node->feedapi->feed_item = $feed_item;
+  $node->created = time();
   node_object_prepare($node);
   if (!isset($feed_item->nid)) {
     $node->created = (isset($settings['node_date']) && $settings['node_date'] == 'feed') ? $feed_item->options->timestamp : time();
@@ -338,10 +328,10 @@ function _feedapi_node_save($feed_item, $feed_nid, $settings = array()) {
     $node->created = db_result(db_query("SELECT created FROM {node} WHERE nid = %d", $feed_item->nid));
   }
   $node->uid = $feed_node->uid;
-  
+
   // If there are dupes on other feeds, don't create new feed item, but link this feed
   // to existing feed item.
-  // Heads up: if there is a duplicate on the SAME feed, 
+  // Heads up: if there is a duplicate on the SAME feed,
   // _feedapi_node_save() won't even be called.
   if (isset($feed_item->feedapi_node->duplicates)) {
     foreach ($feed_item->feedapi_node->duplicates as $fi_nid => $f_nids) {
@@ -360,15 +350,8 @@ function _feedapi_node_save($feed_item, $feed_nid, $settings = array()) {
 /**
  * Update a node which already assigned to a feed item
  */
-function _feedapi_node_update($feed_item, $feed_nid, $settings = array()) {
-  // Determine which node is assigned to this item
-  if ($feed_item->options->guid) {
-    $node = db_fetch_object(db_query("SELECT nid FROM {feedapi_node_item} WHERE guid = '%s'", $feed_item->options->guid));
-  }
-  else {
-    $node = db_fetch_object(db_query("SELECT nid FROM {feedapi_node_item} WHERE url = '%s'", $feed_item->options->original_url));
-  }
-  $feed_item->nid = $node->nid;
+function _feedapi_node_update($feed_item, $feed_nid, $settings, $id) {
+  $feed_item->nid = $id;
   _feedapi_node_save($feed_item, $feed_nid, $settings);
   return $feed_item;
 }
@@ -391,13 +374,13 @@ function _feedapi_node_delete($feed_item) {
  */
 function _feedapi_node_purge($feed) {
   $total = db_result(db_query('SELECT COUNT(*) FROM {feedapi_node_item_feed} WHERE feed_nid = %d', $feed->nid));
-  
+
   $deleted = 0;
   $max_execution_time = ini_get('max_execution_time');
   while ($deleted < $total) {
     // Take hundred items at a time.
     $result = db_query_range('SELECT feed_item_nid as nid FROM {feedapi_node_item_feed} WHERE feed_nid = %d', $feed->nid, 0, 100);
-    
+
     while ($node = db_fetch_object($result)) {
       node_delete($node->nid);
       $deleted++;
@@ -416,27 +399,8 @@ function _feedapi_node_purge($feed) {
     drupal_set_message(t('!count feed items have been deleted.', array('!count' => $deleted)));
   }
   else {
-    drupal_set_message(t('There where no feed items to delete'));
+    drupal_set_message(t('There were no feed items to delete'));
   }
-}
-
-/**
- * Construct the basic information (nid, feed_nid) of all feeds into an array.
- * 
- * @param $feed
- *  Feed object
- * @return
- *  The array of feed elements with basic information
- */
-function _feedapi_node_fetch($feed) {
-  $result = db_query("SELECT fni.nid, ff.feed_nid, fni.arrived, fni.timestamp FROM {feedapi_node_item} fni JOIN {feedapi_node_item_feed} ff ON ff.feed_item_nid = fni.nid WHERE ff.feed_nid = %d ORDER BY fni.timestamp DESC", $feed->nid);
-  $items = array();
-  while ($item = db_fetch_object($result)) {
-    $node = node_load($item->nid);
-    $item->title = $node->title;
-    $items[] = $item;
-  }
-  return $items;
 }
 
 /**
@@ -450,17 +414,63 @@ function _feedapi_node_fetch($feed) {
  *  TRUE if the item is new, FALSE if the item is a duplicated one
  */
 function _feedapi_node_unique($feed_item, $feed_nid, $settings) {
+// Let the mapper hijack the decision
+  if (function_exists('feedapi_mapper_unique')) {
+    $feed_node = node_load($feed_nid);
+    $result = feedapi_mapper_unique($feed_node, 'feedapi_node', $feed_item);
+    if ($result !== FALSE) {
+      if (empty($result)) {
+        return TRUE;
+      }
+      if (!$settings['x_dedupe']) {
+      // Filter out unneeded result, only the items from the same feeds are needed
+        foreach ($result as $field => $dup_items) {
+          foreach ($dup_items as $item_id => $feed_nids) {
+            if (!in_array($feed_nid, $feed_nids)) {
+              unset($result[$field][$item_id]);
+            }
+          }
+          if (count($result[$field]) == 0) {
+            unset($result[$field]);
+          }
+        }
+        if (empty($result)) {
+          return TRUE;
+        }
+        // This is an item id
+        return array_pop(array_keys(array_pop($result)));
+      }
+      // OR connection between the fields
+      // If no cross-feed deduping, it's over here, the array is
+      else {
+        foreach ($result as $dup_items) {
+          foreach ($dup_items as $item_id => $feed_nids) {
+            $feed_item->feedapi_node->duplicates[$item_id] = array_merge($feed_nids, (array) $feed_item->feedapi_node->duplicates[$item_id]);
+          }
+        }
+        return $item_id;
+      }
+    }
+  }
+  // If we reach this point feedapi_mapper_unique() is not available or no unique elements have been defined.
+  // Falls back to URL/GUID for determining whether item is unique.
+  if (empty($feed_item->options->original_url)) {
+    unset($feed_item->options->original_url);
+  }
+  if (empty($feed_item->options->guid)) {
+    unset($feed_item->options->guid);
+  }
   // Feed item is duplicate, if URL or GUID are duplicate or if they are both missing.
   if (isset($feed_item->options->original_url)) {
-    $count = db_result(db_query("SELECT fni.nid FROM {feedapi_node_item} fni JOIN {feedapi_node_item_feed} ff ON ff.feed_item_nid = fni.nid WHERE fni.url = '%s' AND ff.feed_nid = %d", $feed_item->options->original_url, $feed_nid));
-    if ($count) {
-      return FALSE;
+    $nid = db_result(db_query("SELECT fni.nid FROM {feedapi_node_item} fni JOIN {feedapi_node_item_feed} ff ON ff.feed_item_nid = fni.nid WHERE fni.url = '%s' AND ff.feed_nid = %d", $feed_item->options->original_url, $feed_nid));
+    if ($nid !== FALSE) {
+      return $nid;
     }
   }
   if (isset($feed_item->options->guid)) {
-    $count = db_result(db_query("SELECT fni.nid FROM {feedapi_node_item} fni JOIN {feedapi_node_item_feed} ff ON ff.feed_item_nid = fni.nid WHERE fni.guid = '%s' AND ff.feed_nid = %d", $feed_item->options->guid, $feed_nid));
-    if ($count) {
-      return FALSE;
+    $nid = db_result(db_query("SELECT fni.nid FROM {feedapi_node_item} fni JOIN {feedapi_node_item_feed} ff ON ff.feed_item_nid = fni.nid WHERE fni.guid = '%s' AND ff.feed_nid = %d", $feed_item->options->guid, $feed_nid));
+    if ($nid !== FALSE) {
+      return $nid;
     }
   }
   // If cross feed de-dupeing is enabled, check now whether there is a duplicate item on other feeds.
@@ -468,7 +478,7 @@ function _feedapi_node_unique($feed_item, $feed_nid, $settings) {
   // There is *usually* only one. However, there might be more than one.
   // Todo: don't link to feed items whose feed is not x_dedupe enabled.
   if ($settings['x_dedupe']) {
-    
+
     if (isset($feed_item->options->original_url)) {
       $result = db_query("SELECT fni.nid, ff.feed_nid FROM {feedapi_node_item} fni JOIN {feedapi_node_item_feed} ff ON ff.feed_item_nid = fni.nid WHERE ff.feed_nid <> %d AND fni.url = '%s'", $feed_nid, $feed_item->options->original_url);
       while ($existing_feed_item = db_fetch_object($result)) {
@@ -482,7 +492,7 @@ function _feedapi_node_unique($feed_item, $feed_nid, $settings) {
       }
     }
   }
-  
+
   if (isset($feed_item->options->original_url) || isset($feed_item->options->guid)) {
     return TRUE;
   }
@@ -492,7 +502,7 @@ function _feedapi_node_unique($feed_item, $feed_nid, $settings) {
 
 /**
  * Copy of http://api.drupal.org/api/function/node_delete/6 to avoid permission checking
- * 
+ *
  * @todo: this is just a workaround to be able to delete nodes at cron time
  * @param unknown_type $nid
  */

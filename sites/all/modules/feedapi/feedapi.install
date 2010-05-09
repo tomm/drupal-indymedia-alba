@@ -1,20 +1,30 @@
 <?php
-// $Id: feedapi.install,v 1.5.2.21.2.11 2008/10/10 09:58:24 aronnovak Exp $
+// $Id: feedapi.install,v 1.5.2.21.2.20 2009/08/12 19:02:34 aronnovak Exp $
+
+/**
+ * @file
+ * Install file for FeedAPI module.
+ */
 
 /**
  * Implementation of hook_schema().
  */
 function feedapi_schema() {
   $schema['feedapi'] = array(
-    'description' => t('Stores feed-related info for each feed'),
+    'description' => 'Stores feed-related info for each feed',
     'fields' => array(
       'nid' => array(
-        'description' => t('The primary identifier for the feed.'),
+        'description' => 'The node identifier where the feed belongs.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'vid' => array(
+        'description' => 'The primary identifier for the feed.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE),
       'url' => array(
-        'description' => t('The URL of the feed'),
+        'description' => 'The URL of the feed',
         'type' => 'text',
         'not null' => TRUE),
       'feed_type' => array(
@@ -32,8 +42,9 @@ function feedapi_schema() {
         'not null' => TRUE,
         'default' => '',
         'length' => '255'),
-      'checked' => array(
+      'next_refresh_time' => array(
         'type' => 'int',
+        'unsigned' => TRUE,
         'default' => 0,
         'not null' => TRUE),
       'hash' => array(
@@ -47,18 +58,14 @@ function feedapi_schema() {
       'half_done' => array(
         'type' => 'int',
         'size' => 'tiny'),
-      'skip' => array(
-        'type' => 'int',
-        'size' => 'tiny',
-        'default' => 0,
-      ),
     ),
-    'primary key' => array('nid'),
+    'primary key' => array('vid', 'nid'),
     'indexes' => array(
-      'feedapi_skip' => array('skip')),
+      'vid' => array('vid'),
+      'next_refresh_time' => array('next_refresh_time')),
   );
   $schema['feedapi_stat'] = array(
-    'description' => t('Statistics values over the time about the feeds'),
+    'description' => 'Statistics values over the time about the feeds',
     'fields' => array(
       'id' => array(
         'type' => 'int',
@@ -95,7 +102,14 @@ function feedapi_install() {
   // This value warrants that og, taxonomy and similar modules does their job before feedapi. This is important
   // because of for example feedapi_inherit or whatever processor which needs a 3rd-party processed data.
   db_query("UPDATE {system} SET weight = 5 WHERE name = 'feedapi'");
-  
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function feedapi_uninstall() {
+  drupal_uninstall_schema('feedapi');
+
   // Delete variables site-wide
   variable_del('feedapi_allowed_html_tags');
   variable_del('feedapi_allow_html_all');
@@ -108,13 +122,6 @@ function feedapi_install() {
   }
 }
 
-/**
- * Implementation of hook_uninstall().
- */
-function feedapi_uninstall() {
-  drupal_uninstall_schema('feedapi');
-}
-
 function feedapi_update_6101() {
   $ret = array();
   db_add_field($ret, 'feedapi', 'skip', array('type' => 'int', 'size' => 'tiny', 'default' => 0));
@@ -124,7 +131,7 @@ function feedapi_update_6101() {
 
 function feedapi_update_6102() {
   $ret = array();
-  db_change_field($ret, 'feedapi', 'url', 'url', array('description' => t('The URL of the feed'), 'type' => 'text'));
+  db_change_field($ret, 'feedapi', 'url', 'url', array('description' => 'The URL of the feed', 'type' => 'text'));
   db_change_field($ret, 'feedapi', 'link', 'link', array('type' => 'text'));
   return $ret;
 }
@@ -157,7 +164,7 @@ function feedapi_update_6104() {
       }
     }
   }
-  
+
   if ($affected) {
     // Set the parser of defaultly shipped processors if it's not done previously
     $parsers = module_implements('feedapi_feed');
@@ -169,3 +176,83 @@ function feedapi_update_6104() {
   }
   return array();
 }
+
+/**
+ * Adds vid to feedapi table
+ */
+function feedapi_update_6105() {
+  global $db_type;
+  $ret = array();
+  db_add_field($ret, 'feedapi', 'vid',
+    array(
+      'description' => 'The primary identifier for the feed.',
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0,
+    )
+  );
+  db_drop_primary_key($ret, 'feedapi');
+  if ($db_type == 'mysql' || $db_type == 'mysqli') {
+    $ret[] = update_sql("UPDATE {feedapi} f, {node} n SET f.vid = n.vid WHERE n.nid = f.nid");
+  }
+  else {
+    $ret[] = update_sql("UPDATE {feedapi} SET vid = n.vid FROM (SELECT vid, nid FROM {node} n) n WHERE n.nid = feedapi.nid");
+  }
+  $ret[] = update_sql("UPDATE {feedapi} SET vid = nid WHERE vid = 0");
+  db_add_primary_key($ret, 'feedapi', array('vid', 'nid'));
+  db_add_index($ret, 'feedapi', 'vid', array('vid'));
+  return $ret;
+}
+
+/**
+ * Convert checked to next_refresh_time and consolidate skip and
+ * next_refresh_time, add an index on next_refresh_time, make next_refresh_time
+ * unsigned.
+ */
+function feedapi_update_6106() {
+  $spec = array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'default' => 0,
+    'not null' => TRUE,
+  );
+  db_change_field($ret, 'feedapi', 'checked', 'next_refresh_time', $spec);
+
+  // Convert the value in next_refresh_time from the last time a feed has been
+  // to the next time it should be checked.
+  $ret[] = update_sql('UPDATE {feedapi} SET next_refresh_time = (next_refresh_time + '. FEEDAPI_CRON_DEFAULT_REFRESH_TIME .')');
+
+  // Set next_refresh_time to FEEDAPI_CRON_NEVER_REFRESH where skip = 1.
+  $ret[] = update_sql('UPDATE {feedapi} SET next_refresh_time = '. FEEDAPI_CRON_NEVER_REFRESH .' WHERE skip = 1');
+
+  // Drop skip row
+  db_drop_field($ret, 'feedapi', 'skip');
+
+  // Update all settings.
+  $node_types = node_get_types('types');
+
+  // Update all node type settings.
+  foreach ($node_types as $node_type) {
+    if (feedapi_enabled_type($node_type)) {
+      if ($settings = feedapi_get_settings($node_type)) {
+        $settings['refresh_time'] = $settings['skip'] ? FEEDAPI_CRON_NEVER_REFRESH : FEEDAPI_CRON_DEFAULT_REFRESH_TIME;
+        unset($settings['skip']);
+        _feedapi_store_settings(array('node_type' => $node_type), $settings);
+      }
+    }
+  }
+
+  // Update all node settings.
+  $result = db_query('SELECT n.type, f.vid FROM {node} n JOIN {feedapi} f ON f.nid = n.nid');
+  while ($node = db_fetch_object($result)) {
+    if ($settings = feedapi_get_settings($node->type, $node->vid)) {
+      $settings['refresh_time'] = $settings['skip'] ? FEEDAPI_CRON_NEVER_REFRESH : FEEDAPI_CRON_DEFAULT_REFRESH_TIME;
+      unset($settings['skip']);
+      _feedapi_store_settings(array('node_type' => $node->type, 'vid' => $node->vid), $settings);
+    }
+  }
+
+  return $ret;
+}
+

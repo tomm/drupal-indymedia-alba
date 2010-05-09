@@ -1,12 +1,43 @@
-// $Id: CHANGELOG.txt,v 1.1.2.4.2.11 2009/02/03 20:02:15 aronnovak Exp $
+// $Id: CHANGELOG.txt,v 1.1.2.4.2.23 2009/08/12 19:19:43 aronnovak Exp $
+FeedAPI 1.8, 2009-08-12
+-----------------------
+- Missing {} in an update hook in feedapi.install
 
-FeedAPI 1.x, 2009-02-03
+FeedAPI 1.7, 2009-08-12
+-----------------------
+- The meaning of "Update Rate" column at the admin overview has been
+changed.
+  Previously: the time what is elapsed between incoming new items
+  Now: the time between feed refresh, regardless of the content of the feed
+- Possibility of saving such feed URLs that are inaccessible for the parser
+  for whatever reason
+
+FeedAPI 1.7beta2, XXXX-XX-XX
+----------------------------
+- Drush commands (create, refresh, config)
+- Simpletest 2.x compatible test suite
+- Impersonating feed author while refreshing the feed via cron hook
+- Better test code coverage
+  (tests for cron part, file upload, item node updating)
+- Fix a critical bug what caused ICal parser useless (#496274)
+
+FeedAPI 1.7beta1, 2009-06-05
+----------------------------
+- Cache lifetime setting for parser_simplepie
+- Split some parts of feedapi into separate files
+- Feedapi supports revisions for data inside {feedapi} table
+- File upload support
+- Selectable input format for feed item nodes
+- Ability to inherit language info as well
+- Configurable refresh rate instead of best effort feed refreshing
+
+FeedAPI 1.6, 2009-02-03
 -----------------------
 - Better parsing in Parser Common Syndication
 - Now it's possible to delete old feed node items at cron time
 - Performance impovements (indeces on cross-nodes table)
 - Fix of bug that prevented parsers to consume their settings
-- Full views support. WARNING: if you upgrade from previous version, 
+- Full views support. WARNING: if you upgrade from previous version,
   you will have to reconfigure some feedapi based views.
 
 FeedAPI 1.5, 2008-12-05
@@ -19,7 +50,7 @@ FeedAPI 1.5, 2008-12-05
 
 FeedAPI 1.4, 2008-10-10
 -----------------------
-- Not allow same weight for processors
+- Do not allow same weight for processors
 - Strip tags from item titles
 - Fix of built-in content-type
 - Extended Views support (for feed items, parent feeds and
@@ -37,7 +68,7 @@ FeedAPI 1.3, 2008-09-01
 - Function name changes
 - FeedAPI Node Views added
 
-FeedAPI 1.2, 2008-04-14 
+FeedAPI 1.2, 2008-04-14
 -----------------------
 - Allow IP-address feed URLs at SimplePie parser
 - Allow long URLs (up to 2048 char)

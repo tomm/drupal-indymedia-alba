@@ -1,5 +1,5 @@
 <?php
-// $Id: parser_simplepie.module,v 1.6.2.20.2.12 2008/12/04 21:35:21 aronnovak Exp $
+// $Id: parser_simplepie.module,v 1.6.2.20.2.16 2009/07/02 16:38:16 aronnovak Exp $
 
 /**
  * @file
@@ -41,6 +41,7 @@ function parser_simplepie_feedapi_feed($op) {
   $args = func_get_args();
   // Validate the URL, if it is not basically valid, why send to simplepie object
   $url_parts = parse_url(is_string($args[1]) ? $args[1] : $args[1]->url);
+  $settings = isset($args[2]) ? $args[2] : array();
   $valid_ip_regex = "^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}^";
   $op = (gethostbyname($url_parts['host']) !== $url_parts['host'] || preg_match($valid_ip_regex, $url_parts['host']) > 0) ? $op : FALSE;
   switch ($op) {
@@ -58,9 +59,31 @@ function parser_simplepie_feedapi_feed($op) {
       return array_shift(parser_simplepie_feedapi_feed('type'));
     case 'parse':
       $feed = is_object($args[1]) ? $args[1] : FALSE;
-      return _parser_simplepie_feedapi_parse($feed);
+      return _parser_simplepie_feedapi_parse($feed, $settings);
   }
   return FALSE;
+}
+
+
+/**
+ * Implementation of hook_feedapi_settings_form().
+ * If a module provides parsers and processors it MUST evaluate the $type variable
+ * to return different forms for parsers and processors.
+ * There might be a better term for parsers and processors than $type.
+ */
+function parser_simplepie_feedapi_settings_form($type) {
+  $form = array();
+  switch ($type) {
+    case 'parsers':
+      $form['cache_lifetime'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Cache lifetime in seconds'),
+        '#description' => t('Lower this value if you know that your feeds refresh more often and you don\'t want to miss items.'),
+        '#default_value' => '3600',
+      );
+      break;
+  }
+  return $form;
 }
 
 /**
@@ -91,8 +114,8 @@ function parser_simplepie_simplify_raw_item($raw_item) {
  * @return
  *  The structured datas extracted from the feed
  */
-function _parser_simplepie_feedapi_parse($feed) {
-  $parser = _parser_simplepie_get_parser($feed->url);
+function _parser_simplepie_feedapi_parse($feed, $settings = array()) {
+  $parser = _parser_simplepie_get_parser($feed->url, TRUE, $settings);
   if ($parser->error) {
     return FALSE;
   }
@@ -103,7 +126,7 @@ function _parser_simplepie_feedapi_parse($feed) {
   $parsed_source->description = $parser->get_description();
   $parsed_source->title = _parser_simplepie_title($parser->get_title(), $parser->get_description());
   $parsed_source->options = new stdClass();
-  $parsed_source->options->link = $entity_decode ? html_entity_decode($parser->get_link()) : $parser->get_link();
+  $parsed_source->options->link = ($entity_decode && $parser->get_link()) ? html_entity_decode($parser->get_link()) : $parser->get_link();
   $parsed_source->items = array();
   $items_num = $parser->get_item_quantity();
   for ($i = 0; $i < $items_num; $i++) {
@@ -112,12 +135,12 @@ function _parser_simplepie_feedapi_parse($feed) {
     $curr_item->title = _parser_simplepie_title($simplepie_item->get_title(), $simplepie_item->get_content());
     $curr_item->description = $simplepie_item->get_content();
     $curr_item->options = new stdClass();
-    $curr_item->options->original_url = $entity_decode ? html_entity_decode($simplepie_item->get_link()) : $simplepie_item->get_link();
+    $curr_item->options->original_url = ($entity_decode && $simplepie_item->get_link()) ? html_entity_decode($simplepie_item->get_link()) : $simplepie_item->get_link();
     // U = std. unix timestamp
     $curr_item->options->timestamp = $simplepie_item->get_date("U");
     $curr_item->options->guid = $simplepie_item->get_id();
     $curr_item->options->original_author = $simplepie_item->get_author();
-    // Enclosures 
+    // Enclosures
     $enclosures = $simplepie_item->get_enclosures();
     if (is_array($enclosures)) {
       foreach ($enclosures as $enclosure) {
@@ -128,7 +151,7 @@ function _parser_simplepie_feedapi_parse($feed) {
         }
       }
     }
-    // Location 
+    // Location
     $latitude = $simplepie_item->get_latitude();
     $longitude = $simplepie_item->get_longitude();
     if (!is_null($latitude) && !is_null($longitude)) {
@@ -159,7 +182,7 @@ function _parser_simplepie_feedapi_parse($feed) {
   }
   return $parsed_source;
 }
-        
+
 /**
  * Set the default caching directory if the current setting is not useable
  */
@@ -180,15 +203,24 @@ function _parser_simplepie_sanitize_cache() {
 /**
  * Set SimplePie setting
  * @param $url
- *  The feed's url
+ *   The feed's url
+ * @param $enable_cache
+ *   If FALSE, the caching is disabled
+ * @param $settings
+ *
  * @return
- *  SimplePie object
+ *   SimplePie object
  */
-function _parser_simplepie_get_parser($url, $enable_cache = TRUE) {
-  require_once(drupal_get_path('module', 'parser_simplepie') .'/simplepie.inc');
+function _parser_simplepie_get_parser($url, $enable_cache = TRUE, $settings = array()) {
+  if (!class_exists('SimplePie')) {
+    require_once(drupal_get_path('module', 'parser_simplepie') .'/simplepie.inc');
+  }
   $parser = new SimplePie();
   $parser->set_feed_url($url);
   $parser->set_timeout(15);
+  if (isset($settings['cache_lifetime'])) {
+    $parser->set_cache_duration($settings['cache_lifetime']);
+  }
   $parser->set_stupidly_fast(TRUE);
   $parser->encode_instead_of_strip(FALSE);
   $cache_location = _parser_simplepie_sanitize_cache();

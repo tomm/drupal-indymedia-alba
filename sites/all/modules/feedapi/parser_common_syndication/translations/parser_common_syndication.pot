@@ -1,17 +1,17 @@
-# $Id: parser_common_syndication.pot,v 1.1.2.1 2008/08/23 12:33:44 aronnovak Exp $
+# $Id: parser_common_syndication.pot,v 1.1.2.3 2009/06/23 10:04:14 aronnovak Exp $
 #
 # LANGUAGE translation of Drupal (general)
 # Copyright YEAR NAME <EMAIL@ADDRESS>
 # Generated from files:
-#  parser_common_syndication.module,v 1.6.2.23.2.16 2008/08/22 16:26:55 aronnovak
+#  parser_common_syndication.module,v 1.6.2.23.2.42 2009/06/05 13:49:43 aronnovak
+#  parser_common_syndication.install,v 1.1.2.4.2.7 2009/04/21 13:30:03 aronnovak
 #  parser_common_syndication.info,v 1.1.2.3.2.2 2008/04/11 19:42:51 aronnovak
-#  parser_common_syndication.install,v 1.1.2.4.2.5 2008/08/23 07:48:33 aronnovak
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2008-08-23 14:25+0200\n"
+"POT-Creation-Date: 2009-06-23 11:36+0200\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -28,8 +28,20 @@ msgstr ""
 msgid "Parser Common Syndication - only for PHP5"
 msgstr ""
 
+#: parser_common_syndication.module:77
+msgid "Do not verify SSL peer"
+msgstr ""
+
+#: parser_common_syndication.module:78
+msgid "When the parser connects to an SSL protected resource it tries to validate the resource's SSL certificate. If this can't be done the feed download fails. Check this box to skip validation and accept any SSL certificate. Note that skipping validation can pose a security risk. See !curlopt."
+msgstr ""
+
 #: parser_common_syndication.module:0
 msgid "parser_common_syndication"
+msgstr ""
+
+#: parser_common_syndication.install:11;77
+msgid "The MD5 hash of feed URL"
 msgstr ""
 
 #: parser_common_syndication.info:0
@@ -42,9 +54,5 @@ msgstr ""
 
 #: parser_common_syndication.info:0
 msgid "FeedAPI Add On"
-msgstr ""
-
-#: parser_common_syndication.install:11
-msgid "The URL of the feed"
 msgstr ""
 
