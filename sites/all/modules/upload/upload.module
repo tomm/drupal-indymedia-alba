@@ -279,7 +279,7 @@ function upload_node_form_submit(&$form, &$form_state) {
 }
 
 function upload_form_alter(&$form, $form_state, $form_id) {
-  drupal_add_js(drupal_get_path('module', 'upload') . '/' . 'upload-fckeditor-insert.js');
+  drupal_add_js(drupal_get_path('module', 'upload') . '/' . 'upload-wysiwyg-insert.js');
   
   if ($form_id == 'node_type_form' && isset($form['identity']['type'])) {
     $form['workflow']['upload'] = array(
@@ -579,8 +579,8 @@ function _upload_form($node) {
         if (!$thumb_fid) $thumb_fid = upload_make_derivatives($file);
         if ($thumb_fid) $thumb_url = db_result(db_query("SELECT filepath FROM {files} WHERE fid = %d", $thumb_fid));
           $form['files'][$key]['insertbutton'] = array('#type' => 'markup', '#value' => 
-                '<button type="button" class="insertimg" id="'.file_create_url($file->filepath).'">Full sized</button>'.
-                '<button type="button" class="insertthumb" id="'.file_create_url($thumb_url).'">Thumbnail</button>'
+                '<button type="button" class="insertimg" id="'.file_create_url($file->filepath).'">Big</button>'.
+                '<button type="button" class="insertthumb" id="'.file_create_url($thumb_url).'">Small</button>'
           );
         }
      }

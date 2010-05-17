@@ -37,15 +37,13 @@ function clickedNode(nid) {
 }
 
 function clickedImgFile(filepath) {
-  var oEditor = window.opener.oooFCKeditorAPI.GetInstance( window.opener.oooFckName ) ;
   var imgtag = "<img src=\""+filepath+"\" alt=\"\" />";
-  oEditor.InsertHtml(imgtag);
+  window.opener.Drupal.wysiwyg.instances[window.opener.Drupal.wysiwyg.activeId].insert(imgtag);
 }
 
 function clickedFile(filepath, basename) {
-  var oEditor = window.opener.oooFCKeditorAPI.GetInstance( window.opener.oooFckName ) ;
   var imgtag = "<a href=\""+filepath+"\">"+basename+"</a>";
-  oEditor.InsertHtml(imgtag);
+  window.opener.Drupal.wysiwyg.instances[window.opener.Drupal.wysiwyg.activeId].insert(imgtag);
 }
 
 function makeNodeLink(info) {
