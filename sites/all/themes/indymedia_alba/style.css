@@ -404,3 +404,26 @@ div.block h2.title a {
 .node-type-article #title {
 	font-size: 200%;
 }
+/* customisation of node form */
+.node-form #edit-taxonomy-2-wrapper {
+	float: left;
+	width: 20%;
+}
+
+.node-form #edit-taxonomy-tags-1-wrapper {
+	float: left;
+	width: 45%;
+}
+
+.node-form #edit-author-wrapper {
+	float: left;
+	width: 25%;
+	margin-left: 4%;
+}
+.node-form .menu-item-form,
+.node-form .attachments {
+	clear: left;
+}
+.node-form .wysiwyg .tips {
+	display: none;
+}
