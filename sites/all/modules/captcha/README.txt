@@ -1,31 +1,31 @@
-$Id: README.txt,v 1.15 2007/12/12 22:02:57 soxofaan Exp $
+// $Id: README.txt,v 1.20 2009/12/15 22:27:17 soxofaan Exp $
 
-### CAPTCHA Readme
+Readme file for the CAPTCHA module for Drupal
+---------------------------------------------
 
-captcha.module is the basic CAPTCHA module that offers general CAPTCHA
+captcha.module is the basic CAPTCHA module, offering general CAPTCHA
 administration and a simple math challenge.
 
-text_captcha offers another simple text based challenge.
-
-image_captcha offers an image based challenge.
+Submodule image_captcha.module offers an image based challenge.
 
 Installation:
-  Installation is like all normal modules (e.g. extract in the directory sites/all/modules)
-  The basic CAPTCHA module has no dependencies, so nothing special is required.
+  Installation is like with all normal drupal modules:
+  extract the 'captcha' folder from the tar ball to the
+  modules directory from your website (typically sites/all/modules).
+
+Dependencies:
+  The basic CAPTCHA module has no dependencies, nothing special is required.
+
+Conflicts/known issues:
+  CAPTCHA and page caching do not work together currently.
+  However, the CAPTCHA module does support the Drupal core page
+  caching mechanism: it just disables the caching of the pages
+  where it has to put its challenges.
+  If you use other caching mechanisms, it is possible that CAPTCHA's
+  won't work, and you get error messages like 'CAPTCHA validation
+  error: unknown CAPTCHA session ID'.
 
 Configuration:
   The configuration page is at admin/user/captcha, here you can configure
   the CAPTCHA module and enable challenges for the desired forms.
-
-Using the Image CAPTCHA:
-  If you plan on using image_captcha, you will have to install TTF fonts into
-  the image_captcha/fonts or files directory.  You can find free fonts
-  available at a number of different locations:
-    - DejaVu:
-      http://dejavu.sourceforge.net/wiki/index.php/Download
-    - Gentium:
-      http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&item_id=Gentium
-    - Redhat:
-      https://www.redhat.com/promo/fonts
-    - Matt's Free Fonts Page:
-      http://www.theory.org/~matt/strthrwr/fonts/free
+  You can also tweak the image CAPTCHA to your liking.

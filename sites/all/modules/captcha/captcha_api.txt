@@ -1,3 +1,4 @@
+// $Id: captcha_api.txt,v 1.12 2009/08/27 21:27:03 soxofaan Exp $
 
 This documentation is for developers that want to implement their own
 challenge type and integrate it with the base CAPTCHA module.
@@ -18,6 +19,9 @@ Functionality depends on the first argument $op:
     $captcha['form']: an array of the form elements you want to add to the form.
       There should be a key 'captcha_response' in this array, which points to
       the form element where the user enters his answer.
+    An optional additional argument $captcha_sid with the captcha session ID is
+    available for more advanced challenges (e.g. the image CAPTCHA uses this
+    argument, see image_captcha_captcha()).
 
 Let's give a simple example to make this more clear.
 We create the challenge 'Foo CAPTCHA', which requires the user to
@@ -38,6 +42,7 @@ function foo_captcha_captcha($op, $captcha_type='') {
         $captcha['form']['captcha_response'] = array(
           '#type' => 'textfield',
           '#title' => t('Enter "foo"'),
+          '#required' => TRUE,
         );
         return $captcha;
       }
@@ -64,7 +69,7 @@ file foo_captcha.info:
 name = "Foo CAPTCHA"
 description = "The foo CAPTCHA requires the user to enter the word 'foo'."
 package = "Spam control"
-dependencies = captcha
+dependencies[] = captcha
 core = 6.x
 """
 
@@ -122,38 +127,53 @@ function foo_captcha_help($path, $arg) {
 """
 
 
-=== Optional: preprocess the response ===
-In some situations it could be necessary to preprocess the response before
-letting the CAPTCHA module validate it. For example: if you want the validation
-to be case insensitive, you could convert the reponse to lower case.
-To enable response preprocessing:
 
-* Add a non zero 'preprocess' entry to $captcha in the 'generate' part of
-  hook_captcha(). E.g.:
+=== Optional: custom response validation ===
+The CAPTCHA module provides an option for case sensitive and case insensitve
+validation of the responses. If this is not sufficient, you can provide
+your own validation function with the 'captcha_validate' field, illustrated
+by the following example:
 
 """
+/**
+ * Implementation of hook_captcha().
+ */
 function foo_captcha_captcha($op, $captcha_type='') {
-  switch($op) {
+  switch ($op) {
     ...
     case 'generate':
       if ($captcha_type == 'Foo CAPTCHA') {
-        ...
-        $captcha['preprocess'] = TRUE,
-        ...
-"""
-
-* Add a 'preprocess' operation to hook_captcha() and add a $response argument
-  to the function signature. E.g.:
-
-"""
-function foo_captcha_captcha($op, $captcha_type='', $response='') {
-  switch($op) {
-    ...
-    case 'preprocess':
-      if ($captcha_type == 'Foo CAPTCHA') {
-        return strtolower($response);
+        $captcha = array();
+        $captcha['solution'] = ...
+        $captcha['form'] = ...
+        $captcha['captcha_validate'] = 'foo_captcha_custom_validation';
+        return $captcha;
       }
       break;
-    ...
+  }
+}
+
+/**
+ * Custom CAPTCHA validation function.
+ *
+ * @param solution the solution for the challenge as reported by hook_captcha('generate', ...).
+ * @param response the answer given by the user.
+ * @return TRUE on succes and FALSE on failure.
+ */
+function foo_captcha_custom_validation($solution, $response) {
+  return $response == "foo" || $response == "bar";
+}
 """
+
+Previous example shows the basic usage for custom validation with only a $solution
+and $response argument, which should be sufficient for most CAPTCHA modules.
+More advanced CAPTCHA modules can also use extra provided arguments $element
+and $form_state:
+"""
+function foo_captcha_custom_validation($solution, $response, $element, $form_state) {
+  return $form_state['foo']['#bar'] = 'baz';
+}
+"""
+These extra arguments are the $element and $form_state arguments of the validation function
+of the #captcha element. See captcha_validate() in captcha.module for more info about this.
 
