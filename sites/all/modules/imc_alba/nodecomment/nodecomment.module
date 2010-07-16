@@ -354,7 +354,7 @@ function nodecomment_get_url($node) {
 		$order = variable_get('comment_default_order_'.$node->type, COMMENT_ORDER_NEWEST_FIRST);
 		// get position of this comment
 		$pos = db_result(db_query('SELECT COUNT(*) FROM {nodecomment} nc INNER JOIN {node} n ON n.nid = nc.comment_nid '.
-				'WHERE nc.parent_nid = %d AND n.created %s %d', $node->parent_nid,
+				'WHERE n.status=1 AND nc.parent_nid = %d AND n.created %s %d', $node->parent_nid,
 				($order == COMMENT_ORDER_NEWEST_FIRST ? '<' : '>'), $node->created));
 		$page = intval($pos / $comments_per_page);
 		return url('node/' . $node->parent_nid, array('absolute' => TRUE,
