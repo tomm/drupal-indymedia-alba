@@ -1,5 +1,5 @@
 <?php
-// $Id: captcha.admin.inc,v 1.32 2009/10/27 16:11:17 soxofaan Exp $
+// $Id: captcha.admin.inc,v 1.32.2.1 2010/06/12 14:35:55 soxofaan Exp $
 
 /**
  * Return an array with the available CAPTCHA types, for use as options array
@@ -168,16 +168,22 @@ function captcha_admin_settings() {
   );
 
   // Field for CAPTCHA persistence.
+  // TODO for D7: Rethink/simplify the explanation and UI strings.
   $form['captcha_persistence'] = array(
     '#type' => 'radios',
     '#title' => t('Persistence'),
-    '#default_value' => variable_get('captcha_persistence', CAPTCHA_PERSISTENCE_SHOW_ALWAYS),
+    '#default_value' => variable_get('captcha_persistence', CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL_PER_FORM_INSTANCE),
     '#options' => array(
-      CAPTCHA_PERSISTENCE_SHOW_ALWAYS => t('Always add a challenge.'),
-      CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL_PER_FORM => t('Omit challenges for a form once the user has successfully responded to a challenge for that form.'),
-      CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL => t('Omit challenges for all forms once the user has successfully responded to a challenge.'),
+      CAPTCHA_PERSISTENCE_SHOW_ALWAYS =>
+        t('Always add a challenge.'),
+      CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL_PER_FORM_INSTANCE =>
+        t('Omit challenges in a multi-step/preview workflow once the user successfully responds to a challenge.'),
+      CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL_PER_FORM_TYPE =>
+        t('Omit challenges on a form type once the user successfully responds to a challenge on a form of that type.'),
+      CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL =>
+        t('Omit challenges on all forms once the user successfully responds to any challenge on the site.'),
     ),
-    '#description' => t('Define if challenges should be omitted during the rest of a session once the user successfully responses to a challenge.'),
+    '#description' => t('Define if challenges should be omitted during the rest of a session once the user successfully responds to a challenge.'),
   );
 
   // Option for logging wrong responses.

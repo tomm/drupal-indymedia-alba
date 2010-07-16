@@ -1,5 +1,5 @@
 <?php
-// $Id: image_captcha.admin.inc,v 1.30 2009/12/15 23:53:37 soxofaan Exp $
+// $Id: image_captcha.admin.inc,v 1.30.2.1 2010/03/16 21:09:17 soxofaan Exp $
 
 /**
  * @file
@@ -22,7 +22,7 @@ function image_captcha_settings_form() {
 
   // First some error checking.
   $setup_status = _image_captcha_check_setup(FALSE);
-  if ($setup_status & IMAGE_CAPTCHA_ERROR_NO_GDLIB_WITH_JPEG) {
+  if ($setup_status & IMAGE_CAPTCHA_ERROR_NO_GDLIB) {
     drupal_set_message(t(
       'The Image CAPTCHA module can not generate images because your PHP setup does not support it (no <a href="!gdlib">GD library</a> with JPEG support).',
       array('!gdlib' => 'http://php.net/manual/en/book.image.php')

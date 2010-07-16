@@ -1,5 +1,5 @@
 <?php
-// $Id: captcha.inc,v 1.11 2009/08/27 22:21:56 soxofaan Exp $
+// $Id: captcha.inc,v 1.11.2.3 2010/06/12 14:35:55 soxofaan Exp $
 
 /**
  * Helper function for adding/updating a CAPTCHA point.
@@ -106,25 +106,41 @@ function _captcha_update_captcha_session($captcha_sid, $solution) {
 
 /**
  * Helper function for checking if CAPTCHA is required for user,
- * based on CAPTCHA session ID and user session info.
+ * based on the CAPTCHA persistence setting, the CAPTCHA session ID and
+ * user session info.
  */
 function _captcha_required_for_user($captcha_sid, $form_id) {
-  $captcha_session_status = db_result(db_query("SELECT status FROM {captcha_sessions} WHERE csid = %d", $captcha_sid));
+  // Get the CAPTCHA persistence setting.
+  $captcha_persistence = variable_get('captcha_persistence', CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL_PER_FORM_INSTANCE);
 
-  $captcha_success_form_ids = isset($_SESSION['captcha_success_form_ids']) ? (array)($_SESSION['captcha_success_form_ids']) : array();
-
-  switch (variable_get('captcha_persistence', CAPTCHA_PERSISTENCE_SHOW_ALWAYS)) {
-    case CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL:
-      $captcha_persistence_status = (count($captcha_success_form_ids) > 0);
-      break;
-    case CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL_PER_FORM:
-      $captcha_persistence_status = isset($captcha_success_form_ids[$form_id]);
-      break;
-    default:
-      $captcha_persistence_status = FALSE;
+  // First check: should we always add a CAPTCHA?
+  if ($captcha_persistence == CAPTCHA_PERSISTENCE_SHOW_ALWAYS) {
+    return TRUE;
   }
 
-  return ($captcha_session_status == CAPTCHA_STATUS_UNSOLVED) && !$captcha_persistence_status;
+  // Get the status of the current CAPTCHA session.
+  $captcha_session_status = db_result(db_query("SELECT status FROM {captcha_sessions} WHERE csid = %d", $captcha_sid));
+  // Second check: if the current session is already solved: omit further CAPTCHAs.
+  if ($captcha_session_status == CAPTCHA_STATUS_SOLVED) {
+    return FALSE;
+  }
+
+  // Third check: look at the persistence level (per form instance, per form or per user).
+  if ($captcha_persistence == CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL_PER_FORM_INSTANCE) {
+    return TRUE;
+  }
+  else {
+    $captcha_success_form_ids = isset($_SESSION['captcha_success_form_ids']) ? (array)($_SESSION['captcha_success_form_ids']) : array();
+    switch ($captcha_persistence) {
+      case CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL:
+        return (count($captcha_success_form_ids) == 0);
+      case CAPTCHA_PERSISTENCE_SKIP_ONCE_SUCCESSFUL_PER_FORM_TYPE:
+        return !isset($captcha_success_form_ids[$form_id]);
+    }
+  }
+
+  // We should never get to this point, but to be sure, we return TRUE.
+  return TRUE;
 }
 
 /**
@@ -151,7 +167,7 @@ function _captcha_get_description($lang_code=NULL) {
   else {
     $description = variable_get('captcha_description', $default);
   }
-  return $description;
+  return filter_xss_admin($description);
 }
 
 /**
@@ -217,7 +233,7 @@ function _captcha_get_captcha_placement($form_id, $form) {
     $buttons = _captcha_search_buttons($form);
     if (count($buttons)) {
       // Pick first button.
-      // TODO: make this more sofisticated? Use cases needed.
+      // TODO: make this more sophisticated? Use cases needed.
       $placement = $buttons[0];
     }
     else {
