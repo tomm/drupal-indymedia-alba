@@ -349,42 +349,11 @@ function imcviews_front() {
 		$main_nids[] = $nid;
 	}
 
-	$term_nids = variable_get('imcviews_front_sections', array());
-/*
-	$term_nids[] = array('tid' => 21, 'color' => 'darkcyan', 'style' => 'summaries', 'num' => 6);
-	$term_nids[] = array('tid' => $headline_tid, 'color' => '#606', 'style' => 'titles', 'num' => 1, 'title' => 'Other recent features');
-	$term_nids[] = array('tid' => 20, 'color' => '#660', 'style' => 'summaries', 'num' => 6);
-	$term_nids[] = array('tid' => 23, 'color' => 'green', 'style' => 'summaries', 'num' => 6);
-	//$term_nids[] = array('tid' => 24, 'color' => 'blue', 'style' => 'titles', 'num' => 8);
-	$term_nids[] = array('tid' => 22, 'color' => 'darkred', 'style' => 'summaries', 'num' => 6);
-*/
-	$tax_num = 0;
-	$max_section_age = intval(variable_get('imcviews_front_section_article_max_age_weeks', IMCVIEWS_DEFAULT_FRONT_SECTION_ARTICLE_MAX_AGE_WEEKS));
-
-	for ($i=0; $i<sizeof($term_nids); $i++) {
-		$t = &$term_nids[$i];
-		$q = db_query('SELECT DISTINCT n.nid FROM {node} n INNER JOIN {term_node} t ON t.nid = n.nid AND t.tid=%d WHERE n.type = "article" AND n.promote = 1 AND n.status = 1 AND n.created > %d ORDER BY n.created DESC LIMIT %d', $t['tid'], time()-$max_section_age*7*24*60*60, $t['num']);
-		$t['nids'] = array();
-		while ($nid = db_result($q)) {
-			if (!in_array($nid, $main_nids)) {
-				$t['nids'][] = $nid;
-			}
-		}
-		if ($t['nids']) $tax_num++;
-	}
-
 	$min = variable_get('imcviews_front_min_first', IMCVIEWS_DEFAULT_FRONT_MIN_FIRST);
 	$max = variable_get('imcviews_front_max_first', IMCVIEWS_DEFAULT_FRONT_MAX_FIRST);
-	$news_num = max($min, $max-$tax_num);
+	$news_num = $max;
 
-	// make news taxonomy blob have overflows from top bunch of news articles
-	for ($i=0; $i<sizeof($term_nids); $i++) {
-		if ($term_nids[$i]['tid'] == $headline_tid) {
-			$term_nids[$i]['nids'] = array_slice($main_nids,$news_num,8);
-		}
-	}
-	$out = "";
-	$out .= '<table class="front-feats" style="clear: both;">';
+	$out = '<table class="front-feats" style="clear: both;">';
 
 	// first feature is big
 	if ($nid = reset($main_nids)) {
@@ -402,35 +371,6 @@ function imcviews_front() {
 		if ($count & 1) $out .= '</tr>';
 		$count++;
 		if (--$news_num < 0) break;
-	}
-
-	// taxonomy articles
-	for ($i=0; $i<sizeof($term_nids); $i++) {
-		$t = &$term_nids[$i];
-		if (isset($t['title']) && $t['title']) $tid_name = $t['title'];
-		else $tid_name = db_result(db_query("SELECT name FROM {term_data} WHERE tid=%d", $t['tid']));
-		if ($t['nids']) {
-			if (!($count & 1)) $out .= '<tr>';
-			$out .= '<td valign="top" class="front-node-teaser-'.($count&1 ? 'right' : 'left').'">';
-			$out .= sprintf('<div class="front_taxonomy" style="background-color: %s; padding-left: 0.5em;">%s</div>', $t['color'], l($tid_name,'taxonomy/term/'.$t['tid']));
-
-			$started_list = 0;
-			for ($idx=0; $idx<sizeof($t['nids']); $idx++) {
-				$nid = $t['nids'][$idx];
-				if ($t['style'] == 'summaries' && $idx == 0) {
-					$node = node_load(array('nid'=>$nid));
-					$out .= node_view($node, TRUE, FALSE, TRUE);
-				} else {
-					if (!$started_list) { $out .= '<ul>'; $started_list = 1; }
-					$node = node_load(array('nid'=>$nid));
-					$out .= '<li class="feature-list">'.l($node->title, 'node/'.$nid).'</li>';
-				}
-			}
-			if ($started_list) $out .= '</ul>';
-			$out .= '</td>';
-			if ($count & 1) $out .= '</tr>';
-			$count++;
-		}
 	}
 
 	$out .= "</table>";
