@@ -69,3 +69,58 @@ function phptemplate_username($object) {
 function phptemplate_image_teaser($node) {
  return l(image_display($node, 'thumbnail'), 'node/'. $node->nid, array('class' => 'image'), NULL, NULL, TRUE, TRUE) . $node->teaser;
 }
+
+/* BITS TO MAKE WYSIWYG IMAGE INSERT WORK FROM UPLOADED ATTACHMENTS */
+/**
+ * Theme the attachments list.
+ *
+ * @ingroup themeable
+ */
+function phptemplate_upload_form_current($form) {
+  $header = array('', t('Delete'), t('List'), t('Description'), t('Weight'), t('Insert into text'), t('Size'));
+  drupal_add_tabledrag('upload-attachments', 'order', 'sibling', 'upload-weight');
+
+  foreach (element_children($form) as $key) {
+    // Add class to group weight fields for drag and drop.
+    $form[$key]['weight']['#attributes']['class'] = 'upload-weight';
+
+    $row = array('');
+    $row[] = drupal_render($form[$key]['remove']);
+    $row[] = drupal_render($form[$key]['list']);
+    $row[] = drupal_render($form[$key]['description']);
+    $row[] = drupal_render($form[$key]['weight']);
+    $row[] = drupal_render($form[$key]['insertbutton']);
+    $row[] = drupal_render($form[$key]['size']);
+    $rows[] = array('data' => $row, 'class' => 'draggable');
+  }
+  $output = theme('table', $header, $rows, array('id' => 'upload-attachments'));
+  $output .= drupal_render($form);
+  return $output;
+}
+
+/**
+ * Theme the attachment form.
+ * Note: required to output prefix/suffix.
+ *
+ * @ingroup themeable
+ */
+function phptemplate_upload_form_new($form) {
+	// add wysiwyg insert buttons
+	foreach (element_children($form['files']) as $key) {
+		$filepath = $form['files'][$key]['filepath']['#value'];
+		$fid = $form['files'][$key]['fid']['#value'];
+		if (image_get_info($filepath)) {
+			$thumb_path = 'sites/default/files/imagecache/small_thumb/' . $filepath;
+			/* The javascript for this is in imc_alba module */
+			$form['files'][$key]['insertbutton'] = array('#type' => 'markup', '#value' => 
+			'<button type="button" class="insertimg" id="'.file_create_url($filepath).'">Big</button>'.
+			'<button type="button" class="insertthumb" id="'.file_create_url($thumb_path).'">Small</button>'
+			);
+		}
+	}
+	drupal_add_tabledrag('upload-attachments', 'order', 'sibling', 'upload-weight');
+
+	$output = drupal_render($form);
+	return $output;
+}
+

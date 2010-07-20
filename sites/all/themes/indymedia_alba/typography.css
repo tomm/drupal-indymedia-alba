@@ -1,5 +1,6 @@
 body {
-  font: 12px/1.5 "Tahoma", sans-serif;
+  font-size: 100%; /* font sizes done like zen theme */
+  font-family: Tahoma, "DejaVu Sans", sans-serif;
   margin: 0px 0 28px 0;
 }
 
@@ -55,6 +56,8 @@ td {
 */
 #wrapper {
   padding: 0 0 0 0;
+  font-size: 0.75em;
+  line-height: 1.5em;
 }
 #content {
   margin: 0 0 0 0;
@@ -324,7 +327,6 @@ td {
   padding: 0.2em;
 }
 .node.teaser .content {
-  clear: left;
   padding: 0 0 0 0;
 }
 .node.teaser.cal .content {

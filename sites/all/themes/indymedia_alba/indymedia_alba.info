@@ -5,6 +5,7 @@ engine = phptemplate
 stylesheets[all][] = typography.css
 stylesheets[all][] = layout.css
 stylesheets[all][] = style.css
+scripts[] = upload-wysiwyg-insert.js
 
 regions[left] = Left sidebar
 regions[right] = Right sidebar

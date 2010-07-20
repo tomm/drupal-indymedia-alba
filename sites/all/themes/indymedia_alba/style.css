@@ -280,6 +280,7 @@ td.front-node-teaser-right {
   padding-left: 0;
 }
 .headline-node h2 {
+  font-size: 180%;
 }
 td#col-left {
 }
@@ -418,7 +419,6 @@ div.block h2.title a {
 .node-form #edit-author-wrapper {
 	float: left;
 	width: 25%;
-	margin-left: 4%;
 }
 .node-form .menu-item-form,
 .node-form .attachments {
@@ -426,4 +426,24 @@ div.block h2.title a {
 }
 .node-form .wysiwyg .tips {
 	display: none;
+}
+.node-teaser-img {
+	float: left;
+	margin: 0;
+}
+.node-teaser-img img.imagecache {
+	border: 1px solid black;
+	margin: 0 0.5em 0.2em 0;
+}
+.front-feats p {
+	margin: 0;
+}
+.front-feats .teaser h2.title {
+	margin: 0 0 0.25em 0;
+}
+.front-feats .node {
+	margin-bottom: 1em;
+}
+table.front-feats {
+	margin-top: 1em;
 }

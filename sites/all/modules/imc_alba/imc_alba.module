@@ -20,6 +20,15 @@ function imc_alba_menu() {
 	return $items;
 }
 
+function imc_alba_form_alter(&$form, $form_state, $form_id)
+{
+	/* Unfortunately necessary to make the upload module wysiwyg hack
+	 * implemented in the theme work */
+	if (isset($form['type']) && isset($form['#node'])) {
+		$form['attachments']['wrapper']['new']['attach']['#ahah']['method'] = 'replaceAndUpdateHandlers';
+	}
+}
+
 function imc_alba_admin() {
 	$form = array();
 	$form["imc_alba_days_to_close_commenting"] = array(

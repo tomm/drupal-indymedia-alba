@@ -1,0 +1,524 @@
+# Ukrainian translation of ImageCache (all releases)
+# Copyright (c) 2009 by the Ukrainian translation team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ImageCache (all releases)\n"
+"POT-Creation-Date: 2009-10-08 19:40+0000\n"
+"PO-Revision-Date: 2009-10-08 22:41+0200\n"
+"Language-Team: Ukrainian\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=((((n%10)==1)&&((n%100)!=11))?(0):(((((n%10)>=2)&&((n%10)<=4))&&(((n%100)<10)||((n%100)>=20)))?(1):2));\n"
+"Last-Translator: podarok <podarok@ua.fm>\n"
+"X-Poedit-Language: Ukrainian\n"
+"X-Poedit-Country: UKRAINE\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+msgid "Delete"
+msgstr "Видалити"
+
+msgid "List"
+msgstr "Список"
+
+msgid "Actions"
+msgstr "Дії"
+
+msgid "Cancel"
+msgstr "Скасувати"
+
+msgid "Action"
+msgstr "Дія"
+
+msgid "Yes"
+msgstr "Так"
+
+msgid "No"
+msgstr "Ні"
+
+msgid "Edit"
+msgstr "Редагувати"
+
+msgid "This action cannot be undone."
+msgstr "Цю дію не можна буде скасувати."
+
+msgid "Weight"
+msgstr "Вага"
+
+msgid "Link"
+msgstr "Посилання"
+
+msgid "Settings"
+msgstr "Налаштування"
+
+msgid "edit"
+msgstr "редагувати"
+
+msgid "Export"
+msgstr "Експорт"
+
+msgid "Label"
+msgstr "Заголовок"
+
+msgid "Preview"
+msgstr "Перегляд"
+
+msgid "Preset Name"
+msgstr "Ім'я налаштування"
+
+msgid "Default"
+msgstr "Типовий"
+
+msgid "Please only use alphanumic characters, underscores (_), and hyphens (-) for preset names."
+msgstr "Будь-ласка в назвах шаблонів використовуйте тільки цифри, латинські букви, символи нижнього підкреслення (_) і дефіс (-)"
+
+msgid "remove"
+msgstr "видалити"
+
+msgid "View"
+msgstr "Перегляд"
+
+msgid "Configure"
+msgstr "Управління"
+
+msgid "Normal"
+msgstr "Нормально"
+
+msgid "Width"
+msgstr "Ширина"
+
+msgid "Height"
+msgstr "Висота"
+
+msgid "Scale"
+msgstr "Маштаб"
+
+msgid "Amount"
+msgstr "Сума"
+
+msgid "Background color"
+msgstr "Колір тла"
+
+msgid "Not installed"
+msgstr "Не встановлено"
+
+msgid "Override"
+msgstr "Переназначити"
+
+msgid "Imagecache Preset"
+msgstr "Шаблон Imagecache"
+
+msgid "Threshold"
+msgstr "Поріг"
+
+msgid "Randomize"
+msgstr "Випадково"
+
+msgid "Revert"
+msgstr "Відновити"
+
+msgid "Missing"
+msgstr "Відсутнє"
+
+msgid "The primary identifier for a node."
+msgstr "Головний ідентифікатор для матеріалу"
+
+msgid "Storage"
+msgstr "Накопичувач"
+
+msgid "imagecache"
+msgstr "imagecache"
+
+msgid "ImageCache"
+msgstr "ImageCache"
+
+msgid "X offset"
+msgstr "зміщення по X"
+
+msgid "Enter an offset in pixels or use a keyword: <em>left</em>, <em>center</em>, or <em>right</em>."
+msgstr "Введіть зміщення в пікселях або використайте ключ: <em>left</em>, <em>center</em>, or <em>right</em>."
+
+msgid "Y offset"
+msgstr "зміщення по Y"
+
+msgid "Enter an offset in pixels or use a keyword: <em>top</em>, <em>center</em>, or <em>bottom</em>."
+msgstr "Введіть зміщення в пікселях або ключ: <em>top</em>, <em>center</em>, or <em>bottom</em>."
+
+msgid "Resize"
+msgstr "Змінити розмір"
+
+msgid "Clean URLs"
+msgstr "Короткі URLs"
+
+msgid "Allow Upscaling"
+msgstr "Дозвіл на збільшення"
+
+msgid "Let scale make images larger than their original size"
+msgstr "Дозволяє робити фото більшими за реальний розмір"
+
+msgid "imagecache_scale_image failed. image: %image, data: %data."
+msgstr "Помилка фільтра маштабу imagecache: %image, параметри: %data."
+
+msgid "imagecache_scale_and_crop failed. image: %image, data: %data."
+msgstr "Помилка фільтра маштабу і обрізання imagecache. %image, data: %data."
+
+msgid "<strong>Inside dimensions</strong>: Final dimensions will be less than or equal to the entered width and height. Useful for ensuring a maximum height and/or width."
+msgstr "<strong>Внутрішні розміри</strong>: Кінцеві розміри будуть менші або рівні до введених ширини і висоти. Зручно для зазначення максимальних висоти чи(або) ширини."
+
+msgid "<strong>Outside dimensions</strong>: Final dimensions will be greater than or equal to the entered width and height. Ideal for cropping the result to a square."
+msgstr "<strong>Зовнішні розміри</strong>: Кінцеві розміри будуть більшими або рівними введеним висоті та ширині. Ідеально для обрізання результату в квадрат."
+
+msgid "Scale to fit"
+msgstr "Вмістити"
+
+msgid "Inside dimensions"
+msgstr "Внутрішні розміри"
+
+msgid "Outside dimensions"
+msgstr "Зовнішні розміри"
+
+msgid "Enter a width in pixels or as a percentage. i.e. 500 or 80%."
+msgstr "Введіть ширину в пікселях або у відсотках. Приклад - 500 або 80%."
+
+msgid "Enter a height in pixels or as a percentage. i.e. 500 or 80%."
+msgstr "Введіть висоту в пікселях або у відсотках. Приклад - 500 або 80%."
+
+msgid "imagecache_deprecated_scale failed. image: %image, data: %data."
+msgstr "Помилка фільтра застрарілого маштабу imagecache. %image, data: %data."
+
+msgid "imagecache_crop failed. image: %image, data: %data."
+msgstr "Помилка фільтра обрізання imagecache. %image, data: %data."
+
+msgid "imagecache_desaturate failed. image: %image, data: %data."
+msgstr "Помилка фільтра перетворення в сірий imagecache. %image, data: %data."
+
+msgid "Rotation angle"
+msgstr "Кут повороту"
+
+msgid "The number of degrees the image should be rotated. Positive numbers are clockwise, negative are counter-clockwise."
+msgstr "Кількість градусів, для поворото фото. Позитивні числа - за годинниковою стрілкою, негативні - проти"
+
+msgid "Randomize the rotation angle for each image. The angle specified above is used as a maximum."
+msgstr "Випадковість в повороті для кожного фото. Кут, вказаний вище - максимум"
+
+msgid "background: "
+msgstr "фон: "
+
+msgid "imagecache_rotate_image failed. image: %image, data: %data."
+msgstr "Помилка фільтра повороту imagecache. %image, data: %data."
+
+msgid "<strong>NOTE:</strong> The sigma parameter below is currently <em>only</em> used when the Imagemagick toolkit is active."
+msgstr "<strong>Примітка:</strong> Параметр сігма нижче <em>виключно</em> використовується, якщо Imagemagick активний."
+
+msgid "Radius"
+msgstr "Радіус"
+
+msgid "The radius of the gaussian, in pixels, not counting the center pixel. If you're using Imagemagick, you can set this to 0 to let Imagemagick select a suitable radius. Typically 0.5 to 1 for screen resolutions. (default 0.5)"
+msgstr "Радіус Гауса, в пікселях, не враховує центральний піксель. Якщо використовується Imagemagick, Ви можете вказати 0, щоб Imagemagick обрав підходячий радіус. Типово від 0.5 до 1 для роздільної екрану. Базово 0.5"
+
+msgid "Sigma"
+msgstr "Сіґма"
+
+msgid "The standard deviation of the gaussian, in pixels. General rule of thumb: if radius < 1 then sigma = radius, else sigma = sqrt(radius). (default 0.5)"
+msgstr "Стандартне відхилення Гауса, в пікселях. Загальне правило іконки: якщо радіус менше сігми, толі сігма рівна радіусу, інакше сігма рівна кореню квадратному від радіуса. Базово - 0.5"
+
+msgid "The percentage of the difference between the original and the blur image that is added back into the original. Typically 50 to 200. (default 100)."
+msgstr "ВІдсоток відмінності між початковим розміром і розмитим фото, що додане в фоні оригіналу. Типово від 50 до 200. Базово - 100"
+
+msgid "The threshold, as a fraction of max RGB levels, needed to apply the difference amount.  Typically 0 to 0.2. (default 0.05)."
+msgstr "Поріг, як частка від максимальниз рівнів RGB, потрібна для використання в величині різниці. Типово від 0 до 0.2. (Базово від 0 до 0.2)"
+
+msgid "imagecache_sharpen_image failed. image: %image, data: %data."
+msgstr "Помилка фільтра чіткості imagecache. Фото: %image, параметри: %data."
+
+msgid "@preset image"
+msgstr "@preset фото"
+
+msgid "@preset image linked to node"
+msgstr "@preset фото причіплене до матеріалу"
+
+msgid "@preset image linked to image"
+msgstr "@preset фото причіплене до фото"
+
+msgid "@preset file path"
+msgstr "@preset шлях до файлу"
+
+msgid "@preset URL"
+msgstr "@preset URL"
+
+msgid "Failed generating an image from %image using imagecache preset %preset."
+msgstr "Помилка створення фото з %image, використовуючи налаштування %preset."
+
+msgid "non-existant action %action"
+msgstr "недоступна дія %action"
+
+msgid "Failed to create imagecache directory: %dir"
+msgstr "Помилка створення теки %dir для imagecache"
+
+msgid "action(id:%id): %action failed for %src"
+msgstr "дія(id:%id): помилка %action для %src"
+
+msgid "Unknown file type(%path) stat: %stat "
+msgstr "Невідомий тип файла(%path) стат: %stat "
+
+msgid "imagecache_resize_image failed. image: %image, data: %data."
+msgstr "Помилка масштабування imagecache. Фото %image, параметри: %data."
+
+msgid "administer imagecache"
+msgstr "адміністрування imahecache"
+
+msgid "flush imagecache"
+msgstr "очистка imagecache"
+
+msgid "view imagecache "
+msgstr "перегляд imagecache "
+
+msgid "presetname"
+msgstr "ім'я налаштувань"
+
+msgid "Manage imagecache preset."
+msgstr "Управління шаблонами imagecache"
+
+msgid "Flush"
+msgstr "Очистка"
+
+msgid "Preset Namespace"
+msgstr "Простір Налаштування"
+
+msgid "The namespace is used in URL's for images to tell imagecache how to process an image. Please only use alphanumeric characters, underscores (_), and hyphens (-) for preset names."
+msgstr "Ім'я, використані в адресах для фото для повідомлення imagecache як обробляти. Прохання, виключно буквенно-цифрові символи, підкреслення (_) і тире (-) для імен."
+
+msgid "Create New Preset"
+msgstr "Створення нового Налаштування"
+
+msgid "Preset \"%name\" (ID: @id) Created."
+msgstr "Шаблон \"%name\" (ID: @id) створено"
+
+msgid "The namespace you have chosen is already in use."
+msgstr "Обране ім'я вже використовується"
+
+msgid "The specified preset was not found"
+msgstr "Вказані налаштування не знайдено"
+
+msgid "Are you sure you want to delete the preset %preset?"
+msgstr "Ви дійсно бажаєте видалити налаштування %preset?"
+
+msgid "Preset \"%name\" (ID: @id) deleted."
+msgstr "Шаблон \"%name\" (ID: @id) видалено"
+
+msgid "Are you sure you want to flush the preset %preset?"
+msgstr "Ви дійсно бажаєте очистити налаштування %preset?"
+
+msgid "New Actions"
+msgstr "Нові Дії"
+
+msgid "Add !action"
+msgstr "Додавання !action"
+
+msgid "Update Preset"
+msgstr "Оновлення Налаштування"
+
+msgid "Update Action"
+msgstr "Оновлення Дії"
+
+msgid "Are you sure you want to delete the !action action from preset !preset?"
+msgstr "Ви дійсно бажаєте видалити !action з налаштування !preset?"
+
+msgid "The action has been deleted."
+msgstr "Дію видалено"
+
+msgid "Add Action"
+msgstr "Додати дію"
+
+msgid "Administer imagecache presets and actions."
+msgstr "Керування налагодженнями і діями imagecache"
+
+msgid "Add new preset"
+msgstr "Додавання нового налаштування"
+
+msgid "The primary identifier for an imagecache_preset."
+msgstr "Головний ідентифікатор для налаштування imagecache"
+
+msgid "The primary identifier for an imagecache_action."
+msgstr "Головний ідентифікатор для дії imagecache"
+
+msgid "The weight of the action in the preset."
+msgstr "Вага дії в налаштуванні"
+
+msgid "The module that defined the action."
+msgstr "Модуль, що назначає дію"
+
+msgid "The unique ID of the action to be executed."
+msgstr "Унікальний ідентифікатор для дії, що буде виконана"
+
+msgid "The configuration data for the action."
+msgstr "Дані конфігурації для дії"
+
+msgid "ImageCache Directory"
+msgstr "Тека ImageCache"
+
+msgid "%p does not a directory or is not readable by the webserver."
+msgstr "%p не тека, або недоступне на запис"
+
+msgid "%p is not writeable by the webserver."
+msgstr "%p недоступне на запис"
+
+msgid "An unknown error occured."
+msgstr "Сталась невідома помилка"
+
+msgid "An unknown error occured trying to verify %p is a directory and is writable."
+msgstr "Сталась невідома помилка при спробі перевірки теки %p на запис"
+
+msgid "ImageCache Temp Directory"
+msgstr "Тимчасова тека ImageCache"
+
+msgid "Dynamic image manipulator and cache."
+msgstr "Динамічне керування фото і кеш"
+
+msgid "Imagecache UI"
+msgstr "Інтерфейс користувача Imagecache"
+
+msgid "ImageCache User Interface."
+msgstr "Інтерфейс ImageCache"
+
+msgid "Update preset"
+msgstr "Оновити шаблон"
+
+msgid "Delete preset"
+msgstr "Вилучити набір"
+
+msgid "Remove this action"
+msgstr "Відмінити дію"
+
+msgid "Crop"
+msgstr "Обрізати"
+
+msgid "Not enabled"
+msgstr "Не увімкнено"
+
+msgid "ImageAPI"
+msgstr "ImageAPI"
+
+msgid "The background color to use for exposed areas of the image. Use web-style hex colors (#FFFFFF for white, #000000 for black). An empty value will cause images that support transparency to have transparent backgrounds, otherwise it will be white."
+msgstr "Колір фону, для використання для зовнішніх полей фото. Синтаксис - стиль ВЕБ (#FFFFFF для білого, #000000 - для чорного). Пусті значення дозволять прозорість фону(якщо присутній), інакше він буде білим."
+
+msgid "degrees:"
+msgstr "градуси:"
+
+msgid "randomize:"
+msgstr "випадково:"
+
+msgid "background:"
+msgstr "фон:"
+
+msgid "Transparent/white"
+msgstr "Прозоро/біле"
+
+msgid "radius:"
+msgstr "радіус:"
+
+msgid "sigma:"
+msgstr "сігма:"
+
+msgid "amount:"
+msgstr "кількість:"
+
+msgid "threshold:"
+msgstr "поріг:"
+
+msgid "The namespace is used in URLs for images to tell imagecache how to process an image. Please only use alphanumeric characters, underscores (_), and hyphens (-) for preset names."
+msgstr "Ім'я, використані в адресах для фото для повідомлення imagecache як обробляти. Прохання, виключно буквенно-цифрові символи, підкреслення (_) і тире (-) для імен."
+
+msgid "Please only use alphanumeric characters, underscores (_), and hyphens (-) for preset names."
+msgstr "Прохання, тільки букво-номерні символи, підкреслення (_), і тире (-) для імен налаштувань"
+
+msgid "Preset %name (ID: @id) was created."
+msgstr "Налаштування %name (ID: @id) створено"
+
+msgid "Preset %name (ID: @id) was deleted."
+msgstr "Налаштування %name (ID: @id) видалено"
+
+msgid "Preset %name (ID: @id) was flushed."
+msgstr "Налаштування %name (ID: @id) очищено"
+
+msgid "The specified preset was not found."
+msgstr "Вказане налаштування не знайдено"
+
+msgid "Override Defaults"
+msgstr "Переназначення Базового"
+
+msgid "Unknown Action."
+msgstr "Невідома дія"
+
+msgid "Unknown Preset."
+msgstr "Невідоме Налаштування"
+
+msgid "The action was succesfully updated."
+msgstr "Дію вдало оновлено"
+
+msgid "Unknown Action: @action_id"
+msgstr "Невідома дія: @action_id"
+
+msgid "ImageCache already generating: %dst, Lock file: %tmp."
+msgstr "ImageCache генерує: %dst, лок-файл: %tmp."
+
+msgid "Cached image file %dst already exists. There may be an issue with your rewrite configuration."
+msgstr "Кешований файл фото %dst вже існує. Можлива проблема для налагодження перезапису"
+
+msgid "Manage ImageCache presets."
+msgstr "Налагодження Налаштувань ImageCache"
+
+msgid "Place the following snippet in your module as part of <code>hook_imagecache_default_presets()</code>."
+msgstr "Розміщайте наступний кусок коду в Ваш модуль як частину <code>hook_imagecache_default_presets()</code>."
+
+msgid "ImageCache UI"
+msgstr "ImageCache UI"
+
+msgid "Add New Preset"
+msgstr "Додати Новий Шаблон"
+
+msgid "Delete Preset: !presetname"
+msgstr "Видалити шаблон: !presetname"
+
+msgid "!presetname"
+msgstr "!presetname"
+
+msgid "Add !action to !presetname"
+msgstr "Додати !action до !presetname"
+
+msgid "!action for preset !presetname"
+msgstr "!action для шаблону !presetname"
+
+msgid "Delete !action for preset !presetname"
+msgstr "Видалити !action для !presetname"
+
+msgid "Imagecache requires ImageAPI to function."
+msgstr "Imagecache потребує ImageAPI для своєї роботи"
+
+msgid "%p is not a directory or is not readable by the webserver."
+msgstr "%p не є папкою або ж вона не є доступною для зчитування сервером"
+
+msgid "width @width"
+msgstr "ширина @width"
+
+msgid "height @height"
+msgstr "висота @height"
+
+msgid "Unknown action."
+msgstr "Невідома дія."
+
+msgid "Create Action"
+msgstr "Створити дію"
+
+msgid "The action was succesfully created."
+msgstr "Дія успішно створена"
+
+msgid "404: Unable to find %image "
+msgstr "404: Неможливо знайти %image "
+
+msgid "403: File is not an image %image "
+msgstr "403: Файл не є зображенням %image "
+
+msgid "There was an error saving the new image file %dst."
+msgstr "Помилка при збиреженні нового зображення %dst"

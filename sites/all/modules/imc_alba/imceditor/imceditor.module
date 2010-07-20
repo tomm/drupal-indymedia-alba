@@ -761,3 +761,9 @@ function imceditor_generic_access($op, $node, $type) {
 	return NULL;
 } 
 
+function imceditor_views_api() {
+	return array(
+		'api' => 2.0,
+	);
+}
+
