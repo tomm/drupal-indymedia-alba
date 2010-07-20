@@ -447,3 +447,6 @@ div.block h2.title a {
 table.front-feats {
 	margin-top: 1em;
 }
+.nodecomment .content {
+	clear: left;
+}
