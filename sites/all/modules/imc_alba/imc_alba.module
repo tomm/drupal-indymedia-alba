@@ -26,6 +26,10 @@ function imc_alba_form_alter(&$form, $form_state, $form_id)
 	 * implemented in the theme work */
 	if (isset($form['type']) && isset($form['#node'])) {
 		$form['attachments']['wrapper']['new']['attach']['#ahah']['method'] = 'replaceAndUpdateHandlers';
+		$form['attachments']['#weight'] = -1;
+		$form['attachments']['#collapsed'] = false;
+		$form['attachments']['#title'] = t('File and image attachments');
+		$form['attachments']['#description'] = t('Changes made to the attachments are not permanent until you save this post. The first "listed" file will be included in RSS feeds. The first file will be used as the article\'s preview image.');
 	}
 }
 

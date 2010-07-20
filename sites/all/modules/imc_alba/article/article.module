@@ -84,9 +84,6 @@ function article_form(&$node) {
     );
   }
   $form['body_field'] = node_body_field($node, $type->body_label, 0);
-  if (!$form['body_field']['body']['#default_value']) {
-    $form['body_field']['body']['#default_value'] = "<p>&nbsp;</p><!--break--><p>&nbsp;</p>";
-  }
 
   return $form;
 }
