@@ -320,6 +320,27 @@ td.col-center-right {
 	font-size: 100%;
 }
 
+#block-views-featured_interviews-block_1 h2.title {
+	background-color: #c95000;
+	color: white;
+	padding: 0 5px;
+	font-size: 100%;
+}
+
+#block-views-featured_reviews-block_1 h2.title {
+	background-color: #6800c9;
+	color: white;
+	padding: 0 5px;
+	font-size: 100%;
+}
+
+#block-views-featured_culture-block_1 h2.title {
+	background-color: #a9a700;
+	color: white;
+	padding: 0 5px;
+	font-size: 100%;
+}
+
 #block-views-featured_commentary-block_1 h2.title {
 	background-color: #077;
 	color: white;
