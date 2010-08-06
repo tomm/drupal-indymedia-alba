@@ -23,6 +23,7 @@ html > body #main .node .content a:visited:after {
 
 h2.title {
   font-size: 136%;
+  line-height: 1em;
   margin: 1em 0 0 0;
 }
 h3.title {
@@ -57,7 +58,6 @@ td {
 #wrapper {
   padding: 0 0 0 0;
   font-size: 0.75em;
-  line-height: 1.5em;
 }
 #content {
   margin: 0 0 0 0;
@@ -341,7 +341,7 @@ td {
 .node.teaser .author {
   margin: 0.5em 15px 0.5em 15px;
 }
-node.teaser .submitted {
+.node.teaser .submitted {
   float: left;
   margin: 0.5em 0 0.5em 15px;
 }
