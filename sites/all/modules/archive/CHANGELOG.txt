@@ -1,0 +1,69 @@
+6.x-1.1
+  [#222886] by nmakarov
+    - Fixed invalid call to _archive_url()
+  [#247680]
+    - Update access permissions to comply with new 6.2 API change
+  [#240559] by MaxxArts
+    - Titles for block links not displayed correctly
+
+6.x-1.0
+  [#205778] by keith.smith
+    - Changes permissions from logged_in to "access content"
+    - Documents permissions in README.txt
+    - Added core dependency to archive.info
+  [#196966] by Beyer, et al
+    - Ported from 5.x branch
+    - Fixed date issues for calendar block
+  - Fixed theme_archive_separator() so that it displays transitions between dates correctly.
+  - Improved documentation for theme_archive_separator()
+  - Post counts for all nav links are now correct.
+  - Only years that have posts are now displayed.
+  - General code cleanup.
+  [#191724] by solomongifford
+    - Added theme_archive_page_title()
+  [#193638] by Gabor Hojtsy
+    - Various documentation fixes
+    - A few incorrect function calls
+    - Better handling of misformed URLs
+  [#197492] by solomongifford
+    - Fixed 'All' links in year selection row
+  - Added polish translation thanks to ser
+
+6.x-0.9-dev
+  Fixed [#189518]
+  Added page titles that change depending on content being viewed
+
+6.x-0.8-dev
+  Removed unused variables
+  Calendar block month title now link only if posts for that month
+  Added translation template from 5.x branch
+  Added Russian pot file from 5.x branch
+  Ported over good block_calendar code from 5.x branch
+  Moved common functions to archive.module so that extra includes aren't needed.
+  Removed archive.install
+
+6.x-0.7-dev:
+  Updated README.txt with more detailed and correct information
+  Optimized date validation code
+  Improved phpdocs
+
+6.x-0.6-dev:
+  Fixed bug #172022 carryover from 5.x branch
+  Refactored code significantly
+  Removed php 5.2 requirement
+  Fixed several date conversion problems where timezones weren't being applied properly
+
+6.x-0.5-dev:
+  Added themeable date separators to archive page
+  Removed arrows from calendar block
+  Fixed regression where node type navigation wasn't being displayed
+  Added CHANGELOG.txt
+  Added 'All' selection to years/months/days which makes navigation 
+    clearer and allows browsing all nodes on the site at once
+
+6.x-0.4-dev:
+	Bug fixes.
+	Stability fixes.
+	Feature refinement.
+	CSS changes.
+	Added TODO.txt

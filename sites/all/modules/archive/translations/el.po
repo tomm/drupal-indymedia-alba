@@ -1,0 +1,181 @@
+# translation of el.po to Greek
+# Greek translation of archive (5.x-1.11)
+# Copyright (c) 2008 by the Greek translation team
+# Generated from files:
+#  archive.inc,v 1.1.2.19 2008/08/19 22:00:31 susurrus
+#  archive.module,v 1.8.2.20 2008/08/19 23:03:30 susurrus
+#  archive.info,v 1.1.2.3 2007/09/05 00:17:36 susurrus
+#
+# Vasileios Lourdas <drupal@lourdas.name>, 2008.
+msgid ""
+msgstr ""
+"Project-Id-Version: el\n"
+"POT-Creation-Date: 2008-10-26 10:53+0200\n"
+"PO-Revision-Date: 2008-10-26 11:26+0200\n"
+"Last-Translator: Vasileios Lourdas <drupal@lourdas.name>\n"
+"Language-Team: Greek <el@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms:  nplurals=2; plural=(n != 1);\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: archive.admin.inc:16
+msgid "Content types available in archive"
+msgstr "Τύποι ύλης διαθέσιμοι για το αρχείο"
+
+#: archive.admin.inc:19
+msgid "Posts of these types will be displayed in the archive."
+msgstr "Οι καταχωρήσεις αυτών των τύπων θα εμφανίζονται στο αρχείο."
+
+#: archive.pages.inc:35
+msgid "No content found."
+msgstr "Δε βρέθηκε περιεχόμενο."
+
+#: archive.pages.inc:205 archive.info:0
+msgid "Archive"
+msgstr "Αρχείο"
+
+#: archive.pages.inc:232
+msgid "Date"
+msgstr "Ημερομηνία"
+
+#: archive.pages.inc:244
+msgid "Type"
+msgstr "Τύπος"
+
+#: archive.pages.inc:265;291;323;359
+msgid "All"
+msgstr "Όλα"
+
+#: archive.pages.inc:265;271;291;304;323;338;359;367
+#: archive.module:113;139;150;173
+msgid "1 post"
+msgid_plural "@count posts"
+msgstr[0] "1 καταχώριση"
+msgstr[1] "@count καταχωρίσεις"
+
+#: archive.module:10
+msgid "The archive module allows your users to browse your content by its type and date of publication. The archive module interface, available at the path <a href=\"@archive\">archive</a>, presents simple controls for selecting a year, month or day. All available posts published within this range are displayed beneath the control. Administrators may select the content types to be displayed. The archive module adds an <em>Archives</em> menu item to the default <em>Navigation</em> menu (the item is disabled by default), and displays the current month and year within an optional block."
+msgstr "Η μονάδα αρχείο επιτρέπει στους χρήστες να περιηγούνται στο περιεχόμενο βάσει του τύπου και της ημερομηνίας καταχώρισης. Η διεπαφή της μονάδας αρχείο, διαθέσιμη στη διαδρομή <a href=\"@archive\">αρχείο</a>, παρουσιάζει απλά ελεγκτήρια για την επιλογή έτους, μήνα ή ημέρας. Όλες οι διαθέσιμες καταχωρίσεις μέσα σε αυτό το εύρος εμφανίζονται κάτω από τα ελεγκτήρια. Οι διαχειριστές μπορούν να επιλέξουν τους τύπους ύλης που θα εμφανίζονται. Η μονάδα αρχείο προσθέτει το στοιχείο μενού <em>Αρχείο</em> στο προεπιλεγμένο μενού <em>Πλοήγηση</em> (το στοιχείο είναι εξ' ορισμού απενεργοποιημένο) και εμφανίζει τον τρέχων μήνα και έτος μέσα σε ένα προαιρετικό μπλοκ."
+
+#: archive.module:11
+msgid "You can"
+msgstr "Μπορείτε να"
+
+#: archive.module:12
+msgid "view your <a href=\"@archive\">archive page</a>."
+msgstr "δείτε τη <a href=\"@archive\">σελίδα του αρχείου</a>."
+
+#: archive.module:13
+msgid "enable, position and configure the <em>Current calendar month with archive links</em> block at the <a href=\"@blocks\">blocks administration page</a>."
+msgstr "ενεργοποιήσετε, τοποθετήσετε σε ορισμένη θέση και ρυθμίσετε το μπλοκ για τον <em>Τρέχων ημερολογιακό μήνα με τους συνδέσμους για το αρχείο</em> στη <a href=\"@blocks\">σελίδα διαχείρισης των μπλοκ</a>."
+
+#: archive.module:14
+msgid "enable or disable the <em>Archives</em> menu item on the <a href=\"@menu-administration\">navigation menu administration page</a>."
+msgstr "ενεργοποιήσετε ή απενεργοποιήσετε το στοιχείο μενού <em>Αρχείο</em> στη <a href=\"@menu-administration\">σελίδα διαχείρισης του μενού πλοήγησης</a>."
+
+#: archive.module:15
+msgid "For more information, see the online handbook entry for <a href=\"@handbook-page\">Archive module</a>."
+msgstr "Για περισσότερες πληροφορίες διαβάστε το εγχειρίδιο ρύθμισης και προσαρμογής, <a href=\"@handbook-page\">σελίδα Archive</a>."
+
+#: archive.module:121
+msgid "Sun"
+msgstr "Κυρ"
+
+#: archive.module:121
+msgid "Mon"
+msgstr "Δευ"
+
+#: archive.module:121
+msgid "Tue"
+msgstr "Τρί"
+
+#: archive.module:121
+msgid "Wed"
+msgstr "Τετ"
+
+#: archive.module:121
+msgid "Thu"
+msgstr "Πέμ"
+
+#: archive.module:121
+msgid "Fri"
+msgstr "Παρ"
+
+#: archive.module:121
+msgid "Sat"
+msgstr "Σάβ"
+
+#: archive.module:193
+msgid "Current calendar month with archive links"
+msgstr "Τρέχων ημερολογιακός μήνας με συνδέσμους για το αρχείο"
+
+#: archive.module:199;26;33
+msgid "Archives"
+msgstr "Αρχείο"
+
+#: archive.module:34
+msgid "Select the content types listed in the archives."
+msgstr "Επιλέξτε τους τύπους ύλης που θα εμφανίζονται στο αρχείο."
+
+#: archive.module:0
+msgid "archive"
+msgstr "αρχείο"
+
+#: archive.info:0
+msgid "Allows visitors to view content filtered by date or node type."
+msgstr "Επιτρέπει στους επισκέπτες να βλέπουν περιεχόμενο φιλτραρισμένο με την ημερομηνία ή τον τύπο καταχώρισης."
+
+#: archive.info:0
+msgid "Content display"
+msgstr "Εμφάνιση περιεχομένου"
+
+#: archive.inc:457
+msgid "Jan"
+msgstr "Ιαν"
+
+#: archive.inc:457
+msgid "Feb"
+msgstr "Φεβ"
+
+#: archive.inc:457
+msgid "Mar"
+msgstr "Μάρ"
+
+#: archive.inc:457
+msgid "Apr"
+msgstr "Απρ"
+
+#: archive.inc:457
+msgid "May"
+msgstr "Μάι"
+
+#: archive.inc:457
+msgid "Jun"
+msgstr "Ιούν"
+
+#: archive.inc:457
+msgid "Jul"
+msgstr "Ιούλ"
+
+#: archive.inc:457
+msgid "Aug"
+msgstr "Αύγ"
+
+#: archive.inc:457
+msgid "Sep"
+msgstr "Σεπ"
+
+#: archive.inc:457
+msgid "Oct"
+msgstr "Οκτ"
+
+#: archive.inc:457
+msgid "Nov"
+msgstr "Νοέ"
+
+#: archive.inc:457
+msgid "Dec"
+msgstr "Δεκ"
+

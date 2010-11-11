@@ -1,0 +1,130 @@
+# $Id: ja.po,v 1.1.2.1 2008/05/02 05:57:46 imagine Exp $
+#
+# Japanese translation of Drupal (archive)
+# Copyright 2008 0829 <hixarg+0829@gmail.com>
+# Generated from files:
+#  archive.admin.inc,v 1.6 2008/01/04 12:25:33 susurrus Exp
+#  archive.info,v 1.9 2008/01/04 12:21:36 susurrus Exp
+#  archive.module,v 1.36 2008/04/28 01:59:57 susurrus Exp
+#  archive.pages.inc,v 1.18 2008/01/04 12:25:33 susurrus Exp
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Drupal 6.x\n"
+"POT-Creation-Date: 2008-05-01 15:03+0900\n"
+"PO-Revision-Date: 2008-05-01 15:45+0900\n"
+"Last-Translator: 0829 <hixarg+0829@gmail.com>\n"
+"Language-Team: DRUPAL*DRUPAL <hixarg+0829@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: modules/archive/archive.admin.inc:16
+msgid "Content types available in archive"
+msgstr "アーカイブで利用可能なコンテンツタイプ"
+
+#: modules/archive/archive.admin.inc:19
+msgid "Posts of these types will be displayed in the archive."
+msgstr "ここで選択したコンテンツタイプの投稿のみがアーカイブに表示されます。"
+
+#: modules/archive/archive.info:0
+#: modules/archive/archive.pages.inc:196
+msgid "Archive"
+msgstr "アーカイブ"
+
+#: modules/archive/archive.info:0
+msgid "Allows visitors to view content filtered by date or node type."
+msgstr "コンテンツを日付またはコンテンツタイプごとにフィルタ表示するためのページを提供します。"
+
+#: modules/archive/archive.info:0
+msgid "Content display"
+msgstr "コンテンツ表示"
+
+#: modules/archive/archive.module:10
+msgid "The archive module allows your users to browse your content by its type and date of publication. The archive module interface, available at the path <a href=\"@archive\">archive</a>, presents simple controls for selecting a year, month or day. All available posts published within this range are displayed beneath the control. Administrators may select the content types to be displayed. The archive module adds an <em>Archives</em> menu item to the default <em>Navigation</em> menu (the item is disabled by default), and displays the current month and year within an optional block."
+msgstr "アーカイブモジュールはコンテンツタイプや投稿日時によってフィルタ可能なコンテンツの表示機能を提供します。 アーカイブモジュールの標準インターフェイスである <a href=\"@archive\">アーカイブ</a> ページでは、コンテンツを年・月・日でフィルタするための簡単なコントロールが備わっています。 コントロールで指定した日付の範囲内に公開されたすべての表示可能なコンテンツが閲覧できます。 管理者は表示するコンテンツタイプを選択することができます。 アーカイブモジュールは<strong>ナビゲーション</strong>メニューに<strong>アーカイブ</strong>という項目（デフォルトで無効となっています）を追加し、また、オプションブロックとして今月のカレンダーを追加します。"
+
+#: modules/archive/archive.module:11
+msgid "You can"
+msgstr "可能なこと"
+
+#: modules/archive/archive.module:12
+msgid "view your <a href=\"@archive\">archive page</a>."
+msgstr "<a href=\"@archive\">アーカイブ</a>ページを表示できます。"
+
+#: modules/archive/archive.module:13
+msgid "enable, position and configure the <em>Current calendar month with archive links</em> block at the <a href=\"@blocks\">blocks administration page</a>."
+msgstr "<a href=\"@blocks\">ブロックの管理ページ</a>で<strong>今月のアーカイブリンクカレンダー</strong>の表示設定を行えます。"
+
+#: modules/archive/archive.module:14
+msgid "enable or disable the <em>Archives</em> menu item on the <a href=\"@menu-administration\">navigation menu administration page</a>."
+msgstr "<a href=\"@menu-administration\">ナビゲーションメニューの管理ページ</a>で<strong>アーカイブ</strong>メニュー項目を有効または無効にできます。"
+
+#: modules/archive/archive.module:15
+msgid "For more information, see the online handbook entry for <a href=\"@handbook-page\">Archive module</a>."
+msgstr "詳細については、Drupal handbook の <a href=\"@handbook-page\">Archive</a> ページで確認できます。"
+
+#: modules/archive/archive.module:107
+msgid "Sun"
+msgstr "日"
+
+#: modules/archive/archive.module:107
+msgid "Mon"
+msgstr "月"
+
+#: modules/archive/archive.module:107
+msgid "Tue"
+msgstr "火"
+
+#: modules/archive/archive.module:107
+msgid "Wed"
+msgstr "水"
+
+#: modules/archive/archive.module:107
+msgid "Thu"
+msgstr "木"
+
+#: modules/archive/archive.module:107
+msgid "Fri"
+msgstr "金"
+
+#: modules/archive/archive.module:107
+msgid "Sat"
+msgstr "土"
+
+#: modules/archive/archive.module:153
+msgid "Current calendar month with archive links"
+msgstr "今月のアーカイブリンクカレンダー"
+
+#: modules/archive/archive.module:158;26;33
+msgid "Archives"
+msgstr "アーカイブ"
+
+#: modules/archive/archive.module:95;125
+#: modules/archive/archive.pages.inc:253;259;279;292;311;326;347;355
+msgid "1 post"
+msgid_plural "@count posts"
+msgstr[0] "投稿数(1)"
+msgstr[1] "投稿数(@count)"
+
+#: modules/archive/archive.module:34
+msgid "Select the content types listed in the archives."
+msgstr "アーカイブに一覧表示したいコンテンツタイプを選択します。"
+
+#: modules/archive/archive.module:0
+msgid "archive"
+msgstr "アーカイブ"
+
+#: modules/archive/archive.pages.inc:35
+msgid "No content found."
+msgstr "コンテンツが見つかりません。"
+
+#: modules/archive/archive.pages.inc:220
+msgid "Date"
+msgstr "日付"
+
+#: modules/archive/archive.pages.inc:232
+msgid "Type"
+msgstr "タイプ"
+

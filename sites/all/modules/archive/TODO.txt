@@ -1,0 +1,2 @@
+Enable caching of calendar block until end of month or new node created
+  Priority: Low

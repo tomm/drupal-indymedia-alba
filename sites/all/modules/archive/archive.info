@@ -1,0 +1,11 @@
+; $Id: archive.info,v 1.9 2008/01/04 12:21:36 susurrus Exp $
+name = Archive
+description = Allows visitors to view content filtered by date or node type.
+core = 6.x
+package = Content display
+; Information added by drupal.org packaging script on 2010-06-16
+version = "6.x-1.4"
+core = "6.x"
+project = "archive"
+datestamp = "1276715404"
+

@@ -1,0 +1,54 @@
+/* Archive Navigation */
+#archive-container ul {
+  margin: 0;
+  padding: 4px 10px 4px 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+ul#archive-days {
+  border: 0px;
+}
+
+#archive-container ul li {
+  margin: 0;
+  padding: 0 0.2em;
+  display: inline;
+  background-image: none;
+  list-style-type: none;
+}
+
+#archive-container .selected {
+  border-bottom: 4px solid #ddd;
+}
+
+#archive-container .future {
+  color: #aaa;
+}
+
+#archive-container dt {
+  font-weight: bold;
+  margin: 0.5em 0 0 0;
+  padding: 0.2em 0.5em;
+  background-color: #eee;
+}
+
+#archive-container dd {
+  margin: 0;
+  border: 1px solid #eee;
+}
+
+/* Archive block CSS */
+.block-archive table {
+  margin-top: 0;
+}
+.block-archive caption {
+  font-size: 1.3em;
+  font-weight: bold;
+}
+.block-archive .out-of-month {
+  color: #aaa;
+}
+.block-archive td, .block-archive th {
+  line-height: 130%;
+  padding: 0.3em;
+}
