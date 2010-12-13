@@ -13,7 +13,7 @@
 		<?php
 		$u = user_load(array('uid' => $block['uid']));
 		$username = ($u ? $u->name : "{unknown}");
-		print sprintf(t('Feature proposal blocked by %s, stating: '), $username).check_plain($block['comment']);
+		print sprintf(t('Feature proposal blocked by %s, stating: %s'), $username, $block['comment']);
 		/*if ($prop['comment']) {
 			print t('with comment: ').$prop['comment'];
 		}*/
