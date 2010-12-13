@@ -1,0 +1,11 @@
+; $Id: mobile_tools.info,v 1.1.2.3 2009/10/29 01:04:34 tdrycker Exp $
+name = Mobile Tools
+description = "This module gives a set of functionality to make your site mobile"
+core = 6.x
+package = Mobile
+; Information added by drupal.org packaging script on 2010-11-06
+version = "6.x-1.14"
+core = "6.x"
+project = "mobile_tools"
+datestamp = "1289085641"
+
