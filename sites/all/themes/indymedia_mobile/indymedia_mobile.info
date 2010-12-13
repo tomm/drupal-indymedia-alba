@@ -1,0 +1,15 @@
+name = Indymedia Mobile
+description = A mobile device theme for Indymedia sites
+core = 6.x
+engine = phptemplate
+stylesheets[all][] = typography.css
+stylesheets[all][] = layout.css
+stylesheets[all][] = style.css
+scripts[] = upload-wysiwyg-insert.js
+
+regions[before_content] = Before content
+regions[content] = Content
+regions[after_content] = After content
+regions[header] = Header
+regions[footer] = Footer
+
