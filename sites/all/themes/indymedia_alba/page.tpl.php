@@ -7,6 +7,7 @@ $language->language ?>" xmlns="http://www.w3.org/1999/xhtml">
 <?php print $head ?>
 <?php print $styles ?>
 <?php print $scripts ?>
+<link href="/rss.xml" rel="alternate" type="application/rss+xml" title="Indymedia Scotland" />
 <!--[if lte IE 6]>
 <style>
 #header { position: static; }
