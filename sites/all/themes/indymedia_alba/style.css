@@ -276,6 +276,9 @@ td.front-node-teaser-right {
 .event-block td, .event-block th {
   font-size: 70%;
 }
+.block {
+  clear: both;
+}
 .block ul {
   padding-left: 0;
 }
@@ -424,9 +427,6 @@ div.block h2.title a {
 	font-size: 120%;
 }
 
-.node-type-article #title {
-	font-size: 2em;
-}
 /* customisation of node form */
 .node-form #edit-taxonomy-2-wrapper {
 	float: left;
@@ -475,9 +475,6 @@ table.front-feats {
 table.views-view-grid td {
 	vertical-align: top;
 }
-h2#title {
-	font-size: 3em;
-}
 /* newswire theme */
 .article-minilist .item-list h3 {
 	margin-bottom: 0;
@@ -501,4 +498,32 @@ h2#title {
 	font-size: 90%;
 	line-height: 150%;
 }
-
+.feature-list .views-row {
+	float: left;
+	width: 50%;
+}
+.feature-list .article {
+	border-top: 1px solid #ddd;
+}
+.front .feature-list .views-row-1 .article {
+	border-top: 0px;
+}
+.feature-list .views-row-even {
+	clear: left;
+}
+.feature-list .views-row-even .article {
+	margin-right: 2em;
+}
+.feature-list .views-row-1 {
+	width: 100%;
+}
+.feature-list .views-row-1 h2.title {
+	font-size: 180%;
+}
+/* (article) link in "Past news in pictures" block */
+.block .view-article-pictures {
+	margin: 1em;
+}
+.block .view-article-pictures .views-field-view-node {
+	float: left;
+}
