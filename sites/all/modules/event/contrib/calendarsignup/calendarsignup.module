@@ -4,7 +4,6 @@
 
 
 function calendarsignup_forms($form_id, $args) {
-  watchdog('calendarsignup_forms', $form_id);
   if (strpos($form_id, 'calendarsignup_form_') === 0) {
     $node = $args[0];
     if ($form_id == 'calendarsignup_form_'. $node->nid) {

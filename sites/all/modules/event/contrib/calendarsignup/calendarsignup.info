@@ -6,9 +6,9 @@ dependencies[]  = event
 dependencies[]  = signup
 core = 6.x
 
-; Information added by drupal.org packaging script on 2009-01-02
+; Information added by drupal.org packaging script on 2010-07-11
 version = "6.x-2.x-dev"
 core = "6.x"
 project = "event"
-datestamp = "1230854727"
+datestamp = "1278834158"
 
