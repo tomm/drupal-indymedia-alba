@@ -498,4 +498,7 @@ table.views-view-grid td {
 	font-size: 90%;
 	line-height: 150%;
 }
-
+.ical-link {
+	float: right;
+	margin-left: 1em;
+}

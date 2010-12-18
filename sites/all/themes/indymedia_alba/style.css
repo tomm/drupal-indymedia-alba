@@ -527,3 +527,7 @@ table.views-view-grid td {
 .block .view-article-pictures .views-field-view-node {
 	float: left;
 }
+.ical-link {
+	float: right;
+	margin-left: 1em;
+}
