@@ -1,0 +1,58 @@
+<?php
+/* Run this from the command line, not using modphp.
+ * This will migrate the nodecomment comments to the standard drupal comment
+ * module. We need this because moving to Drupal 7 we won't be using
+ * nodecomment.
+ */
+
+/* Only allow it to be run from the command line */
+if (isset($_SERVER['HTTP_HOST'])) return;
+
+include_once 'includes/bootstrap.inc';
+drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+
+global $user;
+$user = user_load(1);
+
+$num = 0;
+$hidden = 0;
+$q = db_query("SELECT * FROM {node} WHERE type='nodecomment'");
+while ($a = db_fetch_array($q)) {
+	$noderef = db_fetch_array(db_query("SELECT * FROM {nodecomment} WHERE comment_nid=%d", $a['nid']));
+	if (!$noderef) {
+		print "Well, that is fucking weird\n";
+		exit();
+	}
+	$revision = db_fetch_array(db_query("SELECT * FROM {node_revisions} WHERE nid=%d AND vid=%d", 
+		$a['nid'], $a['vid']));
+	if (!$revision) {
+		print "ERROR! No noderevision for comment node. Should not happen.\n";
+		exit();
+	}
+	if ($a['status'] != 1) {
+		// discard hidden comments
+		$hidden++;
+		node_delete($a['nid']);
+		continue;
+	}
+	$xtradata = db_fetch_array(db_query("SELECT * FROM {nodextradata} WHERE nid=%d", $a['nid']));
+
+	if ($xtradata) {
+		db_query("INSERT INTO {comments} (nid, pid, uid, subject, comment, ".
+			"format, hostname, timestamp, status, thread, name, mail, homepage) ".
+			"VALUES (%d, %d, %d, '%s', '%s', %d, '%s', %d, %d, '%s', '%s', NULL, NULL)",
+			$noderef['parent_nid'], 0, $a['uid'], $a['title'], $revision['body'],
+			$revision['format'], '', $a['created'], 0, '',
+			$xtradata['author']);
+	} else {
+		db_query("INSERT INTO {comments} (nid, pid, uid, subject, comment, ".
+			"format, hostname, timestamp, status, thread, name, mail, homepage) ".
+			"VALUES (%d, %d, %d, '%s', '%s', %d, '%s', %d, %d, '%s', NULL, NULL, NULL)",
+			$noderef['parent_nid'], 0, $a['uid'], $a['title'], $revision['body'],
+			$revision['format'], '', $a['created'], 0, '');
+	}
+	node_delete($a['nid']);
+		
+	$num += 1;	
+}
+print "Migrated $num comments and discarded $hidden comments\n";
