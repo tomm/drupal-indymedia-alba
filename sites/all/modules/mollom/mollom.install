@@ -1,5 +1,4 @@
 <?php
-// $Id: mollom.install,v 1.2.2.36 2010/10/28 02:04:52 dries Exp $
 
 /**
  * @file
@@ -129,6 +128,12 @@ function mollom_schema() {
         'size' => 'tiny',
         'not null' => FALSE,
       ),
+      'profanity' => array(
+        'description' => 'Text analysis profanity check result.',
+        'type' => 'float',
+        'size' => 'tiny',
+        'not null' => FALSE,
+      ),
       'languages' => array(
         'description' => 'Text analysis language check result.',
         'type' => 'varchar',
@@ -184,6 +189,13 @@ function mollom_schema() {
         'type' => 'text',
         'not null' => FALSE,
         'serialize' => TRUE,
+      ),
+      'strictness' => array(
+        'description' => 'Strictness of text analysis checks.',
+        'type' => 'varchar',
+        'length' => 8,
+        'not null' => TRUE,
+        'default' => 'normal',
       ),
       'module' => array(
         'description' => 'Module name owning the form.',
@@ -254,6 +266,7 @@ function mollom_update_2() {
  * Upgrade form protection storage.
  */
 function mollom_update_3() {
+  $ret = array();
   // Load hook_mollom_form_info() implementations for mollom_form_list().
   foreach (module_list(FALSE, FALSE) as $module) {
     drupal_load('module', $module);
@@ -268,6 +281,7 @@ function mollom_update_3() {
       variable_set($name, 2);
     }
   }
+  return $ret;
 }
 
 /**
@@ -331,7 +345,12 @@ function mollom_update_6105() {
     if (!empty($mode) && isset($form_list[$form_id])) {
       $info = $form_list[$form_id];
       $info += mollom_form_info($form_id, $info['module']);
-      $info['enabled_fields'] = ($mode == MOLLOM_MODE_ANALYSIS ? array_keys($info['elements']) : array());
+      if ($mode == MOLLOM_MODE_ANALYSIS && isset($info['elements']) && is_array($info['elements'])) {
+        $info['enabled_fields'] = array_keys($info['elements']);
+      }
+      else {
+        $info['enabled_fields'] = array();
+      }
       db_query("INSERT INTO {mollom_form} (form_id, mode, enabled_fields, module) VALUES ('%s', %d, '%s', '%s')", array($form_id, $mode, serialize($info['enabled_fields']), $info['module']));
     }
     variable_del($row->name);
@@ -523,7 +542,7 @@ function mollom_update_6114() {
     $ret[] = update_sql("UPDATE {mollom} SET spam = 1 WHERE quality > 0.5");
   }
 
-  // Addition of {mollom}.profanity deferred to D7.
+  // Addition of {mollom}.profanity deferred to mollom_update_6119().
 
   return $ret;
 }
@@ -627,5 +646,54 @@ function mollom_update_6118() {
   if (db_column_exists('mollom', 'moderate')) {
     db_drop_field($ret, 'mollom', 'moderate');
   }
+  return $ret;
+}
+
+/**
+ * Add {mollom}.profanity.
+ */
+function mollom_update_6119() {
+  $ret = array();
+  if (!db_column_exists('mollom', 'profanity')) {
+    db_add_field($ret, 'mollom', 'profanity', array(
+      'description' => 'Text analysis profanity check result.',
+      'type' => 'float',
+      'size' => 'tiny',
+      'not null' => FALSE,
+    ));
+  }
+  return $ret;
+}
+
+/**
+ * Add {mollom_form}.strictness column.
+ */
+function mollom_update_6120() {
+  $ret = array();
+  if (!db_column_exists('mollom_form', 'strictness')) {
+    db_add_field($ret, 'mollom_form', 'strictness', array(
+      'description' => 'Strictness of text analysis checks.',
+      'type' => 'varchar',
+      'length' => 8,
+      'not null' => TRUE,
+      'default' => 'normal',
+    ));
+  }
+  return $ret;
+}
+
+/**
+ * Fix default value of {mollom_form}.strictness.
+ */
+function mollom_update_6121() {
+  $ret = array();
+  db_change_field($ret, 'mollom_form', 'strictness', 'strictness', array(
+    'description' => 'Strictness of text analysis checks.',
+    'type' => 'varchar',
+    'length' => 8,
+    'not null' => TRUE,
+    'default' => 'normal',
+  ));
+  $ret[] = update_sql("UPDATE {mollom_form} SET strictness = 'normal' WHERE strictness = 'medium'");
   return $ret;
 }

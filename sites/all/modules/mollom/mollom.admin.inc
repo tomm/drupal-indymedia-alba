@@ -1,5 +1,4 @@
 <?php
-// $Id: mollom.admin.inc,v 1.1.2.49 2010/11/01 16:41:06 sun Exp $
 
 /**
  * @file
@@ -204,15 +203,17 @@ function mollom_admin_configure_form(&$form_state, $mollom_form = NULL) {
 
       $all_permissions = array();
       foreach (module_implements('perm') as $module) {
-        // Transpose permissions into D7 format.
-        $module_permissions = array_flip(module_invoke($module, 'perm'));
-        foreach ($module_permissions as $permission => $key) {
-          $module_permissions[$permission] = array(
-            'title' => $permission,
-            'module' => $module,
-          );
+        if ($module_permissions = module_invoke($module, 'perm')) {
+          // Transpose permissions into D7 format.
+          $module_permissions = array_flip($module_permissions);
+          foreach ($module_permissions as $permission => $key) {
+            $module_permissions[$permission] = array(
+              'title' => $permission,
+              'module' => $module,
+            );
+          }
+          $all_permissions += $module_permissions;
         }
-        $all_permissions += $module_permissions;
       }
       // Prepend Mollom's global permission to the list.
       array_unshift($mollom_form['bypass access'], 'bypass mollom protection');
@@ -235,14 +236,12 @@ function mollom_admin_configure_form(&$form_state, $mollom_form = NULL) {
         // Textual analysis filters.
         $form['mollom']['checks'] = array(
           '#type' => 'checkboxes',
-          '#title' => t('Analyze text for'),
+          '#title' => t('Text analysis checks'),
           '#options' => array(
             'spam' => t('Spam'),
+            'profanity' => t('Profanity'),
           ),
           '#default_value' => $mollom_form['checks'],
-          // D7 only.
-          '#value' => array('spam' => 'spam'),
-          '#access' => FALSE,
         );
 
         // Form elements defined by hook_mollom_form_info() use the
@@ -270,6 +269,19 @@ function mollom_admin_configure_form(&$form_state, $mollom_form = NULL) {
           '#options' => $elements,
           '#default_value' => $enabled_fields,
           '#required' => $mollom_form['mode'] == MOLLOM_MODE_ANALYSIS,
+        );
+
+        $form['mollom']['strictness'] = array(
+          '#type' => 'radios',
+          '#title' => t('Text analysis accuracy'),
+          '#options' => array(
+            'strict' => t('Strict'),
+            'normal' => t('Normal'),
+            'relaxed' => t('Relaxed'),
+          ),
+          '#default_value' => $mollom_form['strictness'],
+          // Only possible for forms protected via text analysis.
+          '#access' => $modes[MOLLOM_MODE_ANALYSIS],
         );
 
         $form['mollom']['discard'] = array(
@@ -706,12 +718,14 @@ function mollom_admin_settings(&$form_state) {
     '#type' => 'textfield',
     '#title' => t('Public key'),
     '#default_value' => variable_get('mollom_public_key', ''),
+    '#element_validate' => array('mollom_admin_settings_validate_key'),
     '#description' => t('Used to uniquely identify you.'),
   );
   $form['access-keys']['mollom_private_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Private key'),
     '#default_value' => variable_get('mollom_private_key', ''),
+    '#element_validate' => array('mollom_admin_settings_validate_key'),
     '#description' => t('Used to prevent someone else from hijacking your requests. Similar to a password, it should never be shared with anyone.'),
   );
 
@@ -750,6 +764,23 @@ function mollom_admin_settings(&$form_state) {
   );
 
   return system_settings_form($form);
+}
+
+/**
+ * Element validation handler for API key text fields.
+ */
+function mollom_admin_settings_validate_key($element, &$form_state) {
+  if ($element['#value'] !== '') {
+    // Remove any leading/trailing white-space and override submitted value.
+    $element['#value'] = trim($element['#value']);
+    form_set_value($element, $element['#value'], $form_state);
+    // Verify the key has a length of 32 characters.
+    if (drupal_strlen($element['#value']) != 32) {
+      form_error($element, t('!title must be 32 characters. Ensure you copied the key correctly.', array(
+        '!title' => $element['#title'],
+      )));
+    }
+  }
 }
 
 /**
@@ -850,19 +881,7 @@ function mollom_reports_page() {
     '#title' => t('Statistics'),
     '#value' => '<embed' . drupal_attributes($embed_attributes) . '></embed>',
   );
-  if (module_exists('dblog')) {
-    $logs = array();
-    $query = db_query_range("SELECT message, variables FROM {watchdog} WHERE type = 'mollom' AND severity <= %d ORDER BY wid DESC", WATCHDOG_WARNING, 0, 10);
-    while ($log = db_fetch_object($query)) {
-      $t_args = unserialize($log->variables);
-      $logs[] = t($log->message, ($t_args ? $t_args : array()));
-    }
-    $form['watchdog'] = array(
-      '#type' => 'item',
-      '#title' => t('Recent Mollom messages'),
-      '#value' => $logs ? theme('item_list', $logs) : t('None'),
-    );
-  }
+
   return $form;
 }
 

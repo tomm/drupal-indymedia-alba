@@ -1,5 +1,4 @@
 <?php
-// $Id: mollom.inc,v 1.1.2.7 2010/09/13 23:52:36 sun Exp $
 
 /**
  * @file
@@ -101,6 +100,10 @@ function _mollom_retrieve_server_list() {
       break;
     }
   }
+
+  // Allow other modules to alter the server list. Internal use only.
+  drupal_alter('mollom_server_list', $result);
+
   if (is_array($result)) {
     _mollom_watchdog_multiple($messages, WATCHDOG_DEBUG);
     return $result;
