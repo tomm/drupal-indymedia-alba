@@ -1,5 +1,4 @@
 <?php
-// $Id: FeedsFetcher.inc,v 1.6 2010/03/03 18:38:57 alexb Exp $
 
 /**
  * Abstract class, defines shared functionality between fetchers.
@@ -94,4 +93,17 @@ abstract class FeedsFetcher extends FeedsPlugin {
    *   Source information for unsubscribing.
    */
   public function unsubscribe(FeedsSource $source) {}
+
+  /**
+   * Override import period settings. This can be used to force a certain import
+   * interval.
+   *
+   * @param $source
+   *   A FeedsSource object.
+   *
+   * @return
+   *   A time span in seconds if periodic import should be overridden for given
+   *   $source, NULL otherwise.
+   */
+  public function importPeriod(FeedsSource $source) {}
 }

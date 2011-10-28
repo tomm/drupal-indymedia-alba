@@ -1,60 +1,36 @@
 <?php
-// $Id: feeds_mapper_taxonomy.test,v 1.2 2010/03/30 20:06:36 diggersf Exp $
+module_load_include('test', 'feeds', 'test/feeds_mapper');
 
 /**
  * @file
- * Test case for taxonomy field mapper mappers/taxonomy.inc.
+ * Test case for taxonomy mapper mappers/taxonomy.inc.
  */
-
-require_once(drupal_get_path('module', 'feeds') . '/tests/feeds_mapper_test.inc');
 
 /**
  * Class for testing Feeds <em>content</em> mapper.
  */
 class FeedsMapperTaxonomyTestCase extends FeedsMapperTestCase {
-
   public static function getInfo() {
     return array(
-      'name' => t('Mapper: Taxonomy'),
-      'description' => t('Test Feeds Mapper support for Taxonomy.'),
-      'group' => t('Feeds'),
+      'name' => 'Mapper: Taxonomy',
+      'description' => 'Test Feeds Mapper support for Taxonomy.',
+      'group' => 'Feeds',
     );
   }
 
-  /**
-   * Set up the test.
-   */
   function setUp() {
-    // Call parent setup with required modules.
-    parent::setUp('feeds', 'feeds_ui', 'ctools', 'taxonomy');
-
-    // Create user and login.
-    $this->drupalLogin($this->drupalCreateUser(
-        array(
-          'administer content types',
-          'administer feeds',
-          'administer nodes',
-          'administer site configuration',
-          'administer taxonomy',
-        )
-    ));
-  }
-
-  /**
-   * Basic test loading an RSS feed.
-   */
-  function test() {
+    parent::setUp();
 
     // Add a new taxonomy vocabulary, add to story content type.
     $edit = array(
       'name' => 'Tags',
       'tags' => TRUE,
       'nodes[story]' => TRUE,
+      'nodes[page]' => TRUE,
     );
     $this->drupalPost('admin/content/taxonomy/add/vocabulary', $edit, 'Save');
-
-    // Create a feed, include mapping to taxonomy.
-    $this->createFeedConfiguration('Syndication', 'syndication');
+    // Create an importer configuration with basic mapping.
+    $this->createImporterConfiguration('Syndication', 'syndication');
     $this->addMappings('syndication',
       array(
         array(
@@ -82,6 +58,50 @@ class FeedsMapperTaxonomyTestCase extends FeedsMapperTestCase {
           'target' => 'guid',
           'unique' => TRUE,
         ),
+      )
+    );
+  }
+
+  /**
+   * Test inheriting taxonomy from the feed node.
+   */
+  function testInheritTaxonomy() {
+    // Map feed node's taxonomy to feed item node's taxonomy.
+    $this->addMappings('syndication',
+      array(
+        array(
+          'source' => 'parent:taxonomy:1',
+          'target' => 'taxonomy:1',
+        ),
+      )
+    );
+    // Turn off import on create, create feed node, tag, import.
+    $edit = array(
+      'import_on_create' => FALSE,
+    );
+    $this->drupalPost('admin/build/feeds/edit/syndication/settings', $edit, 'Save');
+    $this->assertText('Do not import on create');
+    $nid = $this->createFeedNode();
+    $terms = array('testterm1', 'testterm2', 'testterm3');
+    $edit = array(
+      'taxonomy[tags][1]' => implode(',', $terms),
+    );
+    $this->drupalPost("node/$nid/edit", $edit, t('Save'));
+    $this->drupalPost('node/'. $nid .'/import', array(), 'Import');
+    $count = db_result(db_query("SELECT COUNT(*) FROM {term_node}", $nid));
+    $this->assertEqual(33, $count, 'Found correct number of tags for all feed nodes and feed items.');
+    foreach ($terms as $term) {
+      $this->assertTaxonomyTerm($term);
+    }
+  }
+
+  /**
+   * Test aggregating RSS categories to taxonomy.
+   */
+  function testRSSCategoriesToTaxonomy() {
+    // Add mapping to tags vocabulary.
+    $this->addMappings('syndication',
+      array(
         array(
           'source' => 'tags',
           'target' => 'taxonomy:1',
@@ -132,8 +152,7 @@ class FeedsMapperTaxonomyTestCase extends FeedsMapperTestCase {
       'World Bank',
     );
     foreach ($terms as $term) {
-      $term = check_plain($term);
-      $this->assertPattern('/<a href="(.*?)\/taxonomy\/term\/([0-9]*?)"(.*)>'. $term .'<\/a>/', 'Found '. $term);
+      $this->assertTaxonomyTerm($term);
     }
 
     // Delete all items, all associations are gone.
@@ -182,5 +201,13 @@ class FeedsMapperTaxonomyTestCase extends FeedsMapperTestCase {
     // This term should now be missing from term-node associations.
     $this->assertEqual(29, db_result(db_query("SELECT count(*) FROM {term_data}")), "Found correct number of terms.");
     $this->assertEqual(39, db_result(db_query("SELECT count(*) FROM {term_node}")), "Found correct number of term-node relations.". db_result(db_query("SELECT count(*) FROM {term_node}")));
+  }
+
+  /**
+   * Helper, finds node style taxonomy term markup in DOM.
+   */
+  public function assertTaxonomyTerm($term) {
+    $term = check_plain($term);
+    $this->assertPattern('/<a href="(.*?)\/taxonomy\/term\/([0-9]*?)"(.*)>'. $term .'<\/a>/', 'Found '. $term);
   }
 }

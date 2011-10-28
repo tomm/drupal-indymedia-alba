@@ -1,5 +1,4 @@
 <?php
-// $Id: feeds.install,v 1.7 2010/02/23 04:59:06 alexb Exp $
 
 /**
  * @file
@@ -7,7 +6,7 @@
  */
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function feeds_schema() {
   $schema = array();
@@ -68,13 +67,13 @@ function feeds_schema() {
       'source' => array(
         'type' => 'text',
         'not null' => TRUE,
-        'description' => t('Main source resource identifier. E. g. a path or a URL.'),
+        'description' => 'Main source resource identifier. E. g. a path or a URL.',
       ),
       'batch' => array(
         'type' => 'text',
         'size' => 'big',
         'not null' => FALSE,
-        'description' => t('Cache for batching.'),
+        'description' => 'Cache for batching.',
         'serialize' => TRUE,
       ),
     ),
@@ -85,61 +84,14 @@ function feeds_schema() {
       'id_source' => array('id', array('source', 128)),
     ),
   );
-  $schema['feeds_schedule'] = array(
-    'description' => t('Contains feeds scheduled for refresh.'),
-    'fields' => array(
-      'feed_nid' => array(
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'unsigned' => TRUE,
-        'description' => 'Node nid if this particular source is attached to a feed node.',
-      ),
-      'id' => array(
-        'type' => 'varchar',
-        'length' => 128,
-        'not null' => TRUE,
-        'default' => '',
-        'description' => 'Id of the feed configuration.',
-      ),
-      'callback' => array(
-        'type' => 'varchar',
-        'length' => 128,
-        'not null' => TRUE,
-        'default' => '',
-        'description' => 'Callback to be invoked.',
-      ),
-      'last_executed_time' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'default' => 0,
-        'not null' => TRUE,
-        'description' => 'Timestamp when a job was last executed.',
-      ),
-      'scheduled' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'default' => 0,
-        'not null' => TRUE,
-        'description' => 'Timestamp when a job was scheduled. 0 if a job is currently not scheduled.',
-      ),
-    ),
-    'indexes' => array(
-      'feed_nid' => array('feed_nid'),
-      'id' => array('id'),
-      'id_callback' => array('id', 'callback'),
-      'last_executed_time' => array('last_executed_time'),
-      'scheduled' => array('scheduled'),
-    ),
-  );
   $schema['feeds_node_item'] = array(
-    'description' => t('Stores additional information about feed item nodes. Used by FeedsNodeProcessor.'),
+    'description' => 'Stores additional information about feed item nodes. Used by FeedsNodeProcessor.',
     'fields' => array(
       'nid' => array(
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'description' => t("Primary Key: The feed item node's nid."),
+        'description' => "Primary Key: The feed item node's nid.",
       ),
       'id' => array(
         'type' => 'varchar',
@@ -152,33 +104,82 @@ function feeds_schema() {
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'description' => t("Node id of the owner feed, if available."),
+        'description' => "Node id of the owner feed, if available.",
       ),
       'imported' => array(
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
-        'description' => t('Import date of the feed item, as a Unix timestamp.'),
+        'description' => 'Import date of the feed item, as a Unix timestamp.',
       ),
       'url' => array(
         'type' => 'text',
         'not null' => TRUE,
-        'description' => t('Link to the feed item.'),
+        'description' => 'Link to the feed item.',
       ),
       'guid' => array(
         'type' => 'text',
         'not null' => TRUE,
-        'description' => t('Unique identifier for the feed item.'),
+        'description' => 'Unique identifier for the feed item.'
       ),
       'hash' => array(
         'type' => 'varchar',
         'length' => 32, // The length of an MD5 hash.
         'not null' => TRUE,
         'default' => '',
-        'description' => t('The hash of the item.'),
+        'description' => 'The hash of the source item.',
       ),
     ),
     'primary key' => array('nid'),
+    'indexes' => array(
+      'id' => array('id'),
+      'feed_nid' => array('feed_nid'),
+      'imported' => array('imported'),
+      'url' => array(array('url', 255)),
+      'guid' => array(array('guid', 255)),
+    ),
+  );
+  $schema['feeds_term_item'] = array(
+    'description' => 'Tracks imported terms.',
+    'fields' => array(
+      'tid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Imported term id.',
+      ),
+      'id' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The id of the fields object that is the creator of this item.',
+      ),
+      'feed_nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => "Node id of the owner feed, if available.",
+      ),
+      'imported' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Import date of the feed item, as a Unix timestamp.',
+      ),
+      'url' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'Link to the feed item.',
+      ),
+      'guid' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'Unique identifier for the feed item.',
+      ),
+    ),
+    'primary key' => array('tid'),
     'indexes' => array(
       'id' => array('id'),
       'feed_nid' => array('feed_nid'),
@@ -214,12 +215,12 @@ function feeds_schema() {
       'hub' => array(
         'type' => 'text',
         'not null' => TRUE,
-        'description' => t('The URL of the hub endpoint of this subscription.'),
+        'description' => 'The URL of the hub endpoint of this subscription.',
       ),
       'topic' => array(
         'type' => 'text',
         'not null' => TRUE,
-        'description' => t('The topic URL (feed URL) of this subscription.'),
+        'description' => 'The topic URL (feed URL) of this subscription.',
       ),
       'secret' => array(
         'type' => 'varchar',
@@ -490,5 +491,133 @@ function feeds_update_6009() {
     ),
   );
   db_create_table($ret, 'feeds_push_subscriptions', $table);
+  return $ret;
+}
+
+/**
+ * Show a message about Feeds News, Feeds Import and Feeds fast news features.
+ */
+function feeds_update_6010() {
+  drupal_set_message(t('You may install Feeds News and Feeds Import as replacement for Feeds Defaults module.'));
+
+  if (module_exists('features')) {
+    drupal_set_message(t('<strong>Review enabled state of importer configurations on admin/build/feeds and features on admin/build/features.</strong>'));
+  }
+  else {
+    drupal_set_message(t('<strong>Review enabled state of importer configurations on admin/build/feeds and Feeds modules on admin/build/modules.</strong>'));
+  }
+  return array();
+}
+
+/**
+ * Add imported flag for terms.
+ */
+function feeds_update_6011() {
+  $ret = array();
+  $schema = array(
+    'description' => 'Tracks imported terms.',
+    'fields' => array(
+      'tid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Imported term id.',
+      ),
+      'id' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The id of the fields object that is the creator of this item.',
+      ),
+      'feed_nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => t("Node id of the owner feed, if available."),
+      ),
+    ),
+    'primary key' => array('tid'),
+    'indexes' => array(
+      'id_feed_nid' => array('id', 'feed_nid'),
+      'feed_nid' => array('feed_nid'),
+    ),
+  );
+  db_create_table($ret, 'feeds_term_item', $schema);
+  return $ret;
+}
+
+/**
+ * Drop schedule table install Job Scheduler module.
+ */
+function feeds_update_6012() {
+  $ret = array();
+  // Only attempt installation if module is present, otherwise we would leave
+  // the system table in a limbo.
+  $modules = module_rebuild_cache();
+  if (isset($modules['job_scheduler'])) {
+    if (!$modules['job_scheduler']->status) {
+      drupal_install_modules(array('job_scheduler'));
+      drupal_set_message(t('Installed Job Scheduler module.'));
+    }
+  }
+  else {
+    drupal_set_message(t('NOTE: Please install new dependency of Feeds: <a href="@job-scheduler-link">Job scheduler module</a>.', array('@job-scheduler-link' => url('http://drupal.org/project/job_scheduler'))), 'warning');
+  }
+  db_drop_table($ret, 'feeds_schedule');
+  return $ret;
+}
+
+/**
+ * Reschedule all tasks.
+ */
+function feeds_update_6013() {
+  // This was originally part of 6012 upgrade, but failed due to usage of
+  // API functions residing in feeds.module. Make sure it runs again for all
+  // users of Feeds.
+  variable_set('feeds_reschedule', TRUE);
+  return array();
+}
+
+/**
+ * Update feeds_term_item to match feeds_node_item.
+ */
+function feeds_update_6014() {
+  $ret = array();
+
+  // Define new fields.
+  $fields = array(
+    'imported' => array(
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+      'description' => t('Import date of the feed item, as a Unix timestamp.'),
+    ),
+    'url' => array(
+      'type' => 'text',
+      'not null' => TRUE,
+      'description' => t('Link to the feed item.'),
+    ),
+    'guid' => array(
+      'type' => 'text',
+      'not null' => TRUE,
+      'description' => t('Unique identifier for the feed item.'),
+    ),
+  );
+
+  // Add new fields.
+  foreach ($fields as $field => $data) {
+    db_add_field($ret, 'feeds_term_item', $field, $data);
+  }
+
+  // Add new indexes, drop id_feed_nid.
+  db_drop_index($ret, 'feeds_term_item', 'id_feed_nid');
+
+  db_add_index($ret, 'feeds_term_item', 'id', array('id'));
+  db_add_index($ret, 'feeds_term_item', 'imported', array('imported'));
+  db_add_index($ret, 'feeds_term_item', 'url', array(array('url', 255)));
+  db_add_index($ret, 'feeds_term_item', 'guid', array(array('guid', 255)));
+
   return $ret;
 }

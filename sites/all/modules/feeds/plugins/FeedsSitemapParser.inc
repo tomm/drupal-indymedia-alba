@@ -1,5 +1,4 @@
 <?php
-// $Id: FeedsSitemapParser.inc,v 1.1 2010/05/16 21:35:08 alexb Exp $
 
 /**
  * A parser for the Sitemap specification http://www.sitemaps.org/protocol.php
@@ -9,6 +8,9 @@ class FeedsSitemapParser extends FeedsParser {
    * Implementation of FeedsParser::parse().
    */
   public function parse(FeedsImportBatch $batch, FeedsSource $source) {
+    // Set time zone to GMT for parsing dates with strtotime().
+    $tz = date_default_timezone_get();
+    date_default_timezone_set('GMT');
     // Yes, using a DOM parser is a bit inefficient, but will do for now
     $xml = new SimpleXMLElement($batch->getRaw());
     foreach ($xml->url as $url) {
@@ -17,13 +19,14 @@ class FeedsSitemapParser extends FeedsParser {
         $item['lastmod'] = strtotime($url->lastmod);
       }
       if ($url->changefreq) {
-        $item['changefreq'] = $url->changefreq;
+        $item['changefreq'] = (string) $url->changefreq;
       }
       if ($url->priority) {
-        $item['priority'] = $url->priority;
+        $item['priority'] = (string) $url->priority;
       }
-      $batch->addItem($item);
+      $batch->items[] = $item;
     }
+    date_default_timezone_set($tz);
   }
 
   /**
@@ -47,6 +50,6 @@ class FeedsSitemapParser extends FeedsParser {
         'name' => t('Priority'),
         'description' => t('The priority of this URL relative to other URLs on the site.'),
       ),
-    );
+    ) + parent::getMappingSources();
   }
 }

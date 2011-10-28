@@ -1,5 +1,4 @@
 <?php
-// $Id: FeedsUserProcessor.inc,v 1.12 2010/06/19 15:57:13 alexb Exp $
 
 /**
  * @file
@@ -21,10 +20,10 @@ class FeedsUserProcessor extends FeedsProcessor {
 
     while ($item = $batch->shiftItem()) {
 
-      if (!($uid = $this->existingItemId($item, $source)) || $this->config['update_existing']) {
+      if (!($uid = $this->existingItemId($batch, $source)) || $this->config['update_existing']) {
 
         // Map item to a term.
-        $account = $this->map($item);
+        $account = $this->map($batch);
 
         // Check if user name and mail are set, otherwise continue.
         if (empty($account->name) || empty($account->mail) || !valid_email_address($account->mail)) {
@@ -39,7 +38,7 @@ class FeedsUserProcessor extends FeedsProcessor {
 
         // Save the user.
         user_save($account, (array) $account);
-        if ($account->uid && $account->openid) {
+        if ($account->uid && !empty($account->openid)) {
           $authmap = array(
             'uid' => $account->uid,
             'module' => 'openid',
@@ -80,8 +79,6 @@ class FeedsUserProcessor extends FeedsProcessor {
     else {
       drupal_set_message(t('There are no new users.'));
     }
-
-    return FEEDS_BATCH_COMPLETE;
   }
 
   /**
@@ -96,16 +93,18 @@ class FeedsUserProcessor extends FeedsProcessor {
   /**
    * Execute mapping on an item.
    */
-  protected function map($source_item) {
-    // Prepare term object.
-    $target_account = new stdClass();
+  protected function map(FeedsImportBatch $batch, $target_account = NULL) {
+    // Prepare user account object.
+    if (empty($target_account)) {
+      $target_account = new stdClass();
+    }
+
     $target_account->uid = 0;
-    $target_account->roles = $this->config['roles'];
+    $target_account->roles = array_filter($this->config['roles']);
     $target_account->status = $this->config['status'];
 
     // Have parent class do the iterating.
-    self::loadMappers();
-    return parent::map($source_item, $target_account);
+    return parent::map($batch, $target_account);
   }
 
   /**
@@ -140,16 +139,16 @@ class FeedsUserProcessor extends FeedsProcessor {
       $form['roles'] = array(
         '#type' => 'checkboxes',
         '#title' => t('Additional roles'),
-        '#description' => t('Every user will be assigned the "autenticated user" role. Select additional roles here.'),
+        '#description' => t('Every user is assigned the "authenticated user" role. Select additional roles here.'),
         '#default_value' => $this->config['roles'],
         '#options' => $roles,
       );
     }
-
+    // @todo Implement true updating.
     $form['update_existing'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Update existing users'),
-      '#description' => t('Check if existing users should be updated from imported data.'),
+      '#title' => t('Replace existing users'),
+      '#description' => t('If an existing user is found for an imported user, replace it. Existing users will be determined using mappings that are a "unique target".'),
       '#default_value' => $this->config['update_existing'],
     );
     return $form;
@@ -181,6 +180,10 @@ class FeedsUserProcessor extends FeedsProcessor {
         'name' => t('Created date'),
         'description' => t('The created (e. g. joined) data of the user.'),
        ),
+      'pass' => array(
+        'name' => t('Unencrypted Password'),
+        'description' => t('The unencrypted user password.'),
+      ),
     );
     if (module_exists('openid')) {
       $targets['openid'] = array(
@@ -200,11 +203,11 @@ class FeedsUserProcessor extends FeedsProcessor {
   /**
    * Get id of an existing feed item term if available.
    */
-  protected function existingItemId($source_item, FeedsSource $source) {
+  protected function existingItemId(FeedsImportBatch $batch, FeedsSource $source) {
 
     // Iterate through all unique targets and try to find a user for the
     // target's value.
-    foreach ($this->uniqueTargets($source_item) as $target => $value) {
+    foreach ($this->uniqueTargets($batch) as $target => $value) {
       switch ($target) {
         case 'name':
           $uid = db_result(db_query("SELECT uid FROM {users} WHERE name = '%s'", $value));

@@ -1,5 +1,4 @@
 <?php
-// $Id: opml_parser.inc,v 1.4 2010/03/29 02:55:50 alexb Exp $
 
 /**
  * @file

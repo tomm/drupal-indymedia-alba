@@ -1,5 +1,4 @@
 <?php
-// $Id: feeds.module,v 1.47 2010/06/19 20:34:31 alexb Exp $
 
 /**
  * @file
@@ -14,8 +13,6 @@ define('FEEDS_SCHEDULE_NEVER', -1);
 define('FEEDS_EXPIRE_NEVER', -1);
 // An object that is not persistent. Compare EXPORT_IN_DATABASE, EXPORT_IN_CODE.
 define('FEEDS_EXPORT_NONE', 0x0);
-// The Drupal Queue FeedsScheduler may use for scheduling importing or expiry.
-define('FEEDS_SCHEDULER_QUEUE', 'feeds_queue');
 // Status of batched operations.
 define('FEEDS_BATCH_COMPLETE', 1);
 define('FEEDS_BATCH_ACTIVE', 0);
@@ -26,10 +23,20 @@ define('FEEDS_BATCH_ACTIVE', 0);
  */
 
 /**
- * Implementation of hook_cron().
+ * Implements hook_cron().
  */
 function feeds_cron() {
-  feeds_scheduler()->cron();
+  if ($importers = feeds_reschedule()) {
+    foreach ($importers as $id) {
+      feeds_importer($id)->schedule();
+      $result = db_query("SELECT feed_nid FROM {feeds_source} WHERE id = '%s'", $id);
+      while ($row = db_fetch_object($result)) {
+        feeds_source($id, $row->feed_nid)->schedule();
+      }
+    }
+    feeds_reschedule(FALSE);
+    return;
+  }
 }
 
 /**
@@ -39,11 +46,81 @@ function feeds_cron() {
  */
 function feeds_cron_queue_info() {
   $queues = array();
-  $queues[FEEDS_SCHEDULER_QUEUE] = array(
-    'worker callback' => 'feeds_scheduler_work',
+  $queues['feeds_source_import'] = array(
+    'worker callback' => 'feeds_source_import',
+    'time' => variable_get('feeds_worker_time', 15),
+  );
+  $queues['feeds_importer_expire'] = array(
+    'worker callback' => 'feeds_importer_expire',
     'time' => variable_get('feeds_worker_time', 15),
   );
   return $queues;
+}
+
+/**
+ * Scheduler callback for importing from a source.
+ */
+function feeds_source_import($job) {
+  $source = feeds_source($job['type'], $job['id']);
+  try {
+    $source->existing()->import();
+  }
+  catch (FeedsNotExistingException $e) {
+    // Do nothing.
+  }
+  catch (Exception $e) {
+    watchdog('feeds_source_import()', $e->getMessage(), array(), WATCHDOG_ERROR);
+  }
+  $source->schedule();
+}
+
+/**
+ * Scheduler callback for expiring content.
+ */
+function feeds_importer_expire($job) {
+  $importer = feeds_importer($job['type']);
+  try {
+    $importer->existing()->expire();
+  }
+  catch (FeedsNotExistingException $e) {
+    // Do nothing.
+  }
+  catch (Exception $e) {
+    watchdog('feeds_importer_expire()', $e->getMessage(), array(), WATCHDOG_ERROR);
+  }
+  $importer->schedule();
+}
+
+/**
+ * Reschedule one or all importers.
+ *
+ * Note: variable_set('feeds_reschedule', TRUE) is used in update hook
+ * feeds_update_6013() and as such must be maintained as part of the upgrade
+ * path from pre 6.x 1.0 beta 6 versions of Feeds.
+ *
+ * @param $importer_id
+ *   If TRUE, all importers will be rescheduled, if FALSE, no importers will
+ *   be rescheduled, if an importer id, only importer of that id will be
+ *   rescheduled.
+ *
+ * @return
+ *   TRUE if all importers need rescheduling. FALSE if no rescheduling is
+ *   required. An array of importers that need rescheduling.
+ */
+function feeds_reschedule($importer_id = NULL) {
+  $reschedule = variable_get('feeds_reschedule', FALSE);
+  if ($importer_id === TRUE || $importer_id === FALSE) {
+    $reschedule = $importer_id;
+  }
+  elseif (is_string($importer_id) && $reschedule !== TRUE) {
+    $reschedule = is_array($reschedule) ? $reschedule : array();
+    $reschedule[$importer_id] = $importer_id;
+  }
+  variable_set('feeds_reschedule', $reschedule);
+  if ($reschedule === TRUE) {
+    return feeds_enabled_importers();
+  }
+  return $reschedule;
 }
 
 /**
@@ -65,10 +142,10 @@ function feeds_perm() {
  */
 function feeds_forms() {
   $forms = array();
-  $forms['FeedsImporter_feeds_config_form']['callback'] = 'feeds_config_form';
+  $forms['FeedsImporter_feeds_form']['callback'] = 'feeds_form';
   $plugins = feeds_get_plugins();
   foreach ($plugins as $plugin) {
-    $forms[$plugin['handler']['class'] .'_feeds_config_form']['callback'] = 'feeds_config_form';
+    $forms[$plugin['handler']['class'] .'_feeds_form']['callback'] = 'feeds_form';
   }
   return $forms;
 }
@@ -151,7 +228,7 @@ function feeds_importer_load($id) {
  */
 function feeds_theme() {
   return array(
-    'feeds_info' => array(
+    'feeds_upload' => array(
       'file' => 'feeds.pages.inc',
     ),
   );
@@ -161,11 +238,18 @@ function feeds_theme() {
  * Menu access callback.
  *
  * @param $action
- *   One of 'import' or 'clear'.
+ *   The action to be performed. Possible values are:
+ *   - import
+ *   - clear
  * @param $param
  *   Node object or FeedsImporter id.
  */
 function feeds_access($action, $param) {
+  if (!in_array($action, array('import', 'clear'))) {
+    // If $action is not one of the supported actions, we return access denied.
+    return FALSE;
+  }
+
   if (is_string($param)) {
     $importer_id = $param;
   }
@@ -190,7 +274,7 @@ function feeds_page_access() {
     return TRUE;
   }
   foreach (feeds_enabled_importers() as $id) {
-    if (user_access("import $id feed")) {
+    if (user_access("import $id feeds")) {
       return TRUE;
     }
   }
@@ -271,16 +355,13 @@ function feeds_nodeapi(&$node, $op, $form) {
         if (trim($node->title) == '') {
           try {
             $source->addConfig($node_feeds);
-            // @todo Too many indirections. Clean up.
-            $batch = $source->importer->fetcher->fetch($source);
-            $source->importer->parser->parse($batch, $source);
-            if (!$last_title = $batch->getTitle()) {
+            if (!$last_title = $source->preview()->getTitle()) {
               throw new Exception();
             }
           }
           catch (Exception $e) {
             drupal_set_message($e->getMessage(), 'error');
-            form_set_error('title', t('Could not retrieve title from feed.'), 'error');
+            form_set_error('title', t('Could not retrieve title from feed.'));
           }
         }
         break;
@@ -306,17 +387,20 @@ function feeds_nodeapi(&$node, $op, $form) {
         if ($op == 'insert' && feeds_importer($importer_id)->config['import_on_create'] && !isset($node_feeds['suppress_import'])) {
           feeds_batch_set(t('Importing'), 'import', $importer_id, $node->nid);
         }
-        // Add import to scheduler.
-        feeds_scheduler()->add($importer_id, 'import', $node->nid);
-        // Add expiry to schedule, in case this is the first feed of this
-        // configuration.
-        feeds_scheduler()->add($importer_id, 'expire');
+        // Add source to schedule, make sure importer is scheduled, too.
+        if ($op == 'insert') {
+          $source->schedule();
+          $source->importer->schedule();
+        }
         $node_feeds = NULL;
         break;
       case 'delete':
-        // Remove feed from scheduler and delete source.
-        feeds_scheduler()->remove($importer_id, 'import', $node->nid);
-        feeds_source($importer_id, $node->nid)->delete();
+        $source = feeds_source($importer_id, $node->nid);
+        if ($source->importer->processor->config['delete_with_source']) {
+          feeds_batch_set(t('Deleting'), 'clear', $importer_id, $node->nid);
+        }
+        // Remove attached source.
+        $source->delete();
         break;
     }
   }
@@ -345,30 +429,55 @@ function _feeds_nodeapi_node_processor($node, $op) {
       }
       break;
     case 'delete':
-      if (isset($node->feeds_node_item)) {
-        db_query("DELETE FROM {feeds_node_item} WHERE nid = %d", $node->nid);
-      }
+      db_query("DELETE FROM {feeds_node_item} WHERE nid = %d", $node->nid);
       break;
   }
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Implementation of hook_taxonomy().
+ */
+function feeds_taxonomy($op = NULL, $type = NULL, $term = NULL) {
+  if ($type == 'term' && !empty($term['tid'])) {
+    switch ($op) {
+      case 'delete':
+        db_query("DELETE FROM {feeds_term_item} WHERE tid = %d", $term['tid']);
+        break;
+      case 'update':
+        if (isset($term['feeds_term_item'])) {
+          db_query("DELETE FROM {feeds_term_item} WHERE tid = %d", $term['tid']);
+        }
+      case 'insert':
+        if (isset($term['feeds_term_item'])) {
+          $term['feeds_term_item']['tid'] = $term['tid'];
+          drupal_write_record('feeds_term_item', $term['feeds_term_item']);
+        }
+        break;
+    }
+  }
+}
+
+/**
+ * Implements hook_form_alter().
  */
 function feeds_form_alter(&$form, $form_state, $form_id) {
-  if ($form['#id'] == 'node-form') {
-    if ($importer_id = feeds_get_importer_id($form['type']['#value'])) {
+  if (isset($form['#node']->type) && $form['#node']->type . '_node_form' == $form_id) {
+    if ($importer_id = feeds_get_importer_id($form['#node']->type)) {
       // Set title to not required, try to retrieve it from feed.
-      $form['title']['#required'] = FALSE;
+      if (isset($form['title'])) {
+        $form['title']['#required'] = FALSE;
+      }
+
       // Enable uploads.
       $form['#attributes']['enctype'] = 'multipart/form-data';
 
       // Build form.
-      $source = feeds_source($importer_id, empty($form['nid']['#value']) ? 0 : $form['nid']['#value']);
+      $source = feeds_source($importer_id, empty($form['#node']->nid) ? 0 : $form['#node']->nid);
       $form['feeds'] = array(
         '#type' => 'fieldset',
         '#title' => t('Feed'),
         '#tree' => TRUE,
+        '#weight' => 0,
       );
       $form['feeds'] += $source->configForm($form_state);
       $form['#feed_id'] = $importer_id;
@@ -377,16 +486,18 @@ function feeds_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
- * Refreshes a feed identified by $job.
- *
- * Used as a worker callback for drupal_queue.
- *
- * @param $job
- *   Array where the key 'id' is the id of a FeedsImporter object and the key
- *   'feed_nid' is the node id of feed node.
+ * Implements hook_content_extra_fields().
  */
-function feeds_scheduler_work($job) {
-  feeds_scheduler()->work($job);
+function feeds_content_extra_fields($type) {
+  $extras = array();
+  if (feeds_get_importer_id($type)) {
+    $extras['feeds'] = array(
+      'label' => t('Feed'),
+      'description' => t('Feeds module form elements'),
+      'weight' => 0,
+    );
+  }
+  return $extras;
 }
 
 /**
@@ -516,7 +627,7 @@ function _feeds_importer_digest() {
     else {
       $importers = array();
       foreach (feeds_importer_load_all() as $importer) {
-        $importers[$importer->id] = $importer->config['content_type'];
+        $importers[$importer->id] = isset($importer->config['content_type']) ? $importer->config['content_type'] : '';
       }
       cache_set(__FUNCTION__, $importers);
     }
@@ -553,9 +664,9 @@ function feeds_export($importer_id, $indent = '') {
  * Logs to a file like /mytmp/feeds_my_domain_org.log in temporary directory.
  */
 function feeds_dbg($msg) {
-  if (variable_get('feeds_debug', false)) {
+  if (variable_get('feeds_debug', FALSE)) {
     if (!is_string($msg)) {
-      $msg = var_export($msg, true);
+      $msg = var_export($msg, TRUE);
     }
     $filename = trim(str_replace('/', '_', $_SERVER['HTTP_HOST'] . base_path()), '_');
     $handle = fopen(file_directory_temp() ."/feeds_$filename.log", 'a');
@@ -604,19 +715,6 @@ function feeds_importer($id) {
 function feeds_source($importer_id, $feed_nid = 0) {
   feeds_include('FeedsImporter');
   return FeedsSource::instance($importer_id, $feed_nid);
-}
-
-/**
- * Gets a scheduler instance.
- *
- * @return
- *   A FeedsScheduler object or an object of a class defined by the Drupal
- *   variable 'feeds_scheduler_class'.
- */
-function feeds_scheduler() {
-  feeds_include('FeedsImporter');
-  feeds_include('FeedsScheduler');
-  return FeedsScheduler::instance();
 }
 
 /**
@@ -700,10 +798,10 @@ function feeds_plugin_instance($plugin, $id) {
   if ($class = ctools_plugin_load_class('feeds', 'plugins', $plugin, 'handler')) {
     return FeedsConfigurable::instance($class, $id);
   }
-  $args = array( '%plugin' => $plugin);
+  $args = array( '%plugin' => $plugin, '@id' => $id);
   if (user_access('administer feeds')) {
-    $args['!link'] = l($id, 'admin/build/feeds/edit/' . $id);
-    drupal_set_message(t('Missing Feeds plugin %plugin. See !link. Check whether all required libraries and modules are installed properly.', $args), 'warning');
+    $args['@link'] = url('admin/build/feeds/edit/' . $id);
+    drupal_set_message(t('Missing Feeds plugin %plugin. See <a href="@link">@id</a>. Check whether all required libraries and modules are installed properly.', $args), 'warning');
   }
   else {
     drupal_set_message(t('Missing Feeds plugin %plugin. Please contact your site administrator.', $args), 'warning');
@@ -811,7 +909,7 @@ function feeds_include_library($file, $library) {
       require libraries_get_path($library) ."/$file";
     }
     else {
-      require './'. drupal_get_path('module', 'feeds') ."/libraries/$file";
+      require './' . drupal_get_path('module', 'feeds') . "/libraries/$file";
     }
   }
   $included[$file] = TRUE;
@@ -831,7 +929,7 @@ function feeds_library_exists($file, $library) {
   if (module_exists('libraries') && file_exists(libraries_get_path($library) ."/$file")) {
     return TRUE;
   }
-  elseif (file_exists(drupal_get_path('module', 'feeds') ."/libraries/$file")) {
+  elseif (file_exists('./' . drupal_get_path('module', 'feeds') . "/libraries/$file")) {
     return TRUE;
   }
   return FALSE;
@@ -840,3 +938,34 @@ function feeds_library_exists($file, $library) {
 /**
  * @}
  */
+
+/**
+ * Copy of valid_url() that supports the webcal scheme.
+ *
+ * @see valid_url().
+ *
+ * @todo Replace with valid_url() when http://drupal.org/node/1191252 is fixed.
+ */
+function feeds_valid_url($url, $absolute = FALSE) {
+  if ($absolute) {
+    return (bool) preg_match("
+      /^                                                      # Start at the beginning of the text
+      (?:ftp|https?|feed|webcal):\/\/                         # Look for ftp, http, https, feed or webcal schemes
+      (?:                                                     # Userinfo (optional) which is typically
+        (?:(?:[\w\.\-\+!$&'\(\)*\+,;=]|%[0-9a-f]{2})+:)*      # a username or a username and password
+        (?:[\w\.\-\+%!$&'\(\)*\+,;=]|%[0-9a-f]{2})+@          # combination
+      )?
+      (?:
+        (?:[a-z0-9\-\.]|%[0-9a-f]{2})+                        # A domain name or a IPv4 address
+        |(?:\[(?:[0-9a-f]{0,4}:)*(?:[0-9a-f]{0,4})\])         # or a well formed IPv6 address
+      )
+      (?::[0-9]+)?                                            # Server port number (optional)
+      (?:[\/|\?]
+        (?:[\w#!:\.\?\+=&@$'~*,;\/\(\)\[\]\-]|%[0-9a-f]{2})   # The path and query (optional)
+      *)?
+    $/xi", $url);
+  }
+  else {
+    return (bool) preg_match("/^(?:[\w#!:\.\?\+=&@$'~*,;\/\(\)\[\]\-]|%[0-9a-f]{2})+$/i", $url);
+  }
+}

@@ -1,5 +1,4 @@
 <?php
-// $Id: FeedsDataProcessor.inc,v 1.14 2010/07/08 17:19:16 alexb Exp $
 
 /**
  * @file
@@ -21,13 +20,13 @@ class FeedsDataProcessor extends FeedsProcessor {
     $expiry_time = $this->expiryTime();
 
     while ($item = $batch->shiftItem()) {
-      $id = $this->existingItemId($item, $source);
+      $id = $this->existingItemId($batch, $source);
 
       if ($id === FALSE || $this->config['update_existing']) {
         // Map item to a data record, feed_nid and timestamp are mandatory.
         $data = array();
         $data['feed_nid'] = $source->feed_nid;
-        $data = $this->map($item, $data);
+        $data = $this->map($batch, $data);
         if (!isset($data['timestamp'])) {
           $data['timestamp'] = FEEDS_REQUEST_TIME;
         }
@@ -54,14 +53,12 @@ class FeedsDataProcessor extends FeedsProcessor {
     if ($inserted) {
       drupal_set_message(format_plural($inserted, 'Created @number item.', 'Created @number items.', array('@number' => $inserted)));
     }
-    elseif ($updated) {
+    if ($updated) {
       drupal_set_message(format_plural($updated, 'Updated @number item.', 'Updated @number items.', array('@number' => $updated)));
     }
-    else {
+    if (!$inserted && !$updated) {
       drupal_set_message(t('There are no new items.'));
     }
-
-    return FEEDS_BATCH_COMPLETE;
   }
 
   /**
@@ -74,8 +71,12 @@ class FeedsDataProcessor extends FeedsProcessor {
       'feed_nid' => $source->feed_nid,
     );
     $num = $this->handler()->delete($clause);
-    drupal_set_message(format_plural($num, 'Deleted @number item.', 'Deleted @number items.', array('@number' => $num)));
-    return FEEDS_BATCH_COMPLETE;
+    if ($num) {
+      drupal_set_message('All items have been deleted.');
+    }
+    else {
+      drupal_set_message('There were no items to delete.');
+    }
   }
 
   /**
@@ -104,41 +105,6 @@ class FeedsDataProcessor extends FeedsProcessor {
    */
   public function expiryTime() {
     return $this->config['expire'];
-  }
-
-  /**
-   * Override parent::addMapping() and create a new field for new mapping
-   * targets.
-   *
-   * @see getMappingTargets().
-   */
-  public function addMapping($source, $target, $unique = FALSE) {
-    if (empty($source) || empty($target)) {
-      return;
-    }
-
-    // Create a new field with targets that start with "new:"
-    @list($new, $type) = explode(':', $target);
-
-    if ($new == 'new') {
-      // Build a field name from the source key.
-      $field_name = data_safe_name($source);
-      // Get the full schema spec from data.
-      $type = data_get_field_definition($type);
-      // Add the field to the table.
-      $schema = $this->table()->get('table_schema');
-      if (!isset($schema['fields'][$field_name])) {
-        $target = $this->table()->addField($field_name, $type);
-        // Let the user know.
-        drupal_set_message(t('Created new field "!name".', array('!name' => $field_name)));
-      }
-      else {
-        throw new Exception(t('Field !field_name already exists as a mapping target. Remove it from mapping if you would like to map another source to it. Remove it from !data_table table if you would like to change its definition.', array('!field_name' => $field_name, '!data_table' => l($this->table()->get('name'), 'admin/content/data'))));
-      }
-    }
-
-    // Let parent populate the mapping configuration.
-    parent::addMapping($source, $target, $unique);
   }
 
   /**
@@ -208,10 +174,11 @@ class FeedsDataProcessor extends FeedsProcessor {
    * Set target element, bring element in a FeedsDataHandler format.
    */
   public function setTargetElement(&$target_item, $target_element, $value) {
+    if (empty($value)) {
+      return;
+    }
     if (strpos($target_element, '.')) {
-
       /**
-
       Add field in FeedsDataHandler format.
 
       This is the tricky part, FeedsDataHandler expects an *array* of records
@@ -229,10 +196,20 @@ class FeedsDataProcessor extends FeedsProcessor {
           $field => $v,
         );
       }
-      $target_item['#'. $table] = $values;
+      if (is_array($target_item["#$table"])) {
+        $target_item["#$table"] = array_merge($target_item["#$table"], $values);
+      }
+      else {
+        $target_item["#$table"] = $values;
+      }
     }
     else {
-      $target_item[$target_element] = $value;
+      if (is_array($target_item[$target_element]) && is_array($value)) {
+        $target_item[$target_element] = array_merge($target_item[$target_element], $value);
+      }
+      else {
+        $target_item[$target_element] = $value;
+      }
     }
   }
 
@@ -240,8 +217,8 @@ class FeedsDataProcessor extends FeedsProcessor {
    * Iterate through unique targets and try to load existing records.
    * Return id for the first match.
    */
-  protected function existingItemId($source_item, FeedsSource $source) {
-    foreach ($this->uniqueTargets($source_item) as $target => $value) {
+  protected function existingItemId(FeedsImportBatch $batch, FeedsSource $source) {
+    foreach ($this->uniqueTargets($batch) as $target => $value) {
       if ($records = $this->handler()->load(array('feed_nid' => $source->feed_nid, $target => $value))) {
         return $records[0]['id'];
       }
@@ -254,9 +231,10 @@ class FeedsDataProcessor extends FeedsProcessor {
    */
   public function configDefaults() {
     return array(
-      'update_existing' => 0,
+      'update_existing' => FEEDS_SKIP_EXISTING,
       'expire' => FEEDS_EXPIRE_NEVER, // Don't expire items by default.
       'mappings' => array(),
+      'delete_with_source' => FALSE,
     );
   }
 
@@ -264,12 +242,6 @@ class FeedsDataProcessor extends FeedsProcessor {
    * Override parent::configForm().
    */
   public function configForm(&$form_state) {
-    $form['update_existing'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Update existing items'),
-      '#description' => t('Check if existing items should be updated from the feed.'),
-      '#default_value' => $this->config['update_existing'],
-    );
     $period = drupal_map_assoc(array(FEEDS_EXPIRE_NEVER, 3600, 10800, 21600, 43200, 86400, 259200, 604800, 604800 * 4, 604800 * 12, 604800 * 24, 31536000), 'feeds_format_expire');
     $form['expire'] = array(
       '#type' => 'select',
@@ -278,7 +250,30 @@ class FeedsDataProcessor extends FeedsProcessor {
       '#description' => t('Select after how much time data records should be deleted. The timestamp target value will be used for determining the item\'s age, see Mapping settings.'),
       '#default_value' => $this->config['expire'],
     );
+    $form['update_existing'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Replace existing records'),
+      '#description' => t('If an existing record is found for an imported record, replace it. Existing records will be determined using mappings that are a "unique target".'),
+      '#default_value' => $this->config['update_existing'],
+    );
+    $form['delete_with_source'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Delete items with source'),
+      '#description' => t('If enabled, any feed items associated with a source node will be removed along with the node. Not available for standalone importers.'),
+      '#default_value' => $this->config['delete_with_source'],
+      '#disabled' => empty(feeds_importer($this->id)->config['content_type']) ? TRUE : FALSE,
+    );
     return $form;
+  }
+
+  /**
+   * Reschedule if expiry time changes.
+   */
+  public function configFormSubmit(&$values) {
+    if ($this->config['expire'] != $values['expire']) {
+      feeds_reschedule($this->id);
+    }
+    parent::configFormSubmit($values);
   }
 
   /**
@@ -353,5 +348,50 @@ class FeedsDataProcessor extends FeedsProcessor {
          '0' => 'id',
        ),
     );
+  }
+
+  /**
+   * Override parent::addConfig().
+   */
+  public function addConfig($config) {
+    $this->processMappings($config);
+    return parent::addConfig($config);
+  }
+
+  /**
+   * Override parent::setConfig().
+   */
+  public function setConfig($config) {
+    $this->processMappings($config);
+    return parent::setConfig($config);
+  }
+
+  /**
+   * Create a new field for each new: mapping.
+   */
+  protected function processMappings(&$config) {
+    if (!empty($config['mappings'])) {
+      foreach ($config['mappings'] as &$mapping) {
+        @list($new, $type) = explode(':', $mapping['target']);
+
+        // Create a new field with targets that start with "new:"
+        if ($new == 'new') {
+          // Build a field name from the source key.
+          $field_name = data_safe_name($mapping['source']);
+          // Get the full schema spec from data.
+          $type = data_get_field_definition($type);
+          // Add the field to the table.
+          $schema = $this->table()->get('table_schema');
+          if (!isset($schema['fields'][$field_name])) {
+            $mapping['target'] = $this->table()->addField($field_name, $type);
+            // Let the user know.
+            drupal_set_message(t('Created new field "@name".', array('@name' => $field_name)));
+          }
+          else {
+            throw new Exception(t('Field @field_name already exists as a mapping target. Remove it from mapping if you would like to map another source to it. Remove it from !data_table table if you would like to change its definition.', array('@field_name' => $field_name, '!data_table' => l($this->table()->get('name'), 'admin/content/data'))));
+          }
+        }
+      }
+    }
   }
 }

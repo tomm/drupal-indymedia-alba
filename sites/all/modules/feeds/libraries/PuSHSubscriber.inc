@@ -85,7 +85,9 @@ class PuSHSubscriber {
           $self = (string) $self->attributes()->href;
         }
       }
-      catch (Exception $e) {}
+      catch (Exception $e) {
+        // Do nothing.
+      }
     }
     curl_close($request);
     // Fall back to $url if $self is not given.
@@ -108,7 +110,7 @@ class PuSHSubscriber {
    *   The callback to unsubscribe.
    */
   public function unsubscribe($topic_url, $callback_url) {
-    if ($sub = $this->loadSubscription()) {
+    if ($sub = $this->subscription()) {
       $this->request($sub->hub, $sub->topic, 'unsubscribe', $callback_url);
       $sub->delete();
     }
@@ -156,7 +158,7 @@ class PuSHSubscriber {
         if ($ignore_signature) {
           return $raw;
         }
-        if (isset($_SERVER['HTTP_X_HUB_SIGNATURE']) && ($sub = $this->loadSubscription())) {
+        if (isset($_SERVER['HTTP_X_HUB_SIGNATURE']) && ($sub = $this->subscription())) {
           $result = array();
           parse_str($_SERVER['HTTP_X_HUB_SIGNATURE'], $result);
           if (isset($result['sha1']) && $result['sha1'] == hash_hmac('sha1', $raw, $sub->secret)) {
@@ -192,7 +194,7 @@ class PuSHSubscriber {
        *
        * In all other cases confirm negative.
        */
-      if ($sub = $this->loadSubscription()) {
+      if ($sub = $this->subscription()) {
         if ($_GET['hub_verify_token'] == $sub->post_fields['hub.verify_token']) {
           if ($_GET['hub_mode'] == 'subscribe' && $sub->status == 'subscribe') {
             $sub->status = 'subscribed';
@@ -215,12 +217,12 @@ class PuSHSubscriber {
         $verify = TRUE;
       }
       if ($verify) {
-        header('HTTP/1.1 200 "Found"', null, 200);
+        header('HTTP/1.1 200 "Found"', NULL, 200);
         print $_GET['hub_challenge'];
         exit();
       }
     }
-    header('HTTP/1.1 404 "Not Found"', null, 404);
+    header('HTTP/1.1 404 "Not Found"', NULL, 404);
     $this->log('Could not verify subscription.', 'error');
     exit();
   }
@@ -242,7 +244,7 @@ class PuSHSubscriber {
    * @todo Make concurrency safe.
    */
   protected function request($hub, $topic, $mode, $callback_url) {
-    $secret = hash('sha1', uniqid(rand(), true));
+    $secret = hash('sha1', uniqid(rand(), TRUE));
     $post_fields = array(
       'hub.callback' => $callback_url,
       'hub.mode' => $mode,
@@ -273,10 +275,26 @@ class PuSHSubscriber {
   }
 
   /**
-   * Helper for loading a subscription.
+   * Get the subscription associated with this subscriber.
+   *
+   * @return
+   *   A PuSHSubscriptionInterface object if a subscription exist, NULL
+   *   otherwise.
    */
-  protected function loadSubscription() {
+  public function subscription() {
     return call_user_func(array($this->subscription_class, 'load'), $this->domain, $this->subscriber_id);
+  }
+
+  /**
+   * Determine whether this subscriber is successfully subscribed or not.
+   */
+  public function subscribed() {
+    if ($sub = $this->subscription()) {
+      if ($sub->status == 'subscribed') {
+        return TRUE;
+      }
+    }
+    return FALSE;
   }
 
   /**

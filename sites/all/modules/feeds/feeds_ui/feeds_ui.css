@@ -1,4 +1,3 @@
-/* $Id: feeds_ui.css,v 1.5 2010/06/19 14:50:50 alexb Exp $ */
 
 /* Feeds admin overview form. */
 table.feeds-admin-importers thead th {
@@ -22,7 +21,7 @@ div.left-bar {
   float: left;
   position: relative;
   width: 240px;
-  border-right: 1px solid #D3E7F4;
+  border-right: 1px solid #DDD;
   padding: 10px 10px 0 0;
   }
 div.configuration {
@@ -41,9 +40,9 @@ div.feeds-container h4 {
   font-weight: bold;
   }
 div.feeds-container.plain {
-  background-color: #EDF5FA;
-  border-bottom: 1px solid #D3E7F4;
-  border-top: 2px solid #D3E7F4;
+  background-color: #EEE;
+  border-bottom: 1px solid #DDD;
+  border-top: 2px solid #DDD;
   padding: 5px;
   margin: 10px 0;
   }
@@ -62,20 +61,20 @@ div.feeds-container.plain {
       padding: 0;
       background-image: none;
       }
-  div.item-list ul.container-actions {
+  ul.container-actions {
     font-family: Arial, Helvetica;
     float: right;
     margin: 0;
     }
-    div.item-list ul.container-actions li {
+    ul.container-actions li {
       text-align: right;
       background-image: none;
       margin: 0;
       padding: 0;
       }
-      div.item-list .form-item,
-      div.item-list ul.container-actions li form,
-      div.item-list ul.container-actions li form input {
+      ul.container-actions .form-item,
+      ul.container-actions li form,
+       ul.container-actions li form input {
         padding: 0;
         margin: 0;
         display: inline;

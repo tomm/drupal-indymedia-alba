@@ -1,4 +1,3 @@
-// $Id: feeds_ui.js,v 1.6 2010/05/05 23:52:48 alexb Exp $
 
 Drupal.behaviors.feeds = function() {
 

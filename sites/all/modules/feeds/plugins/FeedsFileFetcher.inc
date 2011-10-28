@@ -1,5 +1,4 @@
 <?php
-// $Id: FeedsFileFetcher.inc,v 1.9 2010/03/29 02:55:50 alexb Exp $
 
 /**
  * @file
@@ -16,9 +15,9 @@ class FeedsFileBatch extends FeedsImportBatch {
   /**
    * Constructor.
    */
-  public function __construct($file_path) {
+  public function __construct($file_path, $feed_nid = 0) {
     $this->file_path = $file_path;
-    parent::__construct();
+    parent::__construct('', $feed_nid);
   }
 
   /**
@@ -32,6 +31,9 @@ class FeedsFileBatch extends FeedsImportBatch {
    * Implementation of FeedsImportBatch::getFilePath().
    */
   public function getFilePath() {
+    if (!file_exists($this->file_path)) {
+      throw new Exception(t('File @filepath is not accessible.', array('@filepath' => $this->file_path)));
+    }
     return $this->file_path;
   }
 }
@@ -46,25 +48,38 @@ class FeedsFileFetcher extends FeedsFetcher {
    */
   public function fetch(FeedsSource $source) {
     $source_config = $source->getConfigFor($this);
-    return new FeedsFileBatch($source_config['source']);
+    return new FeedsFileBatch($source_config['source'], $source->feed_nid);
   }
 
   /**
    * Source form.
    */
   public function sourceForm($source_config) {
-    $form = array();
-    // When renaming, do not forget feeds_vews_handler_field_source class.
+    $form = $info = array();
+    if (!empty($source_config['source']) && file_exists($source_config['source'])) {
+      $info = array(
+        'path' => $source_config['source'],
+        'size' => filesize(realpath($source_config['source'])),
+      );
+      if (module_exists('mimedetect')) {
+        $file = new stdClass;
+        $file->filepath = realpath($source_config['source']);
+        $info['mime'] = mimedetect_mime($file);
+      }
+    }
     $form['source'] = array(
-      '#type' => 'textfield',
+      '#type' => empty($this->config['direct']) ? 'value' : 'textfield',
       '#title' => t('File'),
       '#description' => t('Specify a file in the site\'s file system path or upload a file below.'),
-      '#default_value' => isset($source_config['source']) ? $source_config['source'] : '',
+      '#default_value' => empty($source_config['source']) ? '' : $source_config['source'],
     );
     $form['upload'] = array(
       '#type' => 'file',
-      '#title' => t('Upload'),
-      '#description' => t('Choose a file from your local computer.'),
+      '#title' => empty($this->config['direct']) ? t('File') : NULL,
+      '#description' => empty($source_config['source']) ? t('Select the file to be imported from your local system.') : t('Select a different file to be imported from your local system.'),
+      '#theme' => 'feeds_upload',
+      '#file_info' => $info,
+      '#size' => 10,
     );
     return $form;
   }
@@ -91,5 +106,28 @@ class FeedsFileFetcher extends FeedsFetcher {
     elseif (!file_check_location($values['source'], file_directory_path())) {
       form_set_error('feeds][source', t('File needs to point to a file in your Drupal file system path.'));
     }
+  }
+
+  /**
+   * Override parent::configDefaults().
+   */
+  public function configDefaults() {
+    return array(
+      'direct' => FALSE,
+    );
+  }
+
+  /**
+   * Override parent::configForm().
+   */
+  public function configForm(&$form_state) {
+    $form = array();
+    $form['direct'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Supply path to file directly'),
+      '#description' => t('For experts. If checked users can specify a path to a file when importing rather than uploading a file. This is useful when files to be imported are already present on server.'),
+      '#default_value' => $this->config['direct'],
+    );
+    return $form;
   }
 }

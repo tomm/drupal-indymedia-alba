@@ -1,5 +1,4 @@
 <?php
-// $Id: http_request.inc,v 1.6 2010/03/30 18:54:29 diggersf Exp $
 
 /**
  * @file
@@ -20,6 +19,11 @@ define('HTTP_REQUEST_PCRE_LINK_TAG', '/<link((?:[\x09\x0A\x0B\x0C\x0D\x20]+[^\x0
 define('HTTP_REQUEST_PCRE_TAG_ATTRIBUTES', '/[\x09\x0A\x0B\x0C\x0D\x20]+([^\x09\x0A\x0B\x0C\x0D\x20\x2F\x3E][^\x09\x0A\x0B\x0C\x0D\x20\x2F\x3D\x3E]*)(?:[\x09\x0A\x0B\x0C\x0D\x20]*=[\x09\x0A\x0B\x0C\x0D\x20]*(?:"([^"]*)"|\'([^\']*)\'|([^\x09\x0A\x0B\x0C\x0D\x20\x22\x27\x3E][^\x09\x0A\x0B\x0C\x0D\x20\x3E]*)?))?/');
 
 /**
+ * For cUrl specific errors.
+ */
+class HRCurlException extends Exception {}
+
+/**
  * Discover RSS or atom feeds at the given URL. If document in given URL is an
  * HTML document, function attempts to discover RSS or Atom feeds.
  *
@@ -28,10 +32,10 @@ define('HTTP_REQUEST_PCRE_TAG_ATTRIBUTES', '/[\x09\x0A\x0B\x0C\x0D\x20]+([^\x09\
  *    no feeds.
  */
 function http_request_get_common_syndication($url, $settings = NULL) {
-  if (valid_url($url, TRUE)) {
+  $password = $username = NULL;
+  if (feeds_valid_url($url, TRUE)) {
     // Handle password protected feeds.
     $url_parts = parse_url($url);
-    $password = $username = NULL;
     if (!empty($url_parts['user'])) {
       $password = $url_parts['pass'];
       $username = $url_parts['user'];
@@ -117,20 +121,36 @@ function http_request_get($url, $username = NULL, $password = NULL, $accept_inva
     }
   }
 
+  // Support the 'feed' and 'webcal' schemes by converting them into 'http'.
+  $url = strtr($url, array('feed://' => 'http://', 'webcal://' => 'http://'));
+
   if ($curl) {
     $headers[] = 'User-Agent: Drupal (+http://drupal.org/)';
     $result = new stdClass();
 
-    // Only download via cURL if we can validate the scheme to be either http or
-    // https.
-    // Validate in PHP, CURLOPT_PROTOCOLS is only supported with cURL 7.19.4
+    // Parse the URL and make sure we can handle the schema.
+    // cURL can only support either http:// or https://.
+    // CURLOPT_PROTOCOLS is only supported with cURL 7.19.4
     $uri = parse_url($url);
-    if ($uri['scheme'] != 'http' && $uri['scheme'] != 'https') {
-      $result->error = 'invalid schema '. $uri['scheme'];
-      $result->code = -1003; // This corresponds to drupal_http_request()
+    if (!isset($uri['scheme'])) {
+      $result->error = 'missing schema';
+      $result->code = -1002;
     }
     else {
+      switch ($uri['scheme']) {
+        case 'http':
+        case 'https':
+          // Valid scheme.
+          break;
+        default:
+          $result->error = 'invalid schema ' . $uri['scheme'];
+          $result->code = -1003;
+          break;
+      }
+    }
 
+    // If the scheme was valid, continue to request the feed using cURL.
+    if (empty($result->error)) {
       $download = curl_init($url);
       curl_setopt($download, CURLOPT_FOLLOWLOCATION, TRUE);
       if (!empty($username)) {
@@ -140,11 +160,15 @@ function http_request_get($url, $username = NULL, $password = NULL, $accept_inva
       curl_setopt($download, CURLOPT_HEADER, TRUE);
       curl_setopt($download, CURLOPT_RETURNTRANSFER, TRUE);
       curl_setopt($download, CURLOPT_ENCODING, '');
+      curl_setopt($download, CURLOPT_TIMEOUT, variable_get('http_request_timeout', 15));
       if ($accept_invalid_cert) {
         curl_setopt($download, CURLOPT_SSL_VERIFYPEER, 0);
       }
       $header = '';
       $data = curl_exec($download);
+      if (curl_error($download)) {
+        throw new HRCurlException(t('cURL error (@code) @error for @url', array('@code' => curl_errno($download), '@error' => curl_error($download), '@url' => $url)), curl_errno($download));
+      }
       $header_size = curl_getinfo($download, CURLINFO_HEADER_SIZE);
       $header = substr($data, 0, $header_size - 1);
       $result->data = substr($data, $header_size);
@@ -209,6 +233,12 @@ function http_request_get($url, $username = NULL, $password = NULL, $accept_inva
  *   TRUE if curl is available, FALSE otherwise.
  */
 function http_request_use_curl() {
+  // Allow site administrators to choose to not use cURL.
+  if (variable_get('feeds_never_use_curl', FALSE)) {
+    return FALSE;
+  }
+
+  // Check availability of cURL on the system.
   $basedir = ini_get("open_basedir");
   return function_exists('curl_init') && !ini_get('safe_mode') && empty($basedir);
 }
@@ -272,7 +302,7 @@ function http_request_find_feeds($html) {
     foreach ($attributes as $attribute) {
       // Find the key value pairs, attribute[1] is key and attribute[2] is the
       // value.
-      if(!empty($attribute[1]) && !empty($attribute[2])) {
+      if (!empty($attribute[1]) && !empty($attribute[2])) {
         $candidate[drupal_strtolower($attribute[1])] = drupal_strtolower(decode_entities($attribute[2]));
       }
     }
@@ -323,13 +353,13 @@ function http_request_create_absolute_url($url, $base_url) {
     else {
       // Backtracking from the existing path.
       $cparts = array_merge(array_filter(explode("/", $path)), array_filter(explode("/", $url)));
-      foreach($cparts as $i => $part) {
-        if($part == '.') {
-          $cparts[$i] = null;
+      foreach ($cparts as $i => $part) {
+        if ($part == '.') {
+          $cparts[$i] = NULL;
         }
-        if($part == '..') {
-          $cparts[$i - 1] = null;
-          $cparts[$i] = null;
+        if ($part == '..') {
+          $cparts[$i - 1] = NULL;
+          $cparts[$i] = NULL;
         }
       }
       $cparts = array_filter($cparts);

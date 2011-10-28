@@ -1,5 +1,4 @@
 <?php
-// $Id: link.inc,v 1.2 2010/07/08 17:19:16 alexb Exp $
 
 /**
  * @file
@@ -9,7 +8,7 @@
 /**
  * Implementation of hook_feeds_node_processor_targets_alter().
  */
-function link_feeds_node_processor_targets_alter($targets, $content_type) {
+function link_feeds_node_processor_targets_alter(&$targets, $content_type) {
   $info = content_types($content_type);
 
   $fields = array();
@@ -19,18 +18,18 @@ function link_feeds_node_processor_targets_alter($targets, $content_type) {
       if (in_array($field['type'], array('link'))) {
         $name = isset($field['widget']['label']) ? $field['widget']['label'] : $field_name;
         $targets[$field_name .':url'] = array(
-          'name' => t('!field_name (URL)', array('!field_name' => $name)),
+          'name' => t('@field_name (URL)', array('@field_name' => $name)),
           'callback' => 'link_feeds_set_target',
-          'description' => t('The URL for the CCK !name field of the node.', array('!name' => $name)),
+          'description' => t('The URL for the CCK @name field of the node.', array('@name' => $name)),
           'real_target' => $field_name,
         );
 
         //Provides a mapping target for the field title if used.
         if (in_array($field['title'], array('optional', 'required'))) {
           $targets[$field_name .':title'] = array(
-            'name' => $name .' (' . t('title').')',
+            'name' => t('@name (title)', array('@name' => $name)),
             'callback' => 'link_feeds_set_target',
-            'description' => t('The title for the CCK !name field of the node.', array('!name' => $name)),
+            'description' => t('The title for the CCK @name field of the node.', array('@name' => $name)),
             'real_target' => $field_name,
           );
         }
@@ -50,9 +49,10 @@ function link_feeds_node_processor_targets_alter($targets, $content_type) {
  *   The value to assign to the CCK field.
  */
 function link_feeds_set_target($node, $target, $value) {
+  module_load_include('inc', 'link');
   if (!empty($value)) {
     static $defaults = array();
-    list($field_name, $sub_field) = split(':', $target);
+    list($field_name, $sub_field) = explode(':', $target);
 
     if (!isset($defaults[$node->type][$field_name])) {
       $field = content_fields($field_name, $node->type);
@@ -75,7 +75,7 @@ function link_feeds_set_target($node, $target, $value) {
       if (!isset($field_data[$i])) {
         $field_data[$i] = $defaults[$node->type][$field_name];
       }
-      if ($sub_field != 'url' || (($v = link_cleanup_url($v)) && valid_url($v, true))) {
+      if ($sub_field != 'url' || (($v = link_cleanup_url($v)) && valid_url($v, TRUE))) {
         $field_data[$i][$sub_field] = $v;
       }
       $i++;

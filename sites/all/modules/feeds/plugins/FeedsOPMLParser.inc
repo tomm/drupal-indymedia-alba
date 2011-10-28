@@ -1,5 +1,4 @@
 <?php
-// $Id: FeedsOPMLParser.inc,v 1.5 2010/03/29 02:55:50 alexb Exp $
 
 /**
  * @file
@@ -17,8 +16,8 @@ class FeedsOPMLParser extends FeedsParser {
   public function parse(FeedsImportBatch $batch, FeedsSource $source) {
     feeds_include_library('opml_parser.inc', 'opml_parser');
     $result = opml_parser_parse($batch->getRaw());
-    $batch->setTitle($result['title']);
-    $batch->setItems($result['items']);
+    $batch->title = $result['title'];
+    $batch->items = $result['items'];
   }
 
   /**
@@ -34,6 +33,6 @@ class FeedsOPMLParser extends FeedsParser {
         'name' => t('Feed URL'),
         'description' => t('URL of the feed.'),
       ),
-    );
+    ) + parent::getMappingSources();
   }
 }
