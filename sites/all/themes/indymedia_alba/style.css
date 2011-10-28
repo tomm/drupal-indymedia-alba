@@ -528,6 +528,9 @@ table.views-view-grid td {
 	float: left;
 }
 .ical-link {
+	float: left;
+	margin-right: 1em;
+}
+span.event-timeleft {
 	float: right;
-	margin-left: 1em;
 }
