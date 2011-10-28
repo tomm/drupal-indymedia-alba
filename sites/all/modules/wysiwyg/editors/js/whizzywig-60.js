@@ -1,53 +1,5 @@
 
-var wysiwygWhizzywig = { currentField: null, fields: {} };
 var buttonPath = null;
-
-/**
- * Override Whizzywig's document.write() function.
- *
- * Whizzywig uses document.write() by default, which leads to a blank page when
- * invoked in jQuery.ready().  Luckily, Whizzywig developers implemented a
- * shorthand w() substitute function that we can override to redirect the output
- * into the global wysiwygWhizzywig variable.
- *
- * @see o()
- */
-var w = function (string) {
-  if (string) {
-    wysiwygWhizzywig.fields[wysiwygWhizzywig.currentField] += string;
-  }
-  return wysiwygWhizzywig.fields[wysiwygWhizzywig.currentField];
-};
-
-/**
- * Override Whizzywig's document.getElementById() function.
- *
- * Since we redirect the output of w() into a temporary string upon attaching
- * an editor, we also have to override the o() shorthand substitute function
- * for document.getElementById() to search in the document or our container.
- * This override function also inserts the editor instance when Whizzywig
- * tries to access its IFRAME, so it has access to the full/regular window
- * object.
- *
- * @see w()
- */
-var o = function (id) {
-  // Upon first access to "whizzy" + id, Whizzywig tries to access its IFRAME,
-  // so we need to insert the editor into the DOM.
-  if (id == 'whizzy' + wysiwygWhizzywig.currentField && wysiwygWhizzywig.fields[wysiwygWhizzywig.currentField]) {
-    jQuery('#' + wysiwygWhizzywig.currentField).after('<div id="' + wysiwygWhizzywig.currentField + '-whizzywig"></div>');
-    // Iframe's .contentWindow becomes null in Webkit if inserted via .after().
-    jQuery('#' + wysiwygWhizzywig.currentField + '-whizzywig').html(w());
-    // Prevent subsequent invocations from inserting the editor multiple times.
-    wysiwygWhizzywig.fields[wysiwygWhizzywig.currentField] = '';
-  }
-  // If id exists in the regular window.document, return it.
-  if (jQuery('#' + id).size()) {
-    return jQuery('#' + id).get(0);
-  }
-  // Otherwise return id from our container.
-  return jQuery('#' + id, w()).get(0);
-};
 
 (function($) {
 
@@ -68,9 +20,6 @@ Drupal.wysiwyg.editor.attach.whizzywig = function(context, params, settings) {
   else {
     window.buttonPath = 'textbuttons';
   }
-  // Create Whizzywig container.
-  wysiwygWhizzywig.currentField = params.field;
-  wysiwygWhizzywig.fields[wysiwygWhizzywig.currentField] = '';
   // Whizzywig needs to have the width set 'inline'.
   $field = $('#' + params.field);
   var originalValues = Drupal.wysiwyg.instances[params.field];
@@ -105,15 +54,18 @@ Drupal.wysiwyg.editor.detach.whizzywig = function(context, params) {
 
     // Save contents of editor back into textarea.
     $field.val(tidyH(editingArea));
+    // Move original textarea back to its previous location.
+    $container = $('#CONTAINER' + id);
+    $field.insertBefore($container);
     // Remove editor instance.
-    $('#' + id + '-whizzywig').remove();
+    $container.remove();
     whizzies.splice(index, 1);
 
     // Restore original textarea styling.
     var originalValues = Drupal.wysiwyg.instances[id];
     $field.removeAttr('style');
     $field.attr('style', originalValues.originalStyle);
-  };
+  }
 
   if (typeof params != 'undefined') {
     for (var i = 0; i < whizzies.length; i++) {
