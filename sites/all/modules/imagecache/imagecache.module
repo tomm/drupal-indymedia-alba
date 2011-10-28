@@ -1,5 +1,4 @@
 <?php
-// $Id: imagecache.module,v 1.112.2.9 2010/05/26 21:08:58 drewish Exp $
 
 /**
  * @file
@@ -70,7 +69,7 @@ function imagecache_menu() {
   // standard imagecache callback.
   $items[file_directory_path() .'/imagecache'] = array(
     'page callback' => 'imagecache_cache',
-    'access callback' => TRUE,
+    'access callback' => '_imagecache_menu_access_public_files',
     'type' => MENU_CALLBACK
   );
   // private downloads imagecache callback
@@ -84,11 +83,38 @@ function imagecache_menu() {
 }
 
 /**
+ * Menu access callback for public file transfers.
+ */
+function _imagecache_menu_access_public_files() {
+  return (FILE_DOWNLOADS_PUBLIC == variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC));
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter.
+ *
  * Clear imagecache presets cache on admin/build/modules form.
  */
 function imagecache_form_system_modules_alter(&$form, $form_state) {
   imagecache_presets(TRUE);
 }
+
+/**
+ * Implementation of hook_form_FORM_ID_alter.
+ *
+ * The file system form is modified to include an extra submit handler, so
+ * that imagecache can rebuild the menu after the filesystem path is changed.
+ */
+function imagecache_form_system_file_system_settings_alter(&$form, &$form_state) {
+  $form['#submit'][] = 'imagecache_system_file_system_submit';
+}
+
+/**
+ * Rebuild menus to ensure we've got the right files directory callback.
+ */
+function imagecache_system_file_system_submit($form, &$form_state) {
+  menu_rebuild();
+}
+
 
 /**
  * Implementation of hook_theme().
@@ -289,19 +315,22 @@ function imagecache_action_definition($action) {
 }
 
 /**
- * Return a URL that points to the location of a derivative of the
- * original image transformed with the given preset.
+ * Return a URL that points to the location of a derivative of the original
+ * image transformed with the given preset.
  *
  * Special care is taken to make this work with the possible combinations of
  * Clean URLs and public/private downloads. For example, when Clean URLs are not
  * available an URL with query should be returned, like
- * http://example.com/?q=files/imagecache/foo.jpg, so that imagecache is able
+ * http://example.com/?q=files/imagecache/foo.jpg, so that ImageCache is able
  * intercept the request for this file.
  *
- * This code is very similar to the Drupal core function file_create_url(), but
+ * This code began similarly to Drupal core's function file_create_url(), but
  * handles the case of Clean URLs and public downloads differently however.
+ * It also implements hook_file_url_alter() which was added to Drupal 7 and
+ * backported to PressFlow 6.x.
  *
  * @param $presetname
+ *   String specifying an ImageCache preset name.
  * @param $filepath
  *   String specifying the path to the image file.
  * @param $bypass_browser_cache
@@ -312,19 +341,30 @@ function imagecache_action_definition($action) {
  *   A Boolean indicating that the URL should be absolute. Defaults to TRUE.
  */
 function imagecache_create_url($presetname, $filepath, $bypass_browser_cache = FALSE, $absolute = TRUE) {
-  $path = _imagecache_strip_file_directory($filepath);
-  if (module_exists('transliteration')) {
-    $path = transliteration_get($path);
+  $args = array('query' => empty($bypass_browser_cache) ? NULL : time());
+  $file_directory = file_directory_path();
+
+  // Determine the path of the derivative inside the files directory.
+  $derivative_path = 'imagecache/'. $presetname .'/'. _imagecache_strip_file_directory($filepath);
+
+  // Then construct a full path and see if anyone wants to alter it.
+  $altered_path = $old_path = $file_directory .'/'. $derivative_path;
+  drupal_alter('file_url', $altered_path);
+
+  // If any module has altered the path, then return the alteration...
+  if ($altered_path != $old_path) {
+    // ...but use url() so our $bypass_browser_cache parameter is honored.
+    return url($altered_path, $args);
   }
 
-  $args = array('absolute' => $absolute, 'query' => empty($bypass_browser_cache) ? NULL : time());
-  switch (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC)) {
-    case FILE_DOWNLOADS_PUBLIC:
-      $base = $absolute ? $GLOBALS['base_url'] .'/' : '';
-      return url($base . file_directory_path() ."/imagecache/$presetname/$path", $args);
-    case FILE_DOWNLOADS_PRIVATE:
-      return url("system/files/imagecache/$presetname/$path", $args);
-  }
+  // It was unchanged so use the download method's prefix.
+  $prefix = array(
+    FILE_DOWNLOADS_PUBLIC => $file_directory,
+    FILE_DOWNLOADS_PRIVATE => 'system/files',
+  );
+  $path = $prefix[variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC)] .'/'. $derivative_path;
+
+  return url($path, $args + array('absolute' => $absolute));
 }
 
 /**
@@ -455,7 +495,7 @@ function _imagecache_cache($presetname, $path) {
  * @return
  *   Boolean, TRUE indicating success and FALSE failure.
  */
-function _imagecache_apply_action($action, $image) {
+function _imagecache_apply_action($action, &$image) {
   $actions = imagecache_action_definitions();
 
   if ($definition = imagecache_action_definition($action['action'])) {
@@ -879,6 +919,28 @@ function theme_imagecache_imagelink($presetname, $path, $alt = '', $title = '', 
 }
 
 /**
+ * Imagecache JS settings and theme function.
+ */
+function imagecache_add_js() {
+  static $added;
+  if (!$added) {
+    $added = TRUE;
+    drupal_add_js(drupal_get_path('module', 'imagecache') .'/imagecache.js');
+
+    $mode = variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC);
+    if ($mode == FILE_DOWNLOADS_PUBLIC) {
+      $settings['filesUrl'] = $GLOBALS['base_path'] . file_directory_path();
+    }
+    elseif ($mode == FILE_DOWNLOADS_PRIVATE) {
+      $settings['filesUrl'] = 'system/files';
+    }
+    $settings['filesDirectory'] = file_directory_path();
+    $settings['presets'] = array_keys(imagecache_presets());
+    drupal_add_js(array('imagecache' => $settings), 'setting');
+  }
+}
+
+/**
  *  ImageCache 2.x API
  *
  *  The API for imagecache has changed.  The 2.x API returns more structured
@@ -1053,6 +1115,7 @@ function imagecache_preset_flush($preset) {
   if (user_access('flush imagecache')) {
     $presetdir = realpath(file_directory_path() .'/imagecache/'. $preset['presetname']);
     if (is_dir($presetdir)) {
+      module_invoke_all('imagecache_preset_flush', $presetdir, $preset);
       _imagecache_recursive_delete($presetdir);
     }
   }
@@ -1065,7 +1128,9 @@ function imagecache_preset_flush($preset) {
  */
 function imagecache_image_flush($path) {
   foreach (imagecache_presets() as $preset) {
-    file_delete(imagecache_create_path($preset['presetname'], $path));
+    $derivative_path = imagecache_create_path($preset['presetname'], $path);
+    module_invoke_all('imagecache_image_flush', $derivative_path, $preset, $path);
+    file_delete($derivative_path);
   }
 }
 
@@ -1292,3 +1357,4 @@ function imagecache_get_images_in_node(&$node) {
   }
   return $files;
 }
+

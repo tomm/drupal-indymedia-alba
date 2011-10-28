@@ -1,5 +1,4 @@
 <?php
-// $Id: imagecache_ui.pages.inc,v 1.6.2.1 2010/05/03 14:42:53 drewish Exp $
 
 /**
  * Preset Admin callbacks and required functions.
