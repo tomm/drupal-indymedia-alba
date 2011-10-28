@@ -1,4 +1,3 @@
-/* $Id: datepicker.js,v 1.1 2009/07/03 22:00:29 killes Exp $ */
 Drupal.behaviors.datepicker = function(context) {
   for(field in Drupal.settings.datepicker.fields) {
     var current_field = Drupal.settings.datepicker.fields[field];

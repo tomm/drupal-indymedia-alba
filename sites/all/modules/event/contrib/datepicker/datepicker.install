@@ -23,7 +23,7 @@ function datepicker_requirements($phase) {
   $requirements['datepicker_datejs']['title'] = $t('Date library');
   if (!$date_js) {
     $requirements['datepicker_datejs']['value'] = $t('Not found');
-    $requirements['datepicker_datejs']['description'] = $t('Missing Date jQuery plugin. Please !download and extract it to your datepicker module directory. See README.txt for more info.', array('!download' => l(t('download the Date jQuery plugin'), 'http://jqueryjs.googlecode.com/svn/trunk/plugins/methods/date.js')));
+    $requirements['datepicker_datejs']['description'] = $t('Missing Date jQuery plugin. Please !download and extract it to your datepicker module directory. See README.txt for more info.', array('!download' => l(t('download the Date jQuery plugin'), 'http://datejs.googlecode.com/files/date.js')));
     $requirements['datepicker_datejs']['severity'] = REQUIREMENT_ERROR;
   }
   else {

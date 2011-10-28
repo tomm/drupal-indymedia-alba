@@ -1,5 +1,4 @@
 <?php
-/* $Id: ical.inc,v 1.17 2008/12/31 00:07:23 killes Exp $ */
 
 /**
  * @file

@@ -1,5 +1,4 @@
 <?php
-// $Id: event-node-day.tpl.php,v 1.8 2008/12/07 17:19:47 killes Exp $
 
 /**
  * @file event-node-day.tpl.php

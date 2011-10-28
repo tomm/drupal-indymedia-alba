@@ -1,5 +1,4 @@
 <?php
-// $Id: event.install,v 1.37 2009/07/05 00:34:15 killes Exp $ 
 
 /**
  * We need mysql >= 4.1.1

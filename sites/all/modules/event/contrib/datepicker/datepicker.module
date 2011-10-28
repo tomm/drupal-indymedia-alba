@@ -1,5 +1,4 @@
 <?php
-// $Id: datepicker.module,v 1.2 2009/07/03 22:00:29 killes Exp $
 
 /**
  * Implementation of hook_form_alter(). Adds a datepicker for start date

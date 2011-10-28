@@ -1,5 +1,4 @@
 <?php
-// $Id: event_database.pgsql.inc,v 1.17 2008/09/07 01:54:36 killes Exp $
 
 /**
  * @param $nid node ID

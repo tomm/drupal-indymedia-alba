@@ -1,5 +1,4 @@
 <?php
-// $Id: event.module,v 1.407 2010/02/26 10:20:50 killes Exp $ 
 
 define('EVENT_API', '5.2');
 define('EVENT_PATH', drupal_get_path('module', 'event'));
@@ -2126,7 +2125,7 @@ function event_form_alter(&$form, $form_state, $form_id) {
         event_pre_render($node);
       }
       drupal_add_js(drupal_get_path('module', 'event') .'/event_node_edit.js');
-      $form['event'] = array('#type' => 'fieldset', '#tree' =>TRUE);
+      $form['event'] = array('#type' => 'fieldset', '#tree' => TRUE, '#title' => t('Events'));
       $form['event']['has_time'] = array(
         '#type' => 'checkbox',
         '#title' => t('Event has time'),
