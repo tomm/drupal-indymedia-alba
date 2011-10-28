@@ -1,5 +1,4 @@
 <?php
-// $Id: profile.inc,v 1.1 2010/06/19 15:32:07 alexb Exp $
 
 /**
  * @file
@@ -17,8 +16,8 @@ function profile_feeds_user_processor_targets_alter(&$targets) {
       $result = _profile_get_fields($category['name']);
       while ($record = db_fetch_object($result)) {
         $targets[$record->name] = array(
-          'name' => t('Profile:'. $record->title),
-          'description' => t('Profile:'. $record->title),
+          'name' => t('Profile: @name', array('@name' => $record->title)),
+          'description' => t('Profile: @name', array('@name' => $record->title)),
           'callback' => 'profile_feeds_set_target',
         );
       }

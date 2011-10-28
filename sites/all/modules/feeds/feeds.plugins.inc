@@ -1,5 +1,4 @@
 <?php
-// $Id: feeds.plugins.inc,v 1.5 2010/05/16 21:35:08 alexb Exp $
 
 /**
  * @file
@@ -132,8 +131,8 @@ function _feeds_feeds_plugins() {
   );
   $info['FeedsNodeProcessor'] = array(
     'name' => 'Node processor',
-    'description' => 'Create nodes.',
-    'help' => 'Create nodes from parsed content.',
+    'description' => 'Create and update nodes.',
+    'help' => 'Create and update nodes from parsed content.',
     'handler' => array(
       'parent' => 'FeedsProcessor',
       'class' => 'FeedsNodeProcessor',

@@ -1,5 +1,4 @@
 <?php
-// $Id: FeedsDataHandler.inc,v 1.5 2010/03/29 02:55:50 alexb Exp $
 
 /**
  * @file
@@ -44,7 +43,7 @@ class FeedsDataHandler extends DataHandler {
     $this->joined_tables = array();
     $tables = data_get_all_tables();
     foreach ($tables as $join_table) {
-      if($join_table->get('name') == $this->table) {
+      if ($join_table->get('name') == $this->table) {
         // don't bother with joins on the same table...
         continue;
       }

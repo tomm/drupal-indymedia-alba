@@ -1,5 +1,4 @@
 <?php
-// $Id: date.inc,v 1.3 2010/07/08 17:19:16 alexb Exp $
 
 /**
  * @file
@@ -20,13 +19,13 @@ function date_feeds_node_processor_targets_alter(&$targets, $content_type) {
       if (in_array($field['type'], array('date', 'datestamp', 'datetime'))) {
         $name = isset($field['widget']['label']) ? $field['widget']['label'] : $field_name;
         $targets[$field_name .':start'] = array(
-          'name' => $name .': Start',
+          'name' => t('@name: Start', array('@name' => $name)),
           'callback' => 'date_feeds_set_target',
-          'description' => t('The start date for the !name field. Also use if mapping both start and end.', array('!name' => $name)),
+          'description' => t('The start date for the @name field. Also use if mapping both start and end.', array('@name' => $name)),
           'real_target' => $field_name,
         );
         $targets[$field_name .':end'] = array(
-          'name' => $name .': End',
+          'name' => t('@name: End', array('@name' => $name)),
           'callback' => 'date_feeds_set_target',
           'description' => t('The end date for the @name field.', array('@name' => $name)),
           'real_target' => $field_name,
@@ -50,11 +49,17 @@ function date_feeds_node_processor_targets_alter(&$targets, $content_type) {
  * @todo Support array of values for dates.
  */
 function date_feeds_set_target($node, $target, $feed_element) {
-  list($field_name, $sub_field) = split(':', $target);
+  list($field_name, $sub_field) = explode(':', $target);
   if (!($feed_element instanceof FeedsDateTimeElement)) {
     if (is_array($feed_element)) {
       $feed_element = $feed_element[0];
     }
+
+    // Empty string means no time - so do not set any!
+    if (!is_numeric($feed_element) && !strtotime($feed_element)) {
+      return ;
+    }
+
     if ($sub_field == 'end') {
       $feed_element = new FeedsDateTimeElement(NULL, $feed_element);
     }

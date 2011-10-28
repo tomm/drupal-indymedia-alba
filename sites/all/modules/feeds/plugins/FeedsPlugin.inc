@@ -1,5 +1,4 @@
 <?php
-// $Id: FeedsPlugin.inc,v 1.5 2010/03/29 02:55:50 alexb Exp $
 
 /**
  * @file
@@ -74,6 +73,31 @@ abstract class FeedsPlugin extends FeedsConfigurable implements FeedsSourceInter
    * A source is being deleted.
    */
   public function sourceDelete(FeedsSource $source) {}
+
+  /**
+   * Loads on-behalf implementations from mappers/ directory.
+   *
+   * FeedsProcessor::map() does not load from mappers/ as only node and user
+   * processor ship with on-behalf implementations.
+   *
+   * @see FeedsNodeProcessor::map()
+   * @see FeedsUserProcessor::map()
+   */
+  protected static function loadMappers() {
+    static $loaded = FALSE;
+    if (!$loaded) {
+      $path = drupal_get_path('module', 'feeds') .'/mappers';
+      $files = drupal_system_listing('.*\.inc$', $path, 'name', 0);
+      foreach ($files as $file) {
+        if (strstr($file->filename, '/mappers/')) {
+          require_once("./$file->filename");
+        }
+      }
+      // Rebuild cache.
+      module_implements('', FALSE, TRUE);
+    }
+    $loaded = TRUE;
+  }
 }
 
 /**

@@ -1,17 +1,37 @@
 <?php
-// $Id: FeedsSimplePieParser.inc,v 1.12 2010/03/29 02:55:50 alexb Exp $
 
 /**
  * Adapter to present SimplePie_Enclosure as FeedsEnclosure object.
  */
 class FeedsSimplePieEnclosure extends FeedsEnclosure {
   protected $simplepie_enclosure;
+  private $_serialized_simplepie_enclosure;
 
   /**
    * Constructor requires SimplePie enclosure object.
    */
   function __construct(SimplePie_Enclosure $enclosure) {
     $this->simplepie_enclosure = $enclosure;
+  }
+
+  /**
+   * Serialization helper.
+   *
+   * Handle the simplepie enclosure class seperately ourselves.
+   */
+  public function __sleep() {
+    $this->_serialized_simplepie_enclosure = serialize($this->simplepie_enclosure);
+    return array('_serialized_simplepie_enclosure');
+  }
+
+  /**
+   * Unserialization helper.
+   *
+   * Ensure that the simplepie class definitions are loaded for the enclosure when unserializing.
+   */
+   public function __wakeup() {
+    feeds_include_library('simplepie.inc', 'simplepie');
+    $this->simplepie_enclosure = unserialize($this->_serialized_simplepie_enclosure);
   }
 
   /**
@@ -53,9 +73,9 @@ class FeedsSimplePieParser extends FeedsParser {
     $parser->init();
 
     // Construct the standard form of the parsed feed
-    $batch->setTitle(html_entity_decode(($title = $parser->get_title()) ? $title : $this->createTitle($parser->get_description())));
-    $batch->setDescription($parser->get_description());
-    $batch->setLink(html_entity_decode($parser->get_link()));
+    $batch->title = html_entity_decode(($title = $parser->get_title()) ? $title : $this->createTitle($parser->get_description()));
+    $batch->description = $parser->get_description();
+    $batch->link = html_entity_decode($parser->get_link());
 
     $items_num = $parser->get_item_quantity();
     for ($i = 0; $i < $items_num; $i++) {
@@ -115,7 +135,7 @@ class FeedsSimplePieParser extends FeedsParser {
       $this->parseExtensions($item, $simplepie_item);
       $item['raw'] = $simplepie_item->data;
 
-      $batch->addItem($item);
+      $batch->items[] = $item;
     }
     // Release parser.
     unset($parser);
@@ -183,7 +203,7 @@ class FeedsSimplePieParser extends FeedsParser {
         'name' => t('Enclosures'),
         'description' => t('An array of enclosures attached to the feed item.'),
       ),
-     );
+     ) + parent::getMappingSources();
   }
 
   /**

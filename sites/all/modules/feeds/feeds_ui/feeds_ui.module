@@ -1,5 +1,4 @@
 <?php
-// $Id: feeds_ui.module,v 1.10 2010/03/29 02:55:50 alexb Exp $
 /**
  * @file
  */
@@ -109,12 +108,12 @@ function feeds_ui_theme() {
  * Title callback.
  */
 function feed_ui_title($importer) {
-  return t('Edit !importer', array('!importer' => $importer->config['name']));
+  return t('Edit importer: @importer', array('@importer' => $importer->config['name']));
 }
 
 /**
  * Clone title callback.
  */
 function feed_ui_clone_title($importer) {
-  return t('Clone !importer', array('!importer' => $importer->config['name']));
+  return t('Clone importer: @importer', array('@importer' => $importer->config['name']));
 }

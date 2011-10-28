@@ -1,41 +1,26 @@
 <?php
-// $Id: feeds_mapper_profile.test,v 1.1 2010/06/19 15:32:07 alexb Exp $
+module_load_include('test', 'feeds', 'test/feeds_mapper');
 
 /**
  * @file
- * Test suite for the feeds profile mapper.
+ * Test suite for profile mapper mappers/profile.inc.
  */
-
-require_once(drupal_get_path('module', 'feeds') . '/tests/feeds_mapper_test.inc');
 
 /**
  * Class for testing Feeds <em>content</em> mapper.
  */
 class FeedsMapperProfileTestCase extends FeedsMapperTestCase {
-
   public static function getInfo() {
     return array(
-      'name' => t('Mapper: Profile'),
-      'description' => t('Test Feeds Mapper support for profile fields. <strong>Requires profile module</strong>.'),
-      'group' => t('Feeds'),
+      'name' => 'Mapper: Profile',
+      'description' => 'Test Feeds Mapper support for profile fields.',
+      'group' => 'Feeds',
     );
   }
 
-  /**
-   * Set up the test.
-   */
   function setUp() {
     // Call parent setup with required modules.
-    parent::setUp('feeds', 'feeds_ui', 'ctools', 'profile');
-
-    // Create user and login.
-    $this->drupalLogin($this->drupalCreateUser(
-        array(
-          'administer users',
-          'administer feeds',
-          'administer site configuration'
-        )
-    ));
+    parent::setUp(array('profile'));
   }
 
   /**
@@ -58,8 +43,8 @@ class FeedsMapperProfileTestCase extends FeedsMapperTestCase {
     );
     $name = $this->drupalPost('admin/user/profile/add/selection', $edit, t('Save field'));
 
-    // Create a feed.
-    $this->createFeedConfiguration('Profile import', 'profile_import');
+    // Create an importer.
+    $this->createImporterConfiguration('Profile import', 'profile_import');
 
     // Set and configure plugins.
     $this->setPlugin('profile_import', 'FeedsFileFetcher');
