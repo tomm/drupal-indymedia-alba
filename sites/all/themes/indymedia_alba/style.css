@@ -428,16 +428,6 @@ div.block h2.title a {
 }
 
 /* customisation of node form */
-.node-form #edit-taxonomy-2-wrapper {
-	float: left;
-	width: 20%;
-}
-
-.node-form #edit-taxonomy-tags-1-wrapper {
-	float: left;
-	width: 45%;
-}
-
 .node-form #edit-author-wrapper {
 	float: left;
 	width: 25%;
