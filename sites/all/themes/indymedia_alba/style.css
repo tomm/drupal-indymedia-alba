@@ -428,10 +428,6 @@ div.block h2.title a {
 }
 
 /* customisation of node form */
-.node-form #edit-author-wrapper {
-	float: left;
-	width: 25%;
-}
 .node-form .menu-item-form,
 .node-form .attachments {
 	clear: left;
