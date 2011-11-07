@@ -1,42 +1,25 @@
 <?php
-// $Id: mobile_tools.install,v 1.1.2.3 2009/10/28 03:28:35 tdrycker Exp $
+
 /**
- * @file
- *  Mobile Tools installation 
- */ 
-function mobile_tools_install() {
-  drupal_install_schema('mobile_tools');
-}
-
-
-
+ * Deleting all the Mobile tools variables
+ */
 function mobile_tools_uninstall() {
-  $query = "SELECT * FROM {mobile_tools_roles_relations}";
-  $result = db_query($query);
-  while ($item = db_fetch_object($result)) {
-    db_query("DELETE FROM {role} WHERE rid = %d", $item->mrid);
-  }
-  variable_del('default_main_nodes');
+  variable_del('default_main_nodes_mobile');
   variable_del('default_main_nodes_original');
-  drupal_uninstall_schema('mobile_tools'); 
+  variable_del('site_frontpage_mobile');
+  variable_del('mobile_tools_enable_build_mode');
+  variable_del('desktop_notification');
+  variable_del('mobile_notification');
+  variable_del('mobile_tools_redirect_exceptions');
+  variable_del('mobile_tools_redirect_exceptions_type');
+  variable_del('mobile_tools_cookie_session');
+  variable_del('mobile_tools_redirect');
+  variable_del('mobile_tools_desktop_url');
+  variable_del('mobile_tools_mobile_url');
+  variable_del('mobile-tools-theme-switch');
+  variable_del('mobile_tools_theme_name');
+  variable_del('mobile-tools-device-detection');
+  variable_del('mobile-tools-device-capabilities');
 }
 
 
-
-function mobile_tools_schema() {
-  $schema['mobile_tools_roles_relations'] = array(
-    'fields' => array(
-      'rid' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
-      'mrid' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE
-      )
-    ),
-  );
-  return $schema; 
-}

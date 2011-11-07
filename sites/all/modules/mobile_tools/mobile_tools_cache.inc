@@ -1,5 +1,4 @@
 <?php
-// $Id: mobile_tools_cache.inc,v 1.1.2.4 2010/11/03 23:32:16 tdrycker Exp $
 
 /**
  * @file mobile_tools_cache.inc
@@ -7,8 +6,8 @@
  *  on device type and device group.
  *  
  *  In order to enable this file, add the following to your settings.php file
- *  $conf['page_cache_fastpath'] = FALSE,
- *  $conf['cache_inc'] = './sites/all/modules/mobile_tools/mobile_tools_cache.inc',
+ *  $conf['page_cache_fastpath'] = FALSE;
+ *  $conf['cache_inc'] = './sites/all/modules/mobile_tools/mobile_tools_cache.inc';
  * );
  *
  */

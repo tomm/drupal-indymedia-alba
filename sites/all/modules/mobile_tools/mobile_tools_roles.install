@@ -1,0 +1,41 @@
+<?php 
+// $Id:
+/**
+ * @file
+ *  Mobile Tools Roles installation file
+ */ 
+function mobile_tools_roles_install() {
+  drupal_install_schema('mobile_tools_roles');
+}
+
+function mobile_tools_roles_uninstall(){
+  $query = "SELECT * FROM {mobile_tools_roles_relations}";
+  $result = db_query($query);
+  while ($item = db_fetch_object($result)) {
+    db_query("DELETE FROM {role} WHERE rid = %d", $item->mrid);
+  }
+  drupal_uninstall_schema('mobile_tools_roles'); 
+  variable_del('mobile_tools_roles');
+  variable_del('mobile_tools_enable_roles');
+}
+
+/**
+ * Installing the Mobile Tools roles schema
+ */
+function mobile_tools_roles_schema() {
+  $schema['mobile_tools_roles_relations'] = array(
+    'fields' => array(
+      'rid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'mrid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE
+      )
+    ),
+  );
+  return $schema; 
+}
