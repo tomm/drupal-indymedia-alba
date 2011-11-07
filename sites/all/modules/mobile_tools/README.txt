@@ -1,4 +1,3 @@
-$id$
 README.txt
 ==========
 The purpose of this module is to provide de Drupal developer with some tools that assist in making a site mobile.

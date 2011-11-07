@@ -1,4 +1,3 @@
-$id$
 To install the module, enable the module in the module administration panel.
 
 MODES OF OPERATION

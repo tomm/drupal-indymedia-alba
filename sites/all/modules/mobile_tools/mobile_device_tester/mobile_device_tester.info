@@ -1,7 +1,9 @@
-name = Mobile Tools
-description = "This module gives a set of functionality to make your site mobile"
-core = 6.x
+name = Mobile Device Tester
+description = Allows easy testing of a device for certain characteristics
 package = Mobile
+core = 6.x
+dependencies[] = wurfl
+
 ; Information added by drupal.org packaging script on 2011-05-25
 version = "6.x-2.3"
 core = "6.x"

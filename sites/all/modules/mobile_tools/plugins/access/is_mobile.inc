@@ -1,5 +1,4 @@
 <?php
-// $Id: is_mobile.inc,v 1.1.2.3 2010/11/03 23:47:41 tdrycker Exp $
 
 /**
  * @file
