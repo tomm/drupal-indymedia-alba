@@ -1,5 +1,4 @@
 <?php
-// $Id: views_plugin_argument_validate_node.inc,v 1.1 2008/09/03 19:21:29 merlinofchaos Exp $
 /**
  * @file
  * Contains the 'node' argument validator plugin.
@@ -14,7 +13,7 @@ class views_plugin_argument_validate_node extends views_plugin_argument_validate
   function validate_form(&$form, &$form_state) {
     $types = node_get_types();
     foreach ($types as $type => $info) {
-      $options[$type] = $info->name;
+      $options[$type] = check_plain(t($info->name));
     }
 
     $arg = $this->get_argument();

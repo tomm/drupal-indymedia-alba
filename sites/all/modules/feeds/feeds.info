@@ -1,0 +1,15 @@
+name = Feeds
+description = Aggregates RSS/Atom/RDF feeds, imports CSV files and more.
+package = Feeds
+core = 6.x
+php = 5.2
+
+dependencies[] = ctools
+dependencies[] = job_scheduler
+
+; Information added by drupal.org packaging script on 2011-06-28
+version = "6.x-1.0-beta11"
+core = "6.x"
+project = "feeds"
+datestamp = "1309301816"
+

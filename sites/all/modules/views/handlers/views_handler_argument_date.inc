@@ -1,5 +1,4 @@
 <?php
-// $Id: views_handler_argument_date.inc,v 1.2 2008/10/07 21:26:23 merlinofchaos Exp $
 /**
  * Abstract argument handler for dates.
  *
@@ -38,7 +37,7 @@ class views_handler_argument_date extends views_handler_argument_formula {
     if (!$raw && $this->options['default_argument_type'] == 'date') {
       return date($this->arg_format, time());
     }
-    else if (!$raw) {
+    else if (!$raw && in_array($this->options['default_argument_type'], array('node_created', 'node_changed'))) {
       foreach (range(1, 3) as $i) {
         $node = menu_get_object('node', $i);
         if (!empty($node)) {
@@ -51,7 +50,7 @@ class views_handler_argument_date extends views_handler_argument_formula {
       }
 
       if (empty($node)) {
-        parent::get_default_argument();
+        return parent::get_default_argument();
       }
       else if ($this->options['default_argument_type'] == 'node_created') {
         return date($this->arg_format, $node->created);
@@ -60,8 +59,8 @@ class views_handler_argument_date extends views_handler_argument_formula {
         return date($this->arg_format, $node->changed);
       }
     }
-    else {
-      return parent::get_default_argument($raw);
-    }
+
+    return parent::get_default_argument($raw);
+
   }
 }

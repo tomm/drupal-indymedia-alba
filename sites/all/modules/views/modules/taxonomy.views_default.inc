@@ -1,21 +1,18 @@
 <?php
-// $Id: taxonomy.views_default.inc,v 1.3 2008/06/10 21:30:43 merlinofchaos Exp $
 /**
  * @file
  * Contains default views on behalf of the statistics module.
  */
 
 /**
- * Implementation of hook_default_view_views().
+ * Implementation of hook_views_default_views().
  */
 function taxonomy_views_default_views() {
   $view = new view;
   $view->name = 'taxonomy_term';
   $view->description = 'A view to emulate Drupal core\'s handling of taxonomy/term; it also emulates Views 1\'s handling by having two possible feeds.';
   $view->tag = 'default';
-  $view->view_php = '';
   $view->base_table = 'node';
-  $view->is_cacheable = '0';
   $view->api_version = 2;
   $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');

@@ -1,2 +1,9 @@
 <?php
 
+/**
+ * Dummy necessary because node.module calls it explicitly.
+ */
+function comment_nodeapi(&$node, $op, $a3 = null, $a4 = null)
+{
+
+}

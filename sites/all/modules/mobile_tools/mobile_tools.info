@@ -1,0 +1,10 @@
+name = Mobile Tools
+description = "This module gives a set of functionality to make your site mobile"
+core = 6.x
+package = Mobile
+; Information added by drupal.org packaging script on 2011-05-25
+version = "6.x-2.3"
+core = "6.x"
+project = "mobile_tools"
+datestamp = "1306360917"
+

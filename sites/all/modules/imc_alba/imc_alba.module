@@ -20,8 +20,30 @@ function imc_alba_menu() {
 	return $items;
 }
 
+function imc_alba_form_alter(&$form, $form_state, $form_id)
+{
+	/* Unfortunately necessary to make the upload module wysiwyg hack
+	 * implemented in the theme work */
+	if (isset($form['type']) && isset($form['#node'])) {
+		$form['attachments']['wrapper']['new']['attach']['#ahah']['method'] = 'replaceAndUpdateHandlers';
+		$form['attachments']['#weight'] = -1;
+		$form['attachments']['#collapsed'] = false;
+		$form['attachments']['#title'] = t('File and image attachments');
+		$form['attachments']['#description'] = t('Changes made to the attachments are not permanent until you save this post. The first "listed" file will be included in RSS feeds. The first file will be used as the article\'s preview image.');
+	}
+}
+
 function imc_alba_admin() {
 	$form = array();
+	$form["imc_alba_days_to_close_commenting"] = array(
+		'#type' => 'select',
+		'#title' => t('Close commenting to items after how long'),
+		'#default_value' => variable_get("imc_alba_days_to_close_commenting", 0),
+		'#options' => array(
+			0 => t('Never'), 7 => t('1 week'), 30 => t('1 month'),
+			60 => t('2 months'), 90 => t('3 months'), 180 => t('6 months'),
+			),
+		);
 	$form['members'] = array(
 		'#type' => 'fieldset',
 		'#title' => t('Members'),
@@ -52,7 +74,7 @@ function imc_alba_show_user_articles($arg) {
 	
 	// show visible but not front page articles
 	$q = pager_query(db_rewrite_sql(
-		'SELECT n.nid, n.created, n.status, n.title, n.promote FROM {node} n WHERE n.type = "article" AND n.uid='.intval($uid).' ORDER BY n.created DESC'),
+		'SELECT n.nid, n.created, n.status, n.title, n.promote FROM {node} n WHERE n.type = "article" AND n.status=1 AND n.uid='.intval($uid).' ORDER BY n.created DESC'),
 				ARTICLES_DEFAULT_ITEMS, 0);
 	$out = "<h3>" . t('Articles authored by this user'). "</h3>\n";
 	$out .= "<p>" . t('Featured articles <strong>emphasized</strong>.'). "</p>\n";
@@ -83,5 +105,10 @@ function imc_alba_cron() {
 			db_query("INSERT INTO {users_roles} (uid, rid) VALUES (%d, %d)",
 					$a['uid'], $member_rid);
 		}	
+	}
+	$days_to_close_commenting = variable_get("imc_alba_days_to_close_commenting", 0);
+	if ($days_to_close_commenting) {
+		$time_ago = time() - 60*60*24*$days_to_close_commenting;
+		db_query("UPDATE {node} SET comment=1 WHERE created < %d AND comment=2", $time_ago);
 	}
 }

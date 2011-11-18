@@ -1,5 +1,4 @@
 <?php
-// $Id: event-nodeapi.tpl.php,v 1.4 2008/12/17 23:00:20 killes Exp $
 
 /**
  * @file event-nodeapi.tpl.php

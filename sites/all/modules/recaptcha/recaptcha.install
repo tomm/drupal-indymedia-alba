@@ -1,11 +1,11 @@
 <?php
-/* $Id: recaptcha.install,v 1.2.4.2.2.3.2.1 2007/12/03 16:38:56 robloach Exp $ */
+/* $Id: recaptcha.install,v 1.2.4.2.2.3.2.2 2009/07/28 15:39:20 robloach Exp $ */
 
 /**
  * @file
  * Provides install, updated, and uninstall functions for recaptcha.
  */
- 
+
 /**
  * Implementation of hook_uninstall().
  */

@@ -1,5 +1,4 @@
 <?php
-//$Id: profile.views.inc,v 1.9 2008/09/24 21:21:21 merlinofchaos Exp $
 /**
  * @file
  * Provide views data and handlers for user.module
@@ -33,8 +32,8 @@ function profile_views_data() {
   );
 
   $fields = profile_views_get_fields();
-  foreach($fields as $field) {
-    $table_name = 'profile_values_' . $field->name;
+  foreach ($fields as $field) {
+    $table_name = 'profile_values_' . str_replace('-', '_', $field->name);
     $data[$table_name] = array(
       'table' => array(
         'group' => t('Profile'),
@@ -97,7 +96,7 @@ function profile_views_get_fields() {
  */
 function profile_views_fetch_field($field) {
   $data = array(
-    'title' => t('@field-name', array('@field-name' => $field->title)),
+    'title' => t('@category: @field-name', array('@category' => $field->category, '@field-name' => $field->title)),
   );
 
   // Add fields specific to the profile type.
@@ -106,7 +105,7 @@ function profile_views_fetch_field($field) {
       $data += array(
         'help' => t('Profile textfield'),
         'field' => array(
-          'handler' => 'views_handler_field',
+          'handler' => 'views_handler_field_user',
           'click sortable' => TRUE,
         ),
         'sort' => array(
@@ -149,6 +148,7 @@ function profile_views_fetch_field($field) {
         ),
         'filter' => array(
           'handler' => 'views_handler_filter_boolean_operator',
+          'accept null' => TRUE,
         ),
         // @todo there ought to be a boolean argument handler
       );

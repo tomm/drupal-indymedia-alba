@@ -1,4 +1,3 @@
-<!-- $Id: api-tables.html,v 1.6 2008/11/19 23:48:37 merlinofchaos Exp $ -->
 Tables are described to Views via hook_views_data(), which returns an array of table information, keyed by the name of the table. For example, if your module is describing three tables, 'foo', 'bar' and 'baz', your array will look like this:
 <pre>$data = array(
   'foo' =&gt; array(
@@ -67,7 +66,7 @@ For example:
 The following tags are available in the 
 <dl>
 <dt>field</dt>
-<dd>The primary key field for this table. For Views to treat any table as a base table, it <b>must</b> have a primary field. For node this is the 'nid', for users this is the 'uid', etc. <strong>Without a single primary key field, Views will not be able to utilize the table as a base table.</strong> If your table does not have a primary key field, it is not too difficult to just add a serial field to it, usually.</dd>
+<dd>The primary key field for this table. For Views to treat any table as a base table, it <b>must</b> have a primary field. For node this is the 'nid', for users this is the 'uid', etc. <strong>Without a single primary key field (i.e. not a composite key), Views will not be able to utilize the table as a base table.</strong> If your table does not have a primary key field, it is not too difficult to just add a serial field to it, usually.</dd>
 <dt>title</dt>
 <dd>The title of this table in the UI. It should be singular and describe the object that this table contains from the perspective of the user.</dd>
 <dt>help</dt>
@@ -147,10 +146,10 @@ Quite a few more fields are available in this definition:
       <dd>Must be set. If an array, operator will be defaulted to IN.</dd>
       <dt>numeric</dt>
       <dd>If true, the value will not be surrounded in quotes, and %d will be used for its placeholder.</dd>
-      <dt>extra type</dt>
-      <dd> How all the extras will be combined. Either AND or OR. Defaults to AND.</dd>
     </dl>
   </dd>
+  <dt>extra type</dt>
+  <dd> How all the extras will be combined. Either AND or OR. Defaults to AND.</dd>
 </dl>
 
 <h2>Describing fields on tables</h2>
@@ -227,7 +226,7 @@ The following items are allowed in the field definition:
 <dt>sort</dt>
 <dd>A handler definition for the "Sort criteria" section, which will be used to add an ORDER BY clause to the view. The definition is an array; the contents of the array are completely up to the handler, other than the 'handler' definition. If omitted, handler will default to 'views_handler_sort'.</dd>
 <dt>relationship</dt>
-<dd>A handler definition for the "Field" section, which is a way to bring in new or alternative base tables in the view. The definition is an array; the contents of the array are completely up to the handler, other than the 'handler' definition. If omitted, handler will default to 'views_handler_relationship'. The basic relationship handler requires 'base' and 'field' to be set; 'base' and 'field' represent the "right" half of the join that will use this field as the left side.</dd>
+<dd>A handler definition for the "Field" section, which is a way to bring in new or alternative base tables in the view. The definition is an array; the contents of the array are completely up to the handler, other than the 'handler' definition. If omitted, handler will default to 'views_handler_relationship'. The basic relationship handler requires 'base' and 'base field' to be set; 'base' and 'base field' represent the "right" half of the join that will use this field as the left side.</dd>
 <dt>argument</dt>
 <dd>A handler definition for the "Field" section, which is method of accepting user input from the URL or some other source. The definition is an array; the contents of the array are completely up to the handler, other than the 'handler' definition. If omitted, handler will default to 'views_handler_argument'.</dd>
 </dl>

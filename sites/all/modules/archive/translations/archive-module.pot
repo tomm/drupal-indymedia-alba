@@ -1,0 +1,181 @@
+# $Id: archive-module.pot,v 1.1.2.3 2008/10/26 09:32:10 goofyx Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  archive.admin.inc,v 1.6 2008/01/04 12:25:33 susurrus
+#  archive.pages.inc,v 1.18.2.4 2008/08/19 22:18:25 susurrus
+#  archive.info,v 1.9 2008/01/04 12:21:36 susurrus
+#  archive.module,v 1.36.2.4 2008/08/19 23:00:53 susurrus
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2008-10-26 10:53+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: archive.admin.inc:16
+msgid "Content types available in archive"
+msgstr ""
+
+#: archive.admin.inc:19
+msgid "Posts of these types will be displayed in the archive."
+msgstr ""
+
+#: archive.pages.inc:35
+msgid "No content found."
+msgstr ""
+
+#: archive.pages.inc:205 archive.info:0
+msgid "Archive"
+msgstr ""
+
+#: archive.pages.inc:232
+msgid "Date"
+msgstr ""
+
+#: archive.pages.inc:244
+msgid "Type"
+msgstr ""
+
+#: archive.pages.inc:265;291;323;359
+msgid "All"
+msgstr ""
+
+#: archive.pages.inc:265;271;291;304;323;338;359;367 archive.module:113;139;150;173
+msgid "1 post"
+msgid_plural "@count posts"
+msgstr[0] ""
+msgstr[1] ""
+
+#: archive.module:10
+msgid "The archive module allows your users to browse your content by its type and date of publication. The archive module interface, available at the path <a href=\"@archive\">archive</a>, presents simple controls for selecting a year, month or day. All available posts published within this range are displayed beneath the control. Administrators may select the content types to be displayed. The archive module adds an <em>Archives</em> menu item to the default <em>Navigation</em> menu (the item is disabled by default), and displays the current month and year within an optional block."
+msgstr ""
+
+#: archive.module:11
+msgid "You can"
+msgstr ""
+
+#: archive.module:12
+msgid "view your <a href=\"@archive\">archive page</a>."
+msgstr ""
+
+#: archive.module:13
+msgid "enable, position and configure the <em>Current calendar month with archive links</em> block at the <a href=\"@blocks\">blocks administration page</a>."
+msgstr ""
+
+#: archive.module:14
+msgid "enable or disable the <em>Archives</em> menu item on the <a href=\"@menu-administration\">navigation menu administration page</a>."
+msgstr ""
+
+#: archive.module:15
+msgid "For more information, see the online handbook entry for <a href=\"@handbook-page\">Archive module</a>."
+msgstr ""
+
+#: archive.module:121
+msgid "Sun"
+msgstr ""
+
+#: archive.module:121
+msgid "Mon"
+msgstr ""
+
+#: archive.module:121
+msgid "Tue"
+msgstr ""
+
+#: archive.module:121
+msgid "Wed"
+msgstr ""
+
+#: archive.module:121
+msgid "Thu"
+msgstr ""
+
+#: archive.module:121
+msgid "Fri"
+msgstr ""
+
+#: archive.module:121
+msgid "Sat"
+msgstr ""
+
+#: archive.module:193
+msgid "Current calendar month with archive links"
+msgstr ""
+
+#: archive.module:199;26;33
+msgid "Archives"
+msgstr ""
+
+#: archive.module:34
+msgid "Select the content types listed in the archives."
+msgstr ""
+
+#: archive.module:0
+msgid "archive"
+msgstr ""
+
+#: archive.info:0
+msgid "Allows visitors to view content filtered by date or node type."
+msgstr ""
+
+#: archive.info:0
+msgid "Content display"
+msgstr ""
+
+#: archive.inc:457
+msgid "Jan"
+msgstr ""
+
+#: archive.inc:457
+msgid "Feb"
+msgstr ""
+
+#: archive.inc:457
+msgid "Mar"
+msgstr ""
+
+#: archive.inc:457
+msgid "Apr"
+msgstr ""
+
+#: archive.inc:457
+msgid "May"
+msgstr ""
+
+#: archive.inc:457
+msgid "Jun"
+msgstr ""
+
+#: archive.inc:457
+msgid "Jul"
+msgstr ""
+
+#: archive.inc:457
+msgid "Aug"
+msgstr ""
+
+#: archive.inc:457
+msgid "Sep"
+msgstr ""
+
+#: archive.inc:457
+msgid "Oct"
+msgstr ""
+
+#: archive.inc:457
+msgid "Nov"
+msgstr ""
+
+#: archive.inc:457
+msgid "Dec"
+msgstr ""
+

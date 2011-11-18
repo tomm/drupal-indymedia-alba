@@ -1,5 +1,4 @@
 <?php
-// $Id: pager.inc,v 1.63 2007/12/06 09:58:30 goba Exp $
 
 /**
  * @file
@@ -85,7 +84,7 @@ function pager_query($query, $limit = 10, $element = 0, $count_query = NULL) {
 function pager_get_querystring() {
   static $string = NULL;
   if (!isset($string)) {
-    $string = drupal_query_string_encode($_REQUEST, array_merge(array('q', 'page'), array_keys($_COOKIE)));
+    $string = drupal_query_string_encode($_REQUEST, array_merge(array('q', 'page', 'pass'), array_keys($_COOKIE)));
   }
   return $string;
 }
@@ -216,10 +215,11 @@ function theme_pager($tags = array(), $limit = 10, $element = 0, $parameters = a
 
 
 /**
- * @name Pager pieces
+ * @defgroup pagerpieces Pager pieces
  * @{
- * Use these pieces to construct your own custom pagers in your theme. Note that
- * you should NOT modify this file to customize your pager.
+ * Theme functions for customizing pager elements.
+ *
+ * Note that you should NOT modify this file to customize your pager.
  */
 
 /**

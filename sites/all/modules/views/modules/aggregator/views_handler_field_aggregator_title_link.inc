@@ -1,5 +1,4 @@
 <?php
-// $Id: views_handler_field_aggregator_title_link.inc,v 1.1 2009/01/07 19:38:08 merlinofchaos Exp $
 
  /**
  * Field handler that turns an item's title into a clickable link to the original
@@ -38,7 +37,7 @@ class views_handler_field_aggregator_title_link extends views_handler_field {
       return l(check_plain($value), $link, array('html' => TRUE));
     }
     else {
-      return $value;
+      return check_plain($value);
     }
   }
 }

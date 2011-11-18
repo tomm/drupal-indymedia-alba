@@ -1,16 +1,15 @@
 <?php
-// $Id: views_plugin_access_perm.inc,v 1.3 2009/01/07 23:31:13 merlinofchaos Exp $
 
 /**
  * Access plugin that provides permission-based access control.
  */
 class views_plugin_access_perm extends views_plugin_access {
   function access($account) {
-    return user_access($this->options['perm'], $account);
+    return views_check_perm($this->options['perm'], $account);
   }
 
   function get_access_callback() {
-    return array('user_access', array($this->options['perm']));
+    return array('views_check_perm', array($this->options['perm']));
   }
 
   function summary_title() {

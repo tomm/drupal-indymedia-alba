@@ -1,0 +1,171 @@
+# $Id: pl.po,v 1.1.2.2 2008/04/28 02:18:24 susurrus Exp $
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  archive.inc,v 1.1.2.9 2007/08/30 18:14:22 susurrus
+#  archive.module,v 1.8.2.5 2007/08/31 17:16:34 susurrus
+#  archive.info,v 1.1.2.3 2007/09/05 00:17:36 susurrus
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2007-09-04 20:18-0400\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: Sergiusz Pawłowicz <drupal-archive-translation@pawlowicz.name>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: archive.inc:44
+msgid "There's currently nothing in the archives to browse."
+msgstr "Nie ma archiwów do przeglądania."
+
+#: archive.inc:391
+msgid "Date"
+msgstr "Data"
+
+#: archive.inc:402
+msgid "Type"
+msgstr "Rodzaj"
+
+#: archive.inc:425;454;491;527
+msgid "All"
+msgstr "Wszystkie"
+
+#: archive.inc:457
+msgid "Jan"
+msgstr "Sty"
+
+#: archive.inc:457
+msgid "Feb"
+msgstr "Lut"
+
+#: archive.inc:457
+msgid "Mar"
+msgstr "Mar"
+
+#: archive.inc:457
+msgid "Apr"
+msgstr "Kwi"
+
+#: archive.inc:457
+msgid "May"
+msgstr "Maj"
+
+#: archive.inc:457
+msgid "Jun"
+msgstr "Cze"
+
+#: archive.inc:457
+msgid "Jul"
+msgstr "Lip"
+
+#: archive.inc:457
+msgid "Aug"
+msgstr "Sie"
+
+#: archive.inc:457
+msgid "Sep"
+msgstr "Wrz"
+
+#: archive.inc:457
+msgid "Oct"
+msgstr "Paź"
+
+#: archive.inc:457
+msgid "Nov"
+msgstr "Lis"
+
+#: archive.inc:457
+msgid "Dec"
+msgstr "Gru"
+
+#: archive.inc:425;431;454;467;491;504;527;535 archive.module:95;113
+msgid "1 post"
+msgid_plural "@count posts"
+msgstr[0] "1 wiadomość"
+msgstr[1] "@count wiadomości"
+
+#: archive.module:10
+msgid "The archive module provides a suggested menu item, which shows a page allowing content to be filtered by date and node type. The date selectors allow visitors to view content published in any given year, month or day. The node type selectors allow visitors to view content of all node types or only specific ones."
+msgstr "Moduł archiwum umożliwia filtrowanie treści przez datę stworzenia wiadomości, w postaci kalendarza do bloku. Można również wybierać rodzaje węzłów, które są poddawane filtrowaniu."
+
+#: archive.module:11
+msgid "<p>You can</p>\r\n<ul>\r\n<li>view your <a href=\"!archive\">archive page</a>.</li>\r\n<li><a href=\"!admin-menu\">enable or disable the archive menu item</a>.</li>\r\n</ul>\r\n"
+msgstr "<p>Możesz</p>\r\n<ul>\r\n<li>zobaczyć swe <a href=\"!archive\">archiwum</a>.</li>\r\n<li><a href=\"!admin-menu\">włączać i wyłączać elementy menu</a>.</li>\r\n</ul>\r\n"
+
+#: archive.module:17
+msgid "For more information please read the configuration and customization handbook <a href=\"http://drupal.org/handbook/modules/archive/\">Archive page</a>."
+msgstr "Aby uzyskać więcej informacji, przeczytaj <a href=\"http://drupal.org/handbook/modules/archive/\">podręcznik konfiguracji</a>."
+
+#: archive.module:20
+msgid "Provides a node listing for specified node-types browsable by date."
+msgstr "Umożliwia wyświetlanie listy węzłów pewnego rodzaju w postaci kalendarza."
+
+#: archive.module:32;39;146
+msgid "Archives"
+msgstr "Archiwa"
+
+#: archive.module:35
+msgid "Browse the archives"
+msgstr "Przeglądaj archiwa"
+
+#: archive.module:42
+msgid "Configure node types available for archive browsing."
+msgstr "Skonfiguruj rodzaje węzłów dostępnych do przeglądania w postaci archiwum."
+
+#: archive.module:65
+msgid "What nodes are available as filters"
+msgstr "Które węzły są dostępne jako filtry."
+
+#: archive.module:68
+msgid "Whichever node type you choose here will be available as a filter to the user."
+msgstr "Którykolwiek rodzaj węzła wybierzesz, będzie dostępny jako filtr dla czytelnika."
+
+#: archive.module:100
+msgid "Sun"
+msgstr "Nie"
+
+#: archive.module:100
+msgid "Mon"
+msgstr "Pon"
+
+#: archive.module:100
+msgid "Tue"
+msgstr "Wto"
+
+#: archive.module:100
+msgid "Wed"
+msgstr "Śro"
+
+#: archive.module:100
+msgid "Thu"
+msgstr "Czw"
+
+#: archive.module:100
+msgid "Fri"
+msgstr "Pią"
+
+#: archive.module:100
+msgid "Sat"
+msgstr "Sob"
+
+#: archive.module:141
+msgid "Archive calendar"
+msgstr "Kalendarz archiwów"
+
+#: archive.module:0
+msgid "archive"
+msgstr "archiwum"
+
+#: archive.info:0
+msgid "Archive"
+msgstr "Archiwum"
+
+#: archive.info:0
+msgid "Allows visitors to view content filtered by date."
+msgstr "Pozwala na wyświetlenie listy węzłów w postaci kalendarza."

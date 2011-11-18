@@ -1,5 +1,4 @@
 <?php
-// $Id: event.module,v 1.400 2008/12/30 23:54:03 killes Exp $ 
 
 define('EVENT_API', '5.2');
 define('EVENT_PATH', drupal_get_path('module', 'event'));
@@ -9,14 +8,15 @@ define('EVENT_PATH', drupal_get_path('module', 'event'));
  * @ingroup event_support
  */
 function event_include_files() {
-  include_once(EVENT_PATH .'/event.theme');
-  global $db_type;
-  include_once(EVENT_PATH ."/event_database.$db_type.inc");
-  
-  if (file_exists($file = path_to_theme() .'/event.css')) {
-    drupal_add_css($file);
-  }
-  else {
+  static $first = TRUE;
+
+  if ($first) {
+    $first = FALSE;
+    include_once(EVENT_PATH .'/event.theme');
+    global $db_type;
+    include_once(EVENT_PATH ."/event_database.$db_type.inc");
+    // Any theme my override this by adding to its .info file:
+    // stylesheets[all][] = event.css
     drupal_add_css(EVENT_PATH .'/event.css');
   }
 }
@@ -733,7 +733,7 @@ function event_calendar_week($op, $date, $types = NULL, $terms = NULL, $rewrite_
     $month_name = event_format_date($cur_date, 'custom', 'M');
 
     $row[$x] = array(
-      'class' => strtolower("$month_name ". $weekdays[$x]['day'] . ($date == $today ? ' today' : '') . ($cur_date['day'] == $date['day'] ? ' selected' : '')),
+      'class' => strtolower("$month_name ". $weekdays[$x]['day'] . ($cur_date == $today ? ' today' : '') . ($cur_date['day'] == $date['day'] ? ' selected' : '')),
       'id' => strtolower($month_name . $cur_date['day']),
       'data' => event_render_day($cur_date, 'week', $types, $terms, $rewrite_parameter));
     $cur_date = event_date_later($cur_date, 1);
@@ -1088,7 +1088,7 @@ function event_calendar_data($date, $view = NULL, $types = NULL, $terms = NULL, 
 
       // we have to load these here since there is no way to pass the
       // $view parameter to nodeapi through node_load :/
-      $node->event['links'] = module_invoke_all('link', 'event_node_'. $view, $node, FALSE);
+      $node->event['links'] = module_invoke_all('link', 'event_node_'. $view, $node, TRUE);
 
       if (event_is_later($node->event['start_exploded'], $first_exploded)) {
         $node_start = $node->event['start_exploded'];
@@ -1571,6 +1571,7 @@ function _event_user_date() {
     $now = _event_user_time();
     $now['hour'] = '00';
     $now['minute'] = '00';
+    $now['second'] = '00';
   }
   return $now;
 }
@@ -1953,7 +1954,7 @@ function event_block($op = 'list', $delta = 0) {
     case 'list' :
       $blocks[0]['info'] = t('Calendar to browse events.');
       $blocks[1]['info'] = t('List of upcoming events.');
-      $types = event_get_types('solo');
+      $types = event_get_types('all') + event_get_types('solo');
       foreach ($types as $type) {
         $blocks["event-upcoming-$type"]['info'] = t('List of upcoming events for node type @name.', array('@name' => $type));
       }
@@ -2124,7 +2125,7 @@ function event_form_alter(&$form, $form_state, $form_id) {
         event_pre_render($node);
       }
       drupal_add_js(drupal_get_path('module', 'event') .'/event_node_edit.js');
-      $form['event'] = array('#type' => 'fieldset', '#tree' =>TRUE);
+      $form['event'] = array('#type' => 'fieldset', '#tree' => TRUE, '#title' => t('Events'));
       $form['event']['has_time'] = array(
         '#type' => 'checkbox',
         '#title' => t('Event has time'),
@@ -2328,7 +2329,6 @@ function event_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
         $node->event['end_exploded'] = event_explode_date($node->event['end']);
 
         $format = event_strip_time(variable_get('date_format_short', 'm/d/Y - H:i'));
-
         $node->event['start_format'] = event_format_date($node->event['start_exploded'], 'small');
         $node->event['start_date_format'] = event_format_date($node->event['start_exploded'], 'custom', $format);
         $node->event['start_time_format'] = event_format_date($node->event['start_exploded'], 'custom', (variable_get('event_ampm', '0') ? 'g:i a' : 'H:i'));
@@ -2364,8 +2364,10 @@ function event_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
         if (event_is_later($node->event['start_exploded'], $node->event['end_exploded'], 'array')) {
           $node->event['end_exploded'] = $node->event['start_exploded'];
         }
-        $node->event['start_in_dst'] = event_is_dst($node->event['timezone'], $node->event['start_exploded']);
-        $node->event['end_in_dst'] = event_is_dst($node->event['timezone'], $node->event['end_exploded']);
+
+        $timezone = event_zonelist_by_id($node->event['timezone']);
+        $node->event['start_in_dst'] = event_is_dst($timezone['dst_region'], $node->event['start_exploded']);
+        $node->event['end_in_dst'] = event_is_dst($timezone['dst_region'], $node->event['end_exploded']);
         break;
       case 'update':
         // While the DELETE/INSERT is less efficient than single UPDATE, the
@@ -3009,7 +3011,7 @@ function event_format_date($date, $type = 'medium', $format = '') {
  */
 function event_strip_time($format) {
   $no_time_date = array();
-  foreach (array('d', 'm', 'Y', 'M', 'j') as $key) {
+  foreach (array('d', 'm', 'Y', 'M', 'j', 'n') as $key) {
     $pos = strpos($format, $key);
     if ($pos !== FALSE) {
       if ($pos > 0) {
@@ -3086,7 +3088,7 @@ function event_zonelist_by_id($id) {
  */
 function event_zone_by_name($name) {
   static $zones = array();
-  var_dump($name);
+
   if (!isset($zones[$name])) {
     $zone = db_fetch_array(db_query("SELECT * FROM {event_timezones} WHERE name = '%s'", $name));
     if ($zone) {

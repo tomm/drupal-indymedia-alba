@@ -18,6 +18,13 @@ function imceditor_update_3() {
 	return array();
 }
 
+function imceditor_update_4() {
+	// node.moderate now means 'has an editor seen this thing'
+	// start with empty moderation queue
+	db_query("UPDATE {node} SET moderate = 1");
+	return array();
+}
+
 function imceditor_schema() {
 	$schema['imc_node_moderation'] = array(
 		'fields' => array(

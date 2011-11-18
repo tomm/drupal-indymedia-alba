@@ -1,5 +1,4 @@
 <?php
-// $Id: views_handler_field.inc,v 1.7 2009/01/30 19:21:12 merlinofchaos Exp $
 /**
  * @defgroup views_field_handlers Views' field handlers
  * @{
@@ -94,6 +93,11 @@ class views_handler_field extends views_handler {
           else {
             $table_alias = $this->table_alias;
           }
+          if (empty($table_alias)) {
+            vpr(t('Handler @handler tried to add additional_field @identifier but @table could not be added!', array('@handler' => $this->definition['handler'], '@identifier' => $identifier, '@table' => $info['table'])));
+            $this->aliases[$identifier] = 'broken';
+            continue;
+          }
           $this->aliases[$identifier] = $this->query->add_field($table_alias, $info['field']);
         }
         else {
@@ -107,7 +111,7 @@ class views_handler_field extends views_handler {
    * Called to determine what to tell the clicksorter.
    */
   function click_sort($order) {
-    $this->query->add_orderby($this->table, $this->field, $order, $this->field_alias);
+    $this->query->add_orderby($this->table_alias, $this->real_field, $order, $this->field_alias);
   }
 
   /**
@@ -148,16 +152,24 @@ class views_handler_field extends views_handler {
         'text' => array('default' => '', 'translatable' => TRUE),
         'make_link' => array('default' => FALSE),
         'path' => array('default' => '', 'translatable' => TRUE),
+        'absolute' => array('default' => '', 'translatable' => FALSE),
         'alt' => array('default' => '', 'translatable' => TRUE),
+        'rel' => array('default' => ''),
+        'link_class' => array('default' => ''),
         'prefix' => array('default' => '', 'translatable' => TRUE),
         'suffix' => array('default' => '', 'translatable' => TRUE),
+        'target' => array('default' => '', 'translatable' => TRUE),
         'trim' => array('default' => FALSE),
         'max_length' => array('default' => ''),
         'word_boundary' => array('default' => TRUE),
         'ellipsis' => array('default' => TRUE),
+        'strip_tags' => array('default' => FALSE),
         'html' => array('default' => FALSE),
       ),
     );
+    $options['empty'] = array('default' => '', 'translatable' => TRUE);
+    $options['hide_empty'] = array('default' => FALSE);
+    $options['empty_zero'] = array('default' => FALSE);
 
     return $options;
   }
@@ -191,7 +203,7 @@ class views_handler_field extends views_handler {
 
       $form['alter']['text'] = array(
         '#title' => t('Text'),
-        '#type' => 'textfield',
+        '#type' => 'textarea',
         '#default_value' => $this->options['alter']['text'],
         '#description' => t('The text to display for this field. You may include HTML. You may enter data from this view as per the "Replacement patterns" below.'),
         '#process' => array('views_process_dependency'),
@@ -215,12 +227,43 @@ class views_handler_field extends views_handler {
         '#dependency' => array(
           'edit-options-alter-make-link' => array(1)
         ),
+        '#maxlength' => 255,
+      );
+       $form['alter']['absolute'] = array(
+         '#type' => 'checkbox',
+         '#title' => t('Use absolute path'),
+         '#default_value' => $this->options['alter']['absolute'],
+         '#process' => array('views_process_dependency'),
+         '#dependency' => array(
+           'edit-options-alter-make-link' => array(1)
+         ),
+       );
+
+      $form['alter']['link_class'] = array(
+        '#title' => t('Link class'),
+        '#type' => 'textfield',
+        '#default_value' => $this->options['alter']['link_class'],
+        '#description' => t('The CSS class to apply to the link.'),
+        '#process' => array('views_process_dependency'),
+        '#dependency' => array(
+          'edit-options-alter-make-link' => array(1)
+        ),
       );
       $form['alter']['alt'] = array(
         '#title' => t('Alt text'),
         '#type' => 'textfield',
         '#default_value' => $this->options['alter']['alt'],
         '#description' => t('Text to place as "alt" text which most browsers display as a tooltip when hovering over the link.'),
+        '#process' => array('views_process_dependency'),
+        '#dependency' => array(
+          'edit-options-alter-make-link' => array(1)
+        ),
+      );
+      $form['alter']['rel'] = array(
+        '#title' => t('Rel Text'),
+        '#type' => 'textfield',
+        '#default_value' => $this->options['alter']['rel'],
+        '#description' => t('Include Rel attribute for use in lightbox2 or other javascript utility.'),
         '#process' => array('views_process_dependency'),
         '#dependency' => array(
           'edit-options-alter-make-link' => array(1)
@@ -246,6 +289,17 @@ class views_handler_field extends views_handler {
           'edit-options-alter-make-link' => array(1)
         ),
       );
+      $form['alter']['target'] = array(
+        '#title' => t('Target'),
+        '#type' => 'textfield',
+        '#default_value' => $this->options['alter']['target'],
+        '#description' => t("Target of the link, such as _blank, _parent or an iframe's name. This field is rarely used."),
+        '#process' => array('views_process_dependency'),
+        '#dependency' => array(
+          'edit-options-alter-make-link' => array(1)
+        ),
+      );
+
 
       // Get a list of the available fields and arguments for token replacement.
       $options = array();
@@ -258,22 +312,25 @@ class views_handler_field extends views_handler {
       }
       $count = 0; // This lets us prepare the key as we want it printed.
       foreach ($this->view->display_handler->get_handlers('argument') as $arg => $handler) {
-        $options[t('Arguments')]['%' . ++$count] = $handler->ui_name();
+        $options[t('Arguments')]['%' . ++$count] = t('@argument title', array('@argument' => $handler->ui_name()));
+        $options[t('Arguments')]['!' . $count] = t('@argument input', array('@argument' => $handler->ui_name()));
       }
+
+      $this->document_self_tokens($options[t('Fields')]);
 
       // Default text.
       $output = t('<p>You must add some additional fields to this display before using this field. These fields may be marked as <em>Exclude from display</em> if you prefer. Note that due to rendering order, you cannot use fields that come after this field; if you need a field not listed here, rearrange your fields.</p>');
       // We have some options, so make a list.
       if (!empty($options)) {
-        $output = t('<p>The following substitution patterns are available for this display. Use the pattern shown on the left to display the value indicated on the right. Note that due to rendering order, you cannot use fields that come after this field; if you need a field not listed here, rearrange your fields.</p>');
+        $output = t('<p>The following tokens are available for this field. Note that due to rendering order, you cannot use fields that come after this field; if you need a field not listed here, rearrange your fields.
+If you would like to have the characters %5B and %5D please use the html entity codes \'%5B\' or  \'%5D\' or they will get replaced with empty space.</p>');
         foreach (array_keys($options) as $type) {
           if (!empty($options[$type])) {
             $items = array();
-            $title = t(ucwords($type));
             foreach ($options[$type] as $key => $value) {
-              $items[] = $key .' == '. $value;
+              $items[] = $key . ' == ' . $value;
             }
-            $output .= theme('item_list', $items, $title);
+            $output .= theme('item_list', $items, $type);
           }
         }
       }
@@ -303,7 +360,7 @@ class views_handler_field extends views_handler {
         '#title' => t('Maximum length'),
         '#type' => 'textfield',
         '#default_value' => $this->options['alter']['max_length'],
-        '#description' => t('The maximum number of characters his field can be.'),
+        '#description' => t('The maximum number of characters this field can be.'),
         '#process' => array('views_process_dependency'),
         '#dependency' => array(
           'edit-options-alter-trim' => array(1)
@@ -342,7 +399,36 @@ class views_handler_field extends views_handler {
           'edit-options-alter-trim' => array(1)
         ),
       );
+
+      $form['alter']['strip_tags'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Strip HTML tags'),
+        '#description' => t('If checked, all HTML tags will be stripped.'),
+        '#default_value' => $this->options['alter']['strip_tags'],
+        '#process' => array('views_process_dependency'),
+      );
     }
+
+    $form['empty'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Empty text'),
+      '#default_value' => $this->options['empty'],
+      '#description' => t('If the field is empty, display this text instead.'),
+    );
+
+    $form['empty_zero'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Count the number 0 as empty'),
+      '#default_value' => $this->options['empty_zero'],
+      '#description' => t('If the field contains the number zero, display the empty text instead'),
+    );
+
+    $form['hide_empty'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Hide if empty'),
+      '#default_value' => $this->options['hide_empty'],
+      '#description' => t('Do not display anything for this field if it is empty. Note that the field label may still be displayed. Check style or row style settings to hide labels for empty fields.'),
+    );
   }
 
   /**
@@ -381,39 +467,91 @@ class views_handler_field extends views_handler {
    * text-replacement rendering is necessary.
    */
   function advanced_render($values) {
-    $this->last_render = $value = $this->render($values);
-    $this->original_value = $value;
-
-    $tokens = NULL;
-    if (!empty($this->options['alter']['alter_text']) && !empty($this->options['alter']['text'])) {
-      $tokens = $this->get_render_tokens();
-      $value = $this->render_altered($tokens);
+    if ($this->allow_advanced_render() && method_exists($this, 'render_item')) {
+      $raw_items = $this->get_items($values);
+    }
+    else {
+      $this->last_render = $value = $this->render($values);
+      $this->original_value = $value;
     }
 
-    if (!empty($this->options['alter']['trim']) && !empty($this->options['alter']['max_length'])) {
-      $value = $this->render_trim_text($value);
-    }
+    if ($this->allow_advanced_render()) {
+      $tokens = NULL;
+      if (method_exists($this, 'render_item')) {
+        $items = array();
+        foreach ($raw_items as $count => $item) {
+          $this->last_render = $this->render_item($count, $item);
+          $this->original_value = $this->last_render;
 
-    if (!empty($this->options['alter']['make_link']) && !empty($this->options['alter']['path'])) {
-      if (!isset($tokens)) {
-       $tokens = $this->get_render_tokens();
+          $alter = $item + $this->options['alter'];
+          $items[] = $this->render_text($alter);
+        }
+
+        $value = $this->render_items($items);
       }
-      $value = $this->render_as_link($value, $tokens);
+      else {
+        $value = $this->render_text($this->options['alter']);
+      }
+
+      // This happens here so that render_as_link can get the unaltered value of
+      // this field as a token rather than the altered value.
+      $this->last_render = $value;
     }
 
-    // This happens here so that render_as_link can get the unaltered value of
-    // this field as a token rather than the altered value.
-    $this->last_render = $value;
+    if (empty($this->last_render)) {
+      if (($this->last_render !== 0 && $this->last_render !== '0') || !empty($this->options['empty_zero'])) {
+        $alter = $this->options['alter'];
+        $alter['alter_text'] = 1;
+        $alter['text'] = $this->options['empty'];
+        $this->last_render = $this->render_text($alter);
+      }
+    }
 
     return $this->last_render;
   }
 
   /**
+   * Perform an advanced text render for the item.
+   *
+   * This is separated out as some fields may render lists, and this allows
+   * each item to be handled individually.
+   */
+  function render_text($alter) {
+    $value = trim($this->last_render);
+
+    if (!empty($alter['alter_text']) && $alter['text'] !== '') {
+      $tokens = $this->get_render_tokens($alter);
+      $value = $this->render_altered($alter, $tokens);
+    }
+
+    if ($this->options['hide_empty'] && empty($value) && ($value !== 0 || $this->options['empty_zero'])) {
+      return '';
+    }
+
+    if (!empty($alter['strip_tags'])) {
+      $value = strip_tags($value);
+    }
+
+    if (!empty($alter['trim']) && !empty($alter['max_length'])) {
+      $value = $this->render_trim_text($alter, $value);
+    }
+
+    if (!empty($alter['make_link']) && !empty($alter['path'])) {
+      if (!isset($tokens)) {
+       $tokens = $this->get_render_tokens($alter);
+      }
+      $value = $this->render_as_link($alter, $value, $tokens);
+    }
+
+    return $value;
+  }
+
+  /**
    * Render this field as altered text, from a fieldset set by the user.
    */
-  function render_altered($tokens) {
+  function render_altered($alter, $tokens) {
     // Filter this right away as our substitutions are already sanitized.
-    $value = filter_xss_admin($this->options['alter']['text']);
+    $value = filter_xss_admin($alter['text']);
     $value = strtr($value, $tokens);
 
     return $value;
@@ -422,72 +560,115 @@ class views_handler_field extends views_handler {
   /**
    * Trim the field down to the specified length.
    */
-  function render_trim_text($value) {
-    if (drupal_strlen($value) <= $this->options['alter']['max_length']) {
-      return $value;
+  function render_trim_text($alter, $value) {
+    if (!empty($alter['strip_tags'])) {
+      // NOTE: It's possible that some external fields might override the
+      // element type so if someone from, say, CCK runs into a bug here,
+      // this may be why =)
+      $this->definition['element type'] = 'span';
     }
-
-    $value = drupal_substr($value, 0, $this->options['alter']['max_length']);
-
-    if (!empty($this->options['alter']['word_boundary'])) {
-      if (preg_match ("/(.*)\b.+/u", $value, $matches)) {
-        $value = $matches[1];
-        // Strip spare space at the end.
-        $value = rtrim($value);
-      }
-    }
-
-    if (!empty($this->options['alter']['ellipsis'])) {
-      $value .= '...';
-    }
-
-    if (!empty($this->options['alter']['html'])) {
-      $value = _filter_htmlcorrector($value);
-    }
-
-    return $value;
+    return views_trim_text($alter, $value);
   }
 
   /**
    * Render this field as a link, with the info from a fieldset set by
    * the user.
    */
-  function render_as_link($text, $tokens) {
-    // $path will be run through check_url() by l() so we do not need to
-    // sanitize it ourselves.
-    $path = $this->options['alter']['path'];
-    $path = strtr($path, $tokens);
-
-    $alt = $this->options['alter']['alt'];
-    $alt = strtr($alt, $tokens);
-
+  function render_as_link($alter, $text, $tokens) {
     $value = '';
 
-    if (!empty($this->options['alter']['prefix'])) {
-      $value .= filter_xss_admin($this->options['alter']['prefix']);
+    if (!empty($alter['prefix'])) {
+      $value .= filter_xss_admin(strtr($alter['prefix'], $tokens));
     }
 
     $options = array(
-      'html' => 'true',
+      'html' => TRUE,
+      'absolute' => !empty($alter['absolute']) ? TRUE : FALSE,
     );
 
-    if ($alt) {
-      $options['attributes']['title'] = $alt;
-      $options['attributes']['alt'] = $alt;
+    // $path will be run through check_url() by l() so we do not need to
+    // sanitize it ourselves.
+    $path = $alter['path'];
+
+    // html_entity_decode removes <front>, so check whether its different to front.
+    if ($path != '<front>') {
+      // Use strip tags as there should never be HTML in the path.
+      // However, we need to preserve special characters like " that
+      // were removed by check_plain().
+      $path = strip_tags(html_entity_decode(strtr($path, $tokens)));
     }
 
-    // These can only be set internally at this time.
-    if (isset($this->options['alter']['query'])) {
-      $options['query'] = $this->options['alter']['query'];
+    // If the path is empty do not build a link around the given text and return
+    // it as is.
+    if (empty($path)) {
+      return $text;
     }
-    if (isset($this->options['alter']['fragment'])) {
-      $options['fragment'] = $this->options['alter']['fragment'];
+
+    // Parse the URL and move any query and fragment parameters out of the path.
+    $url = parse_url($path);
+    if (isset($url['query'])) {
+      $path = strtr($path, array('?' . $url['query'] => ''));
+      $options['query'] = $url['query'];
+    }
+    if (isset($url['fragment'])) {
+      $path = strtr($path, array('#' . $url['fragment'] => ''));
+      // If the path is empty we want to have a fragment for the current site.
+      if ($path == '') {
+        $options['external'] = TRUE;
+      }
+      $options['fragment'] = $url['fragment'];
+    }
+
+    $alt = strtr($alter['alt'], $tokens);
+    // Set the title attribute of the link only if it improves accessibility
+    if ($alt && $alt != $text) {
+      $options['attributes']['title'] = html_entity_decode($alt, ENT_QUOTES);
+    }
+
+    $class = strtr($alter['link_class'], $tokens);
+    if ($class) {
+      $options['attributes']['class'] = $class;
+    }
+
+    if (!empty($alter['rel']) && $rel = strtr($alter['rel'], $tokens)) {
+      $options['attributes']['rel'] = $rel;
+    }
+
+    $target = check_plain(trim(strtr($alter['target'],$tokens)));
+    if (!empty($target)) {
+      $options['attributes']['target'] = $target;
+    }
+
+    // Allow the addition of arbitrary attributes to links. Additional attributes
+    // currently can only be altered in preprocessors and not within the UI.
+    if (isset($alter['link_attributes']) && is_array($alter['link_attributes'])) {
+      foreach ($alter['link_attributes'] as $key => $attribute) {
+        if (!isset($options['attributes'][$key])) {
+          $options['attributes'][$key] = strtr($attribute, $tokens);
+        }
+      }
+    }
+
+    // If the query and fragment were programatically assigned overwrite any
+    // parsed values.
+    if (isset($alter['query'])) {
+      $options['query'] = strtr($alter['query'], $tokens);
+    }
+    if (isset($alter['alias'])) {
+      // Alias is a boolean field, so no token.
+      $options['alias'] = $alter['alias'];
+    }
+    if (isset($alter['fragment'])) {
+      $options['fragment'] = strtr($alter['fragment'], $tokens);
+    }
+    if (isset($this->options['alter']['language'])) {
+      $options['language'] = $this->options['alter']['language'];
     }
 
     $value .= l($text, $path, $options);
 
-    if (!empty($this->options['alter']['suffix'])) {
-      $value .= filter_xss_admin($this->options['alter']['suffix']);
+    if (!empty($alter['suffix'])) {
+      $value .= filter_xss_admin(strtr($alter['suffix'], $tokens));
     }
 
     return $value;
@@ -500,7 +681,7 @@ class views_handler_field extends views_handler {
    * are available and gets their values. This will then be
    * used in one giant str_replace().
    */
-  function get_render_tokens() {
+  function get_render_tokens($item) {
     $tokens = array();
     if (!empty($this->view->build_info['substitutions'])) {
       $tokens = $this->view->build_info['substitutions'];
@@ -511,10 +692,14 @@ class views_handler_field extends views_handler {
       if (!isset($tokens[$token])) {
         $tokens[$token] = '';
       }
+
+      // Use strip tags as there should never be HTML in the path.
+      // However, we need to preserve special characters like " that
+      // were removed by check_plain().
+      $tokens['!' . $count] = isset($this->view->args[$count - 1]) ? strip_tags(html_entity_decode($this->view->args[$count - 1])) : '';
     }
 
     // Now add replacements for our fields.
-    $options = array();
     foreach ($this->view->display_handler->get_handlers('field') as $field => $handler) {
       if (isset($handler->last_render)) {
         $tokens["[$field]"] = $handler->last_render;
@@ -522,6 +707,8 @@ class views_handler_field extends views_handler {
       else {
         $tokens["[$field]"] = '';
       }
+      $this->add_self_tokens($tokens, $item);
+
       // We only use fields up to (and including) this one.
       if ($field == $this->options['id']) {
         break;
@@ -530,6 +717,26 @@ class views_handler_field extends views_handler {
 
     return $tokens;
   }
+
+  /**
+   * Add any special tokens this field might use for itself.
+   *
+   * This method is intended to be overridden by items that generate
+   * fields as a list. For example, the field that displays all terms
+   * on a node might have tokens for the tid and the term.
+   *
+   * By convention, tokens should follow the format of [token-subtoken]
+   * where token is the field ID and subtoken is the field. If the
+   * field ID is terms, then the tokens might be [terms-tid] and [terms-name].
+   */
+  function add_self_tokens(&$tokens, $item) { }
+
+  /**
+   * Document any special tokens this field might use for itself.
+   *
+   * @see add_self_tokens() for details.
+   */
+  function document_self_tokens(&$tokens) { }
 
   /**
    * Call out to the theme() function, which probably just calls render() but
@@ -570,7 +777,7 @@ class views_handler_field extends views_handler {
  * A special handler to take the place of missing or broken handlers.
  */
 class views_handler_field_broken extends views_handler_field {
-  function ui_name() {
+  function ui_name($short = FALSE) {
     return t('Broken/missing handler');
   }
 
@@ -593,9 +800,35 @@ class views_handler_field_broken extends views_handler_field {
  * Render a numeric value as a size.
  */
 class views_handler_field_file_size extends views_handler_field {
+  function option_definition() {
+    $options = parent::option_definition();
+
+    $options['file_size_display'] = array('default' => 'formatted');
+
+    return $options;
+  }
+
+  function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
+    $form['file_size_display'] = array(
+      '#title' => t('File size display'),
+      '#type' => 'select',
+      '#options' => array(
+        'formatted' => t('Formatted (in KB or MB)'),
+        'bytes' => t('Raw bytes'),
+      ),
+    );
+  }
+
   function render($values) {
     if ($values->{$this->field_alias}) {
-      return format_size($values->{$this->field_alias});
+      switch ($this->options['file_size_display']) {
+        case 'bytes':
+          return $values->{$this->field_alias};
+        case 'formatted':
+        default:
+          return format_size($values->{$this->field_alias});
+      }
     }
     else {
       return '';

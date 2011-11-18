@@ -1,5 +1,4 @@
 <?php
-// $Id: menu.inc,v 1.255.2.31 2009/04/27 12:50:13 goba Exp $
 
 /**
  * @file
@@ -72,7 +71,7 @@
  */
 
 /**
- * @name Menu flags
+ * @defgroup menu_flags Menu flags
  * @{
  * Flags for use in the "type" attribute of menu items.
  */
@@ -90,8 +89,10 @@ define('MENU_IS_LOCAL_TASK', 0x0080);
  */
 
 /**
- * @name Menu item types
+ * @defgroup menu_item_types Menu item types
  * @{
+ * Definitions for various menu item types.
+ *
  * Menu item definitions provide one of these constants, which are shortcuts for
  * combinations of the above flags.
  */
@@ -135,7 +136,7 @@ define('MENU_DEFAULT_LOCAL_TASK', MENU_IS_LOCAL_TASK | MENU_LINKS_TO_PARENT);
  */
 
 /**
- * @name Menu status codes
+ * @defgroup menu_status_codes Menu status codes
  * @{
  * Status codes for menu callbacks.
  */
@@ -150,9 +151,9 @@ define('MENU_SITE_OFFLINE', 4);
  */
 
 /**
- * @Name Menu tree parameters
+ * @defgroup menu_tree_parameters Menu tree parameters
  * @{
- * Menu tree
+ * Parameters for a menu tree.
  */
 
  /**
@@ -550,7 +551,7 @@ function _menu_item_localize(&$item, $map, $link_translate = FALSE) {
  *   path from the menu table, for example tabs.
  * @return
  *   Returns the map with objects loaded as defined in the
- *   $item['load_functions. $item['access'] becomes TRUE if the item is
+ *   $item['load_functions']. $item['access'] becomes TRUE if the item is
  *   accessible, FALSE otherwise. $item['href'] is set according to the map.
  *   If an error occurs during calling the load_functions (like trying to load
  *   a non existing node) then this function return FALSE.
@@ -748,13 +749,14 @@ function menu_tree_output($tree) {
 
   $num_items = count($items);
   foreach ($items as $i => $data) {
-    $extra_class = NULL;
+    $extra_class = array();
     if ($i == 0) {
-      $extra_class = 'first';
+      $extra_class[] = 'first';
     }
     if ($i == $num_items - 1) {
-      $extra_class = 'last';
+      $extra_class[] = 'last';
     }
+    $extra_class = implode(' ', $extra_class);
     $link = theme('menu_item_link', $data['link']);
     if ($data['below']) {
       $output .= theme('menu_item', $link, $data['link']['has_children'], menu_tree_output($data['below']), $data['link']['in_active_trail'], $extra_class);
@@ -1503,7 +1505,26 @@ function menu_set_active_item($path) {
 }
 
 /**
- * Set (or get) the active trail for the current page - the path to root in the menu tree.
+ * Sets or gets the active trail (path to root menu root) of the current page.
+ *
+ * @param $new_trail
+ *   Menu trail to set, or NULL to use previously-set or calculated trail. If
+ *   supplying a trail, use the same format as the return value (see below).
+ *
+ * @return
+ *   Path to menu root of the current page, as an array of menu link items,
+ *   starting with the site's home page. Each link item is an associative array
+ *   with the following components:
+ *   - title: Title of the item.
+ *   - href: Drupal path of the item.
+ *   - localized_options: Options for passing into the l() function.
+ *   - type: A menu type constant, such as MENU_DEFAULT_LOCAL_TASK, or 0 to
+ *     indicate it's not really in the menu (used for the home page item).
+ *   If $new_trail is supplied, the value is saved in a static variable and
+ *   returned. If $new_trail is not supplied, and there is a saved value from
+ *   a previous call, the saved value is returned. If $new_trail is not supplied
+ *   and there is no saved value, the path to the current page is calculated,
+ *   saved as the static value, and returned.
  */
 function menu_set_active_trail($new_trail = NULL) {
   static $trail;
@@ -1566,7 +1587,9 @@ function menu_set_active_trail($new_trail = NULL) {
 }
 
 /**
- * Get the active trail for the current page - the path to root in the menu tree.
+ * Gets the active trail (path to root menu root) of the current page.
+ *
+ * See menu_set_active_trail() for details of return value.
  */
 function menu_get_active_trail() {
   return menu_set_active_trail();
@@ -1669,15 +1692,28 @@ function menu_cache_clear_all() {
  * is different and leaves stale data in the menu tables.
  */
 function menu_rebuild() {
-  variable_del('menu_rebuild_needed');
+  if (!lock_acquire('menu_rebuild')) {
+    // Wait for another request that is already doing this work.
+    // We choose to block here since otherwise the router item may not 
+    // be avaiable in menu_execute_active_handler() resulting in a 404.
+    lock_wait('menu_rebuild');
+    return FALSE;
+  }
+
   $menu = menu_router_build(TRUE);
   _menu_navigation_links_rebuild($menu);
   // Clear the menu, page and block caches.
   menu_cache_clear_all();
   _menu_clear_page_cache();
+  
   if (defined('MAINTENANCE_MODE')) {
     variable_set('menu_rebuild_needed', TRUE);
   }
+  else {
+    variable_del('menu_rebuild_needed');
+  }
+  lock_release('menu_rebuild');
+  return TRUE;
 }
 
 /**
@@ -1852,13 +1888,14 @@ function _menu_delete_item($item, $force = FALSE) {
  * @param $item
  *   An array representing a menu link item. The only mandatory keys are
  *   link_path and link_title. Possible keys are:
- *   - menu_name   default is navigation
- *   - weight      default is 0
- *   - expanded    whether the item is expanded.
- *   - options     An array of options, @see l for more.
- *   - mlid        Set to an existing value, or 0 or NULL to insert a new link.
- *   - plid        The mlid of the parent.
- *   - router_path The path of the relevant router item.
+ *   - menu_name: Default is navigation.
+ *   - weight: Default is 0.
+ *   - expanded: Whether the item is expanded.
+ *   - options: An array of options, see l() for more.
+ *   - mlid: Set to an existing value, or 0 or NULL to insert a new link.
+ *   - plid: The mlid of the parent.
+ *   - router_path: The path of the relevant router item.
+ *
  * @return
  *   The mlid of the saved menu link, or FALSE if the menu link could not be 
  *   saved.
@@ -2396,6 +2433,7 @@ function _menu_router_build($callbacks) {
       'file' => '',
       'file path' => '',
       'include file' => '',
+      'module' => '',
     );
 
     // Calculate out the file to be included for each callback, if any.

@@ -7,6 +7,7 @@ $language->language ?>" xmlns="http://www.w3.org/1999/xhtml">
 <?php print $head ?>
 <?php print $styles ?>
 <?php print $scripts ?>
+<link href="/rss.xml" rel="alternate" type="application/rss+xml" title="Indymedia Scotland" />
 <!--[if lte IE 6]>
 <style>
 #header { position: static; }
@@ -26,7 +27,7 @@ $language->language ?>" xmlns="http://www.w3.org/1999/xhtml">
     <img src="<?php print check_url($logo) ?>" alt="<?php print $site_name ?>" id="logo" />
     </a>
   <?php } ?>
-  <?php if ($site_name){ ?>
+  <?php if ($site_name && !$is_front){ ?>
     <h1><a href="<?php print url() ?>" title="<?php print t('Home') ?>" rel="home"><?php print $site_name ?></a></h1>
   <?php } ?>
   <?php if ($site_slogan){ ?>

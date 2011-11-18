@@ -1,5 +1,4 @@
 <?php
-// $Id: views_ui.module,v 1.109 2009/01/30 00:56:01 merlinofchaos Exp $
 /**
  * @file views_ui.module
  * Provide structure for the administrative interface to Views.
@@ -39,12 +38,13 @@ function views_ui_menu() {
     'page callback' => 'views_ui_add_page',
     'type' => MENU_LOCAL_TASK
   );
-  $items['admin/build/views/import'] = $base + array(
+  $items['admin/build/views/import'] = array(
     'title' => 'Import',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('views_ui_import_page'),
+    'access callback' => 'views_import_access',
     'type' => MENU_LOCAL_TASK
-  );
+  ) + $base;
   $items['admin/build/views/tools'] = $base + array(
     'title' => 'Tools',
     'page callback' => 'drupal_get_form',
@@ -127,6 +127,10 @@ function views_ui_menu() {
   $items['admin/build/views/%views_ui_js/add-display/%views_ui_cache'] = $callback + array(
     'page callback' => 'views_ui_add_display',
     'page arguments' => array(3, 5),
+  );
+    $items['admin/build/views/%views_ui_js/clone-display/%views_ui_cache'] = $callback + array(
+    'page callback' => 'views_ui_clone_display',
+    'page arguments' => array(3, 5, 6),
   );
   // Live preview
   $items['admin/build/views/%views_ui_js/preview/%views_ui_cache'] = $callback + array(

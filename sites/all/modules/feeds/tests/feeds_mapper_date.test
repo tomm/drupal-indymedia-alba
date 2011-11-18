@@ -1,0 +1,94 @@
+<?php
+module_load_include('test', 'feeds', 'test/feeds_mapper');
+
+/**
+ * @file
+ * Test case for CCK date field mapper mappers/date.inc.
+ */
+
+/**
+ * Class for testing Feeds <em>content</em> mapper.
+ *
+ * @todo: Add test method iCal
+ * @todo: Add test method for end date
+ */
+class FeedsMapperDateTestCase extends FeedsMapperTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Mapper: Date',
+      'description' => 'Test Feeds Mapper support for CCK Date fields.',
+      'group' => 'Feeds',
+      'dependencies' => array('content', 'date'),
+    );
+  }
+
+  public function setUp() {
+    // Call parent setup with the required module.
+    parent::setUp(array('content', 'date_api', 'date'));
+  }
+
+  /**
+   * Basic test loading a single entry CSV file.
+   */
+  public function test() {
+    // Create content type.
+    $typename = $this->createContentType(array(), array(
+      'date' => 'date',
+      'datestamp' => 'datestamp',
+      'datetime' => 'datetime',
+    ));
+
+    // Create and configure importer.
+    $this->createImporterConfiguration('Date RSS', 'daterss');
+    $this->setSettings('daterss', NULL, array('content_type' => '', 'import_period' => FEEDS_SCHEDULE_NEVER));
+    $this->setPlugin('daterss', 'FeedsFileFetcher');
+    $this->setPlugin('daterss', 'FeedsSyndicationParser');
+    $this->setSettings('daterss', 'FeedsNodeProcessor', array('content_type' => $typename));
+    $this->addMappings('daterss', array(
+      array(
+        'source' => 'title',
+        'target' => 'title',
+      ),
+      array(
+        'source' => 'description',
+        'target' => 'body',
+      ),
+      array(
+        'source' => 'timestamp',
+        'target' => 'field_date:start',
+      ),
+      array(
+        'source' => 'timestamp',
+        'target' => 'field_datestamp:start',
+      ),
+    ));
+
+    // Import CSV file.
+    $this->importFile('daterss', $this->absolutePath() .'/tests/feeds/googlenewstz.rss2');
+    $this->assertText('Created 6 '. $typename .' nodes.');
+
+    // Check the imported nodes.
+    $values = array(
+      '01/06/2010 - 19:26',
+      '01/06/2010 - 10:21',
+      '01/06/2010 - 13:42',
+      '01/06/2010 - 06:05',
+      '01/06/2010 - 11:26',
+      '01/07/2010 - 00:26',
+      );
+    for ($i = 1; $i <= 6; $i++) {
+      $this->drupalGet("node/$i/edit");
+      $this->assertCCKFieldValue('date', $values[$i-1]);
+      $this->assertCCKFieldValue('datestamp', $values[$i-1]);
+    }
+  }
+
+  protected function getFormFieldsNames($field_name, $index) {
+    if (in_array($field_name, array('date', 'datetime', 'datestamp'))) {
+      return array("field_{$field_name}[{$index}][value][date]");
+    }
+    else {
+      return parent::getFormFieldsNames($field_name, $index);
+    }
+  }
+}

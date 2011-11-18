@@ -1,5 +1,4 @@
 <?php
-// $Id: ajax.inc,v 1.19 2008/09/22 20:50:58 merlinofchaos Exp $
 
 /**
  * @file ajax.inc
@@ -19,14 +18,21 @@ function views_ajax() {
     $display_id = $_REQUEST['view_display_id'];
     $args = isset($_REQUEST['view_args']) && $_REQUEST['view_args'] !== '' ? explode('/', $_REQUEST['view_args']) : array();
     $path = isset($_REQUEST['view_path']) ? $_REQUEST['view_path'] : NULL;
-    $dom_id = isset($_REQUEST['view_dom_id']) ? $_REQUEST['view_dom_id'] : NULL;
-    $pager_element = isset($_REQUEST['pager_element']) ? $_REQUEST['pager_element'] : NULL;
+    $dom_id = isset($_REQUEST['view_dom_id']) ? intval($_REQUEST['view_dom_id']) : NULL;
+    $pager_element = isset($_REQUEST['pager_element']) ? intval($_REQUEST['pager_element']) : NULL;
     views_include('ajax');
     $object = new stdClass();
 
     $object->status = FALSE;
     $object->display = '';
 
+    $arg = explode('/', $_REQUEST['view_path']);
+
+    if ($arg[0] == 'admin' || (variable_get('node_admin_theme', '0') && $arg[0] == 'node' && ($arg[1] == 'add' || $arg[2] == 'edit'))) {
+        global $custom_theme;
+        $custom_theme = variable_get('admin_theme', '0');
+        drupal_add_css(drupal_get_path('module', 'system') .'/admin.css', 'module');
+    }
     // Load the view.
     if ($view = views_get_view($name)) {
       if ($view->access($display_id)) {
@@ -46,8 +52,10 @@ function views_ajax() {
         $errors = $view->validate();
         if ($errors === TRUE) {
           $object->status = TRUE;
-          $object->title = $view->get_title();
           $object->display .= $view->preview($display_id, $args);
+          // Get the title after the preview call, to let it set
+          // up both the view's current display and arguments
+          $object->title = $view->get_title();
         }
         else {
           foreach ($errors as $error) {
@@ -104,7 +112,7 @@ function views_ajax_render($output = NULL, $title = NULL, $url = NULL, $js = NUL
 function views_ajax_form_wrapper($form_id, &$form_state) {
   // This won't override settings already in.
   $form_state += array(
-    're_render' => FALSE,
+    'rerender' => FALSE,
     'no_redirect' => !empty($form_state['ajax']),
   );
 

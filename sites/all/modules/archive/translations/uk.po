@@ -1,0 +1,176 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: archive.module\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2008-08-06 10:44+0200\n"
+"Last-Translator: Олег Іванович <ole-studio@meta.ua>\n"
+"Language-Team: ole-studio <ole-studio@meta.ua>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Ukrainian\n"
+"X-Poedit-Country: UKRAINE\n"
+"X-Poedit-SourceCharset: utf-8\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: archive.inc:44
+msgid "There's currently nothing in the archives to browse."
+msgstr "В архіві немає інформації."
+
+#: archive.inc:391
+msgid "Date"
+msgstr "Дата"
+
+#: archive.inc:402
+msgid "Type"
+msgstr "Тип"
+
+#: archive.inc:425;454;491;527
+msgid "All"
+msgstr "Усе"
+
+#: archive.inc:457
+msgid "Jan"
+msgstr "Січ"
+
+#: archive.inc:457
+msgid "Feb"
+msgstr "Лют"
+
+#: archive.inc:457
+msgid "Mar"
+msgstr "Бер"
+
+#: archive.inc:457
+msgid "Apr"
+msgstr "Кві"
+
+#: archive.inc:457
+msgid "May"
+msgstr "Тра"
+
+#: archive.inc:457
+msgid "Jun"
+msgstr "Чер"
+
+#: archive.inc:457
+msgid "Jul"
+msgstr "Лип"
+
+#: archive.inc:457
+msgid "Aug"
+msgstr "Сер"
+
+#: archive.inc:457
+msgid "Sep"
+msgstr "Вер"
+
+#: archive.inc:457
+msgid "Oct"
+msgstr "Жов"
+
+#: archive.inc:457
+msgid "Nov"
+msgstr "Лис"
+
+#: archive.inc:457
+msgid "Dec"
+msgstr "Гру"
+
+#: archive.inc:425;431;454;467;491;504;527;535
+#: archive.module:95;113
+msgid "1 post"
+msgid_plural "@count posts"
+msgstr[0] "одне повідомлення"
+msgstr[1] "повідомлень: @count"
+
+#: archive.module:10
+msgid "The archive module provides a suggested menu item, which shows a page allowing content to be filtered by date and node type. The date selectors allow visitors to view content published in any given year, month or day. The node type selectors allow visitors to view content of all node types or only specific ones."
+msgstr "Модуль archive надає можливість відображати різні типи матеріалів сайту з їх фільтрацією по даті публікації. Допоміжне меню дає можливість побачити перелік публікацій за будь який рік, місяць, день. Є можливість обмежити відображення за типом наповнення (опитуванян, стаття, запис блогу)."
+
+#: archive.module:11
+msgid ""
+"<p>You can</p>\r\n"
+"<ul>\r\n"
+"<li>view your <a href=\"!archive\">archive page</a>.</li>\r\n"
+"<li><a href=\"!admin-menu\">enable or disable the archive menu item</a>.</li>\r\n"
+"</ul>\r\n"
+msgstr ""
+"<p>Ви можете</p>\r\n"
+"<ul>\r\n"
+"<li>переглянути, як виглядає ваша <a href=\"!archive\">архівна сторінка</a>.</li>\r\n"
+"<li><a href=\"!admin-menu\">увімкнути/вимкнути відповідний пункт в меню</a>.</li>\r\n"
+"</ul>\r\n"
+
+#: archive.module:17
+msgid "For more information please read the configuration and customization handbook <a href=\"http://drupal.org/handbook/modules/archive/\">Archive page</a>."
+msgstr "Довідка по налаштування на <a href=\"http://drupal.org/handbook/modules/archive/\">сторінці модуля</a>."
+
+#: archive.module:20
+msgid "Provides a node listing for specified node-types browsable by date."
+msgstr "Відображає перелік наповненя певного типу з можливістю його фільтарації по даті."
+
+#: archive.module:32;39;146
+msgid "Archives"
+msgstr "Архів"
+
+#: archive.module:35
+msgid "Browse the archives"
+msgstr "Перегляд архіву"
+
+#: archive.module:42
+msgid "Configure node types available for archive browsing."
+msgstr "Налаштування типів наповнення,які будуть доступні для перегляду на архівній сторінці."
+
+#: archive.module:65
+msgid "What nodes are available as filters"
+msgstr "Вкажіть тип наповнення, за яким можлива фільтрація"
+
+#: archive.module:68
+msgid "Whichever node type you choose here will be available as a filter to the user."
+msgstr "Будь-який вибраний вами тип може бути використаний користувачем в якості фільтра"
+
+#: archive.module:100
+msgid "Sun"
+msgstr "НД"
+
+#: archive.module:100
+msgid "Mon"
+msgstr "ПН"
+
+#: archive.module:100
+msgid "Tue"
+msgstr "ВТ"
+
+#: archive.module:100
+msgid "Wed"
+msgstr "СР"
+
+#: archive.module:100
+msgid "Thu"
+msgstr "ЧТ"
+
+#: archive.module:100
+msgid "Fri"
+msgstr "ПТ"
+
+#: archive.module:100
+msgid "Sat"
+msgstr "СБ"
+
+#: archive.module:141
+msgid "Archive calendar"
+msgstr "Архівний календар"
+
+#: archive.module:0
+msgid "archive"
+msgstr "архів"
+
+#: archive.info:0
+msgid "Archive"
+msgstr "Архів"
+
+#: archive.info:0
+msgid "Allows visitors to view content filtered by date."
+msgstr "Дає можливість відвідувачам переглядати зміст сайту по днях"
+

@@ -1,5 +1,4 @@
 <?php
-// $Id: views_plugin_argument_validate_taxonomy_term.inc,v 1.2 2008/09/10 16:17:54 merlinofchaos Exp $
 /**
  * @file
  * Contains the 'taxonomy term' argument validator plugin.
@@ -42,12 +41,20 @@ class views_plugin_argument_validate_taxonomy_term extends views_plugin_argument
       '#process' => array('views_process_dependency'),
       '#dependency' => array('edit-options-validate-type' => array($this->id)),
     );
+
+    $form['validate_argument_transform'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Transform dashes in URL to spaces in term name arguments'),
+      '#default_value' => isset($this->argument->options['validate_argument_transform']) ? $this->argument->options['validate_argument_transform'] : FALSE,
+      '#process' => array('views_process_dependency'),
+      '#dependency' => array('edit-options-validate-argument-type' => array('convert', 'name')),
+    );
   }
 
   function validate_argument($argument) {
     $vids = isset($this->argument->options['validate_argument_vocabulary']) ? array_filter($this->argument->options['validate_argument_vocabulary']) : array();
-
     $type = isset($this->argument->options['validate_argument_type']) ? $this->argument->options['validate_argument_type'] : 'tid';
+    $transform = isset($this->argument->options['validate_argument_transform']) ? $this->argument->options['validate_argument_transform'] : FALSE;
 
     switch ($type) {
       case 'tid':
@@ -62,6 +69,11 @@ class views_plugin_argument_validate_taxonomy_term extends views_plugin_argument
 
         return empty($vids) || !empty($vids[$result->vid]);
       case 'tids':
+        // An empty argument is not a term so doesn't pass.
+        if (empty($argument)) {
+          return FALSE;
+        }
+
         $tids = new stdClass();
         $tids->value = $argument;
         $tids = views_break_phrase($argument, $tids);
@@ -69,20 +81,42 @@ class views_plugin_argument_validate_taxonomy_term extends views_plugin_argument
           return FALSE;
         }
 
-        $placeholders = implode(', ', array_fill(0, sizeof($tids->value), '%d'));
-
         $test = drupal_map_assoc($tids->value);
         $titles = array();
 
-        $result = db_query("SELECT * FROM {term_data} WHERE tid IN ($placeholders)", $tids->value);
-        while ($term = db_fetch_object($result)) {
-          if ($vids && empty($vids[$term->vid])) {
-            return FALSE;
+        // check, if some tids already verified
+        static $validated_cache = array();
+        foreach ($test as $tid) {
+          if (isset($validated_cache[$tid])) {
+            if ($validated_cache[$tid] === FALSE) {
+              return FALSE;
+            }
+            else {
+              $titles[] = $validated_cache[$tid];
+              unset($test[$tid]);
+            }
           }
-
-          $titles[] = check_plain($term->name);
-          unset($test[$term->tid]);
         }
+
+
+        // if unverified tids left - verify them and cache results
+        if (count($test)) {
+          $placeholders = implode(', ', array_fill(0, count($test), '%d'));
+
+          $result = db_query("SELECT * FROM {term_data} WHERE tid IN ($placeholders)", $test);
+          while ($term = db_fetch_object($result)) {
+            if ($vids && empty($vids[$term->vid])) {
+              $validated_cache[$term->tid] = FALSE;
+              return FALSE;
+            }
+
+            $titles[] = $validated_cache[$term->tid] = check_plain($term->name);
+            unset($test[$term->tid]);
+          }
+        }
+
+        // Remove duplicate titles
+        $titles = array_unique($titles);
 
         $this->argument->validated_title = implode($tids->operator == 'or' ? ' + ' : ', ', $titles);
         // If this is not empty, we did not find a tid.
@@ -93,8 +127,12 @@ class views_plugin_argument_validate_taxonomy_term extends views_plugin_argument
         if (!empty($vids)) {
           $and = " AND td.vid IN(" . implode(', ', $vids) . ')';
         }
-
-        $result = db_fetch_object(db_query("SELECT td.* FROM {term_data} td LEFT JOIN {term_synonym} ts ON ts.tid = td.tid WHERE (td.name = '%s' OR ts.name = '%s')$and", $argument, $argument));
+        if ($transform) {
+          $result = db_fetch_object(db_query("SELECT td.* FROM {term_data} td LEFT JOIN {term_synonym} ts ON ts.tid = td.tid WHERE (replace(td.name, ' ', '-') = '%s' OR replace(ts.name, ' ', '-') = '%s')$and", $argument, $argument));
+        }
+        else {
+          $result = db_fetch_object(db_query("SELECT td.* FROM {term_data} td LEFT JOIN {term_synonym} ts ON ts.tid = td.tid WHERE (td.name = '%s' OR ts.name = '%s')$and", $argument, $argument));
+        }
         if (!$result) {
           return FALSE;
         }
@@ -102,6 +140,7 @@ class views_plugin_argument_validate_taxonomy_term extends views_plugin_argument
         if ($type == 'convert') {
           $this->argument->argument = $result->tid;
         }
+        $this->argument->validated_title = check_plain($result->name);
 
         return TRUE;
     }

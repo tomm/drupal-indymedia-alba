@@ -157,6 +157,30 @@ function template_preprocess_imcviews_newswire_item(&$variables) {
 }
 
 function imcviews_admin() {
+
+	$q = db_query("SELECT format,name FROM {filter_formats}");
+	$options = array();
+	while ($a = db_fetch_array($q)) {
+		$options[$a['format']] = $a['name'];
+	}
+	$form['misc']['imcviews_teaser_filter'] = array(
+		'#type' => 'select',
+		'#title' => 'Filter article node teasers with',
+		'#options' => $options,
+		'#default_value' => variable_get('imcviews_teaser_filter', 0),
+	);
+	$q = db_query("SELECT * FROM {imagecache_preset}");
+	$options = array();
+	while ($a = db_fetch_array($q)) {
+		$options[$a['presetname']] = $a['presetname'];
+	}
+	$form['misc']['imcviews_teaser_imagecache_preset'] = array(
+		'#type' => 'select',
+		'#title' => 'Display teaser article images using this imagecache preset',
+		'#options' => $options,
+		'#default_value' =>
+		variable_get('imcviews_teaser_imagecache_preset', ''),
+	);
 	$form['blocks'] = array(
 		'#type' => 'fieldset',
 		'#title' => t('Sidebar (block) configuration'),
@@ -216,117 +240,7 @@ function imcviews_admin() {
 		'#maxlength' => 8,
 	);
 
-	$form['front']['sections'] = array(
-		'#tree' => TRUE,
-		'#theme' => 'imcviews_admin_front_sections',
-	);
-
-	$categories = variable_get('imcviews_front_sections', array());
-
-	while (sizeof($categories) < IMCVIEWS_FRONT_MAX_CATS) {
-		$categories[] = array('tid' => 0, 'title' => '', 'color' => 'blue', 'style' => 'summaries', 'num' => 6, 'weight' => 0);
-	}
-	
-	$alltax = array_merge(array(0=>''), taxonomy_form_all(FALSE));
-
-	for ($i=0; $i<sizeof($categories); $i++) {
-		$cat = &$categories[$i];
-		$form['front']['sections'][$i]['tid'] = array(
-			'#type' => 'select',
-			'#multiple' => FALSE,
-			'#default_value' => $cat['tid'],
-			'#options' => $alltax,
-		//	'#description' => t('What types of articles should appear in this category')
-		);
-			//$form['taxonomy'][$key]['#prefix'] = '<div style="float: left; margin-right: 1em;">';
-			//$form['taxonomy'][$key]['#suffix'] = '</div>';
-		$form['front']['sections'][$i]['title'] = array(
-			'#type' => 'textfield',
-			'#default_value' => $cat['title'],
-			'#size' => 8,
-			'#maxlength' => 128,
-		//	'#description' => t("Title if not the same<br>as the category's name.")
-		);
-		$form['front']['sections'][$i]['color'] = array(
-			'#type' => 'textfield',
-			'#default_value' => $cat['color'],
-			'#size' => 6,
-			'#maxlength' => 16,
-		);
-		$form['front']['sections'][$i]['style'] = array(
-			'#type' => 'select',
-			'#multiple' => FALSE,
-			'#default_value' => $cat['style'],
-			'#options' => array('summaries' => t('Full summaries'), 'titles' => t('Titles only')),
-		//	'#description' => t('Style in which the articles are displayed')
-		);
-		$form['front']['sections'][$i]['num'] = array(
-			'#type' => 'textfield',
-			'#default_value' => $cat['num'],
-			'#size' => 2,
-			'#maxlength' => 2,
-		);
-		$form['front']['sections'][$i]['weight'] = array('#type' =>
-				'weight', '#delta' => 10, '#default_value' =>
-				$cat['weight']);
-	}
-
-/*	$term_nids[] = array('tid' => 21, 'color' => 'darkcyan', 'style' => 'summaries', 'num' => 6);
-	$term_nids[] = array('tid' => $headline_tid, 'color' => '#606', 'style' => 'titles', 'num' => 1, 'title' => 'Other recent features');
-	$term_nids[] = array('tid' => 20, 'color' => '#660', 'style' => 'summaries', 'num' => 6);
-	$term_nids[] = array('tid' => 23, 'color' => 'green', 'style' => 'summaries', 'num' => 6);
-	//$term_nids[] = array('tid' => 24, 'color' => 'blue', 'style' => 'titles', 'num' => 8);
-	$term_nids[] = array('tid' => 22, 'color' => 'darkred', 'style' => 'summaries', 'num' => 6);
-*/	
-	$form['#submit'][] = '_imcviews_submit_admin_form';
-
 	return system_settings_form($form);
-}
-
-function theme_imcviews_admin_front_sections($form) {
-	$rows = array();
-	foreach (element_children($form) as $key) {
-		if (isset($form[$key]['tid'])) {
-			$cat = &$form[$key];
-
-			$row = array('');
-			if (isset($cat['weight'])) {
-				$cat['weight']['#attributes']['class'] = 'category-weight';
-				$row[] = drupal_render($cat['weight']);
-			}
-			$row[] = drupal_render($cat['tid']);
-			$row[] = drupal_render($cat['title']);
-			$row[] = drupal_render($cat['color']);
-			$row[] = drupal_render($cat['num']);
-			$row[] = drupal_render($cat['style']);
-			$rows[] = array('data' => $row, 'class' => 'draggable');
-		}
-	}
-	$header = array('', '',t('Category'), t('Title'), t('Color'),
-			t('Number'), t('Style'));
-//	if (isset($form['submit'])) {
-//		$header[] = t('Weight');
-		drupal_add_tabledrag('front-sections', 'order', 'sibling',
-				'category-weight');
-//	}
-	return theme('table', $header, $rows, array('id' => 'front-sections')) .
-		drupal_render($form);
-}
-
-function _imcviews_submit_admin_form($form, &$form_state) {
-	function _imcviews_cmp_weight($a, $b) {
-		if ($a['weight'] > $b['weight']) return 1;
-		else if ($a['weight'] < $b['weight']) return -1;
-		else return 0;
-	}
-
-	$cats = array();
-	foreach ($form_state['values']['sections'] as $idx => $cat) {
-		if ($cat['tid']) $cats[] = $cat;
-	}
-	unset($form_state['values']['sections']);
-	usort($cats, '_imcviews_cmp_weight');
-	variable_set('imcviews_front_sections', $cats);
 }
 
 function imcviews_feature_rssfeed() {
@@ -435,42 +349,11 @@ function imcviews_front() {
 		$main_nids[] = $nid;
 	}
 
-	$term_nids = variable_get('imcviews_front_sections', array());
-/*
-	$term_nids[] = array('tid' => 21, 'color' => 'darkcyan', 'style' => 'summaries', 'num' => 6);
-	$term_nids[] = array('tid' => $headline_tid, 'color' => '#606', 'style' => 'titles', 'num' => 1, 'title' => 'Other recent features');
-	$term_nids[] = array('tid' => 20, 'color' => '#660', 'style' => 'summaries', 'num' => 6);
-	$term_nids[] = array('tid' => 23, 'color' => 'green', 'style' => 'summaries', 'num' => 6);
-	//$term_nids[] = array('tid' => 24, 'color' => 'blue', 'style' => 'titles', 'num' => 8);
-	$term_nids[] = array('tid' => 22, 'color' => 'darkred', 'style' => 'summaries', 'num' => 6);
-*/
-	$tax_num = 0;
-	$max_section_age = intval(variable_get('imcviews_front_section_article_max_age_weeks', IMCVIEWS_DEFAULT_FRONT_SECTION_ARTICLE_MAX_AGE_WEEKS));
-
-	for ($i=0; $i<sizeof($term_nids); $i++) {
-		$t = &$term_nids[$i];
-		$q = db_query('SELECT DISTINCT n.nid FROM {node} n INNER JOIN {term_node} t ON t.nid = n.nid AND t.tid=%d WHERE n.type = "article" AND n.promote = 1 AND n.status = 1 AND n.created > %d ORDER BY n.created DESC LIMIT %d', $t['tid'], time()-$max_section_age*7*24*60*60, $t['num']);
-		$t['nids'] = array();
-		while ($nid = db_result($q)) {
-			if (!in_array($nid, $main_nids)) {
-				$t['nids'][] = $nid;
-			}
-		}
-		if ($t['nids']) $tax_num++;
-	}
-
 	$min = variable_get('imcviews_front_min_first', IMCVIEWS_DEFAULT_FRONT_MIN_FIRST);
 	$max = variable_get('imcviews_front_max_first', IMCVIEWS_DEFAULT_FRONT_MAX_FIRST);
-	$news_num = max($min, $max-$tax_num);
+	$news_num = $max;
 
-	// make news taxonomy blob have overflows from top bunch of news articles
-	for ($i=0; $i<sizeof($term_nids); $i++) {
-		if ($term_nids[$i]['tid'] == $headline_tid) {
-			$term_nids[$i]['nids'] = array_slice($main_nids,$news_num,8);
-		}
-	}
-	$out = "";
-	$out .= '<table class="front-feats" style="clear: both;">';
+	$out = '<table class="front-feats" style="clear: both;">';
 
 	// first feature is big
 	if ($nid = reset($main_nids)) {
@@ -488,35 +371,6 @@ function imcviews_front() {
 		if ($count & 1) $out .= '</tr>';
 		$count++;
 		if (--$news_num < 0) break;
-	}
-
-	// taxonomy articles
-	for ($i=0; $i<sizeof($term_nids); $i++) {
-		$t = &$term_nids[$i];
-		if (isset($t['title']) && $t['title']) $tid_name = $t['title'];
-		else $tid_name = db_result(db_query("SELECT name FROM {term_data} WHERE tid=%d", $t['tid']));
-		if ($t['nids']) {
-			if (!($count & 1)) $out .= '<tr>';
-			$out .= '<td valign="top" class="front-node-teaser-'.($count&1 ? 'right' : 'left').'">';
-			$out .= sprintf('<div class="front_taxonomy" style="background-color: %s; padding-left: 0.5em;">%s</div>', $t['color'], l($tid_name,'taxonomy/term/'.$t['tid']));
-
-			$started_list = 0;
-			for ($idx=0; $idx<sizeof($t['nids']); $idx++) {
-				$nid = $t['nids'][$idx];
-				if ($t['style'] == 'summaries' && $idx == 0) {
-					$node = node_load(array('nid'=>$nid));
-					$out .= node_view($node, TRUE, FALSE, TRUE);
-				} else {
-					if (!$started_list) { $out .= '<ul>'; $started_list = 1; }
-					$node = node_load(array('nid'=>$nid));
-					$out .= '<li class="feature-list">'.l($node->title, 'node/'.$nid).'</li>';
-				}
-			}
-			if ($started_list) $out .= '</ul>';
-			$out .= '</td>';
-			if ($count & 1) $out .= '</tr>';
-			$count++;
-		}
 	}
 
 	$out .= "</table>";

@@ -1,5 +1,4 @@
 <?php
-// $Id: views_plugin_display_page.inc,v 1.5 2009/01/27 18:40:31 merlinofchaos Exp $
 /**
  * @file
  * Contains the page display plugin.
@@ -28,7 +27,7 @@ class views_plugin_display_page extends views_plugin_display {
         'title' => array('default' => '', 'translatable' => FALSE),
         'description' => array('default' => '', 'translatable' => FALSE),
         'weight' => array('default' => 0),
-        'name' => array('default' => 'navigation'),
+        'name' => array('default' => variable_get('menu_default_node_menu', 'navigation')),
        ),
     );
     $options['tab_options'] = array(
@@ -38,6 +37,7 @@ class views_plugin_display_page extends views_plugin_display {
         'title' => array('default' => '', 'translatable' => FALSE),
         'description' => array('default' => '', 'translatable' => FALSE),
         'weight' => array('default' => 0),
+        'name' => array('default' => 'navigation'),
        ),
     );
 
@@ -47,19 +47,23 @@ class views_plugin_display_page extends views_plugin_display {
   /**
    * Add this display's path information to Drupal's menu system.
    */
-  function execute_hook_menu() {
+  function execute_hook_menu($callbacks) {
     $items = array();
     // Replace % with the link to our standard views argument loader
     // views_arg_load -- which lives in views.module
 
     $bits = explode('/', $this->get_option('path'));
     $page_arguments = array($this->view->name, $this->display->id);
+    $view_arguments = $this->get_option('arguments');
 
     // Replace % with %views_arg for menu autoloading and add to the
     // page arguments so the argument actually comes through.
     foreach($bits as $pos => $bit) {
       if ($bit == '%') {
-        $bits[$pos] = '%views_arg';
+        $argument = array_shift($view_arguments);
+        if ($argument['validate_type'] != 'none') {
+          $bits[$pos] = '%views_arg';
+        }
         $page_arguments[] = $pos;
       }
     }
@@ -67,7 +71,9 @@ class views_plugin_display_page extends views_plugin_display {
     $path = implode('/', $bits);
 
     $access_plugin = $this->get_access_plugin();
-
+    if (!isset($access_plugin)) {
+      $access_plugin = views_get_plugin('access', 'none');
+    }
     if ($path) {
       $items[$path] = array(
         // default views page entry
@@ -135,6 +141,7 @@ class views_plugin_display_page extends views_plugin_display {
               'load arguments'  => array($this->view->name, $this->display->id, '%index'),
               'title' => $tab_options['title'],
               'description' => $tab_options['description'],
+              'menu_name' => $tab_options['name'],
             );
             switch ($tab_options['type']) {
               default:
@@ -194,7 +201,7 @@ class views_plugin_display_page extends views_plugin_display {
       'title' => t('Page settings'),
     );
 
-    $path = $this->get_option('path');
+    $path = strip_tags($this->get_option('path'));
     if (empty($path)) {
       $path = t('None');
     }
@@ -258,7 +265,9 @@ class views_plugin_display_page extends views_plugin_display {
           '#type' => 'textfield',
           '#description' => t('This view will be displayed by visiting this path on your site. You may use "%" in your URL to represent values that will be used for arguments: For example, "node/%/feed".'),
           '#default_value' => $this->get_option('path'),
-          '#field_prefix' => url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q='),
+	  '#field_prefix' => '<span dir="ltr">' . url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q='),
+	  '#field_suffix' => '</span>&lrm;',
+	  '#attributes' => array('dir'=>'ltr'),
         );
         break;
       case 'menu':
@@ -387,6 +396,27 @@ class views_plugin_display_page extends views_plugin_display {
           '#process' => array('views_process_dependency'),
           '#dependency' => array('radio:tab_options[type]' => array('normal', 'tab')),
         );
+        // Only display the menu selector if menu module is enabled.
+        if (module_exists('menu')) {
+          $form['tab_options']['name'] = array(
+            '#title' => t('Menu'),
+            '#type' => 'select',
+            '#options' => menu_get_menus(),
+            '#default_value' => $tab_options['name'],
+            '#description' => t('Insert item into an available menu.'),
+            '#process' => array('views_process_dependency'),
+            '#dependency' => array('radio:tab_options[type]' => array('normal')),
+          );
+        }
+        else {
+          $form['tab_options']['name'] = array(
+            '#type' => 'value',
+            '#value' => $tab_options['name'],
+          );
+          $form['tab_options']['markup'] = array(
+            '#value' => t('Menu selection requires the activation of menu module.'),
+          );
+        }
         $form['tab_options']['weight'] = array(
           '#suffix' => '</div>',
           '#title' => t('Tab weight'),
@@ -401,7 +431,7 @@ class views_plugin_display_page extends views_plugin_display {
     }
   }
 
-  function options_validate($form, &$form_state) {
+  function options_validate(&$form, &$form_state) {
     // It is very important to call the parent function here:
     parent::options_validate($form, $form_state);
     switch ($form_state['section']) {
@@ -439,7 +469,7 @@ class views_plugin_display_page extends views_plugin_display {
     }
   }
 
-  function options_submit($form, &$form_state) {
+  function options_submit(&$form, &$form_state) {
     // It is very important to call the parent function here:
     parent::options_submit($form, $form_state);
     switch ($form_state['section']) {

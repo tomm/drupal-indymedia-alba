@@ -1,5 +1,4 @@
 <?php
-// $Id: views_handler_filter.inc,v 1.4 2008/10/20 19:35:53 merlinofchaos Exp $
 /**
  * @defgroup views_filter_handlers Views' filter handlers
  * @{
@@ -8,7 +7,17 @@
  * Definition items:
  * - allow empty: If true, the 'IS NULL' and 'IS NOT NULL' operators become
  *   available as standard operators.
- * -
+ *
+ * Object flags:
+ *  You can set some specific behavior by setting up the following flags on
+ *  your custom class.
+ *
+ * - no_single:
+ *    Disable the possibility to force a single value.
+ * - no_operator:
+ *    Disable the possibility to use operators.
+ * - no_optional:
+ *    Disable the possibility to allow a exposed input to be optional.
  */
 
 /**
@@ -163,8 +172,8 @@ class views_handler_filter extends views_handler {
   function show_value_form(&$form, &$form_state) {
     $this->value_form($form, $form_state);
     if (empty($this->no_operator)) {
-      $form['value']['#prefix'] = '<div class="views-right-70">';
-      $form['value']['#suffix'] = '</div>';
+      $form['value']['#prefix'] = '<div class="views-right-70">' . (isset($form['value']['#prefix']) ? $form['value']['#prefix'] : '');
+      $form['value']['#suffix'] = (isset($form['value']['#suffix']) ? $form['value']['#suffix'] : '') . '</div>';
     }
   }
 
@@ -230,7 +239,7 @@ class views_handler_filter extends views_handler {
     }
 
     $form['expose'] = array(
-      '#prefix' => '<div class="views-expose-options clear">',
+      '#prefix' => '<div class="views-expose-options clear-block">',
       '#suffix' => '</div>',
     );
     $this->expose_form($form, $form_state);
@@ -328,12 +337,14 @@ class views_handler_filter extends views_handler {
    * Handle the 'right' side fo the exposed options form.
    */
   function expose_form_right(&$form, &$form_state) {
-    $form['expose']['optional'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Optional'),
-      '#description' => t('This exposed filter is optional and will have added options to allow it not to be set.'),
-      '#default_value' => $this->options['expose']['optional'],
-    );
+    if (empty($this->no_optional)) {
+      $form['expose']['optional'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Optional'),
+        '#description' => t('This exposed filter is optional and will have added options to allow it not to be set.'),
+        '#default_value' => $this->options['expose']['optional'],
+      );
+    }
     if (empty($this->no_single)) {
       $form['expose']['single'] = array(
         '#type' => 'checkbox',
@@ -362,6 +373,10 @@ class views_handler_filter extends views_handler {
 
     if (!empty($form_state['values']['options']['expose']['identifier']) && $form_state['values']['options']['expose']['identifier'] == 'value') {
       form_error($form['expose']['identifier'], t('This identifier is not allowed.'));
+    }
+
+    if (!$this->view->display_handler->is_identifier_unique($form_state['id'], $form_state['values']['options']['expose']['identifier'])) {
+      form_error($form['expose']['identifier'], t('This identifier is used by another handler.'));
     }
   }
 
@@ -461,8 +476,9 @@ class views_handler_filter extends views_handler {
       $form['#size'] = NULL;
     }
 
-    if ($type == 'value' && !empty($this->options['expose']['optional']) && $form['#type'] == 'select' && empty($form['#multiple'])) {
-      $form['#options'] = array('All' => t('<Any>')) + $form['#options'];
+    if ($type == 'value' && empty($this->no_optional) && !empty($this->options['expose']['optional']) && $form['#type'] == 'select' && empty($form['#multiple'])) {
+      $any_label = variable_get('views_exposed_filter_any_label', 'old_any') == 'old_any' ? '<Any>' : t('- Any -');
+      $form['#options'] = array('All' => $any_label) + $form['#options'];
       $form['#default_value'] = 'All';
     }
   }
@@ -502,8 +518,15 @@ class views_handler_filter extends views_handler {
 
       // Various ways to check for the absence of optional input.
       if (!empty($this->options['expose']['optional'])) {
-        if ($value == 'All' || $value === array()) {
-          return FALSE;
+
+        if (($this->operator == 'empty' || $this->operator == 'not empty') && $value === '') {
+          $value = ' ';
+        }
+
+        if ($this->operator != 'empty' && $this->operator != 'not empty') {
+          if ($value == 'All' || $value === array()) {
+            return FALSE;
+          }
         }
 
         if (!empty($this->no_single) && $value === '') {
@@ -514,7 +537,7 @@ class views_handler_filter extends views_handler {
 
       if (isset($value)) {
         $this->value = $value;
-        if (!empty($this->options['expose']['single'])) {
+        if (empty($this->no_single) && !empty($this->options['expose']['single'])) {
           $this->value = array($value);
         }
       }
@@ -588,7 +611,7 @@ class views_handler_filter extends views_handler {
  * A special handler to take the place of missing or broken handlers.
  */
 class views_handler_filter_broken extends views_handler_filter {
-  function ui_name() {
+  function ui_name($short = FALSE) {
     return t('Broken/missing handler');
   }
 

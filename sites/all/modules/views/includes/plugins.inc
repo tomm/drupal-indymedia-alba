@@ -1,5 +1,4 @@
 <?php
-// $Id: plugins.inc,v 1.152 2009/01/07 23:31:12 merlinofchaos Exp $
 /**
  * @file plugins.inc
  * Built in plugins for Views output handling.
@@ -11,7 +10,8 @@
  */
 function views_views_plugins() {
   $path = drupal_get_path('module', 'views') . '/js';
-  return array(
+
+  $plugins = array(
     'module' => 'views', // This just tells our themes are elsewhere.
     'display' => array(
       'parent' => array(
@@ -95,8 +95,8 @@ function views_views_plugins() {
         'handler' => 'views_plugin_style_default',
         'theme' => 'views_view_unformatted',
         'uses row plugin' => TRUE,
-        'uses options' => TRUE,
         'uses grouping' => TRUE,
+        'uses options' => TRUE,
         'type' => 'normal',
         'help topic' => 'style-unformatted',
       ),
@@ -235,7 +235,52 @@ function views_views_plugins() {
         'help topic' => 'access-perm',
       ),
     ),
+    'cache' => array(
+      'parent' => array(
+        'no ui' => TRUE,
+        'handler' => 'views_plugin_cache',
+        'parent' => '',
+      ),
+      'none' => array(
+        'title' => t('None'),
+        'help' => t('No caching of Views data.'),
+        'handler' => 'views_plugin_cache_none',
+        'help topic' => 'cache-none',
+      ),
+      'time' => array(
+        'title' => t('Time-based'),
+        'help' => t('Simple time-based caching of data.'),
+        'handler' => 'views_plugin_cache_time',
+        'uses options' => TRUE,
+        'help topic' => 'cache-time',
+      ),
+    ),
   );
+
+  if (module_invoke('ctools', 'api_version', '1.3')) {
+    $plugins['style']['jump_menu_summary'] = array(
+      'title' => t('Jump menu'),
+      'help' => t('Puts all of the results into a select box and allows the user to go to a different page based upon the results.'),
+      'handler' => 'views_plugin_style_summary_jump_menu',
+      'theme' => 'views_view_summary_jump_menu',
+      'type' => 'summary', // only shows up as a summary style
+      'uses options' => TRUE,
+      'help topic' => 'style-summary-jump-menu',
+    );
+    $plugins['style']['jump_menu'] = array(
+      'title' => t('Jump menu'),
+      'help' => t('Puts all of the results into a select box and allows the user to go to a different page based upon the results.'),
+      'handler' => 'views_plugin_style_jump_menu',
+      'theme' => 'views_view_jump_menu',
+      'uses row plugin' => TRUE,
+      'uses fields' => TRUE,
+      'uses options' => TRUE,
+      'type' => 'normal',
+      'help topic' => 'style-jump-menu',
+    );
+  }
+
+  return $plugins;
 }
 
 /**
@@ -244,7 +289,7 @@ function views_views_plugins() {
  * @return Nested array of plugins, grouped by type.
  */
 function views_discover_plugins() {
-  $cache = array('display' => array(), 'style' => array(), 'row' => array(), 'argument default' => array(), 'argument validator' => array(), 'access' => array());
+  $cache = array('display' => array(), 'style' => array(), 'row' => array(), 'argument default' => array(), 'argument validator' => array(), 'access' => array(), 'cache' => array());
   // Get plugins from all mdoules.
   foreach (module_implements('views_plugins') as $module) {
     $function = $module . '_views_plugins';
@@ -291,6 +336,9 @@ function views_discover_plugins() {
       }
     }
   }
+
+  // Let other modules modify the plugins.
+  drupal_alter('views_plugins', $cache);
   return $cache;
 }
 
@@ -357,65 +405,3 @@ class views_plugin extends views_object {
   function validate() { return array(); }
 }
 
-// @todo move all these defgroups into their respective .inc files.
-
-/**
- * @defgroup views_style_plugins Views' style plugins
- * @{
- * Style plugins control how a view is rendered. For example, they
- * can choose to display a collection of fields, node_view() output,
- * table output, or any kind of crazy output they want.
- *
- * Many style plugins can have an optional 'row' plugin, that displays
- * a single record. Not all style plugins can utilize this, so it is
- * up to the plugin to set this up and call through to the row plugin.
- *
- * @see hook_views_plugins
- */
-
-
-/**
- * @}
- */
-
-/**
- * @defgroup views_row_plugins Views' row plugins
- * @{
- *
- * Row plugins control how Views outputs an individual record. They are
- * tightly coupled to style plugins, in that a style plugin is what calls
- * the row plugin.
- *
- * @see hook_views_plugins
- */
-
-/**
- * @}
- */
-
-/**
- * @defgroup views_argument_default_plugins Views' argument default plugins
- * @{
- *
- * Allow specialized methods of filling in arguments when they aren't
- * provided.
- *
- * @see hook_views_plugins
- */
-
-/**
- * @}
- */
-
-/**
- * @defgroup views_argument_validate_plugins Views' argument validate plugins
- * @{
- *
- * Allow specialized methods of validating arguments.
- *
- * @see hook_views_plugins
- */
-
-/**
- * @}
- */

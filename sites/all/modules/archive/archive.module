@@ -1,0 +1,510 @@
+<?php
+// $Id: archive.module,v 1.36.2.9 2010/06/16 18:59:18 rmuilwijk Exp $
+
+/**
+ * Implementation of hook_help().
+ */
+function archive_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#archive':
+      $output = '<p>'. t('The archive module allows your users to browse your content by its type and date of publication. The archive module interface, available at the path <a href="@archive">archive</a>, presents simple controls for selecting a year, month or day. All available posts published within this range are displayed beneath the control. Administrators may select the content types to be displayed. The archive module adds an <em>Archives</em> menu item to the default <em>Navigation</em> menu (the item is disabled by default), and displays the current month and year within an optional block.', array('@archive' => url('archive'))) .'</p>';
+      $output .= '<p>'. t('You can') .'</p>';
+      $output .= '<ul><li>'. t('view your <a href="@archive">archive page</a>.', array('@archive' => url('archive'))) .'</li>';
+      $output .= '<li>'. t('enable, position and configure the <em>Current calendar month with archive links</em> block at the <a href="@blocks">blocks administration page</a>.', array('@blocks' => url('admin/build/block'))) .'</li>';
+      $output .= '<li>'. t('enable or disable the <em>Archives</em> menu item on the <a href="@menu-administration">navigation menu administration page</a>.', array('@menu-administration' => url('admin/build/menu-customize/navigation'))) .'</li></ul>';
+      $output .= '<p>'. t('For more information, see the online handbook entry for <a href="@handbook-page">Archive module</a>.', array('@handbook-page' => 'http://drupal.org/handbook/modules/archive/')) .'</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function archive_menu() {
+  $items = array();
+  $items['archive'] = array(
+    'title'            => 'Archives',
+    'access arguments' => array('access content'),
+    'page callback'    => 'archive_page',
+    'file'             => 'archive.pages.inc',
+    'type'             => MENU_SUGGESTED_ITEM
+  );
+  $items['admin/settings/archive'] = array(
+    'title'            => 'Archives',
+    'description'      => 'Select the content types listed in the archives.',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('archive_admin_settings'),
+    'access arguments' => array('access administration pages'),
+    'file'             => 'archive.admin.inc',
+    'type'             => MENU_NORMAL_ITEM
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function archive_uninstall() {
+  variable_del('archive_type_filters');
+}
+
+
+/**
+ * Implementation of hook_theme().
+ */
+function archive_theme() {
+  return array(
+    'archive_block_calendar' => array(
+      'arguments' => array('timestamp' => 0)
+  ),
+    'archive_block_month_list' => array(
+      'arguments' => array('list_items' => array())
+  ),
+    'archive_page_title' => array(
+      'arguments' => array('type' => '', 'year' => NULL, 'month' => NULL, 'day' => NULL)
+  ),
+    'archive_navigation' => array(
+      'arguments' => array('type' => '', 'date' => NULL)
+  ),
+    'archive_navigation_days' => array(
+      'arguments' => array('type' => '', 'date' => NULL)
+  ),
+    'archive_navigation_months' => array(
+      'arguments' => array('type' => '', 'date' => NULL)
+  ),
+    'archive_navigation_node_types' => array(
+      'arguments' => array('type' => '', 'date' => NULL)
+  ),
+    'archive_navigation_years' => array(
+      'arguments' => array('type' => '', 'date' => NULL)
+  ),
+    'archive_separator' => array(
+      'arguments' => array('date_created' => 0, 'separators' => array())
+  ),
+  );
+}
+
+
+/**
+ * Function used in theme_archive_block_calendar from php calendar functions.
+ * Unfortunatly some php versions don't have it compiled so we add it.
+ */
+if (!function_exists('cal_days_in_month')){
+  function cal_days_in_month($calendar,$month, $year) {
+    // $calendar just gets ignored, assume gregorian
+    // calculate number of days in a month
+    return $month == 2 ? ($year % 4 ? 28 : ($year % 100 ? 29 : ($year % 400 ? 28 : 29))) : (($month - 1) % 7 % 2 ? 30 : 31);
+  }
+}
+
+/**
+ * Returns a single month as a calendar grid.
+ *
+ * @todo
+ *   Take the archive logic out to allow better theme-overloading
+ *   of this function.
+ */
+function theme_archive_block_calendar($timestamp) {
+  $the_date = explode(' ', format_date($timestamp, 'custom', 'F Y n t'));
+  $title = $the_date[0] .' '. $the_date[1];
+  $year = $the_date[1];
+  $month = $the_date[2];
+  $num_days = (int)$the_date[3];
+
+  // Get the number of days for the previous month for adding those dates
+  // to the block calendar. Store the month/year for the previous month
+  // so that we can find and link to archive pages in those extra days.
+  // We don't need to get days for the next month as we'll never need to fit
+  // the entire month into the block.
+  $prev_month = $month==1?12:$month-1;
+  $prev_year = $month==1?$year-1:$year;
+  $num_days_prev = cal_days_in_month(CAL_GREGORIAN, $prev_month, $year);
+  $next_month = $month==12?1:$month+1;
+  $next_year = $month==12?$year+1:$year;
+
+  $date = _archive_date('all', $year, $month);
+  $month_title = '';
+  if (isset($date->months[$month])) {
+    $month_title = l($title, _archive_url('all', $year, $month), array('title' => format_plural($date->months[format_date($timestamp, 'custom', 'n')], '1 post', '@count posts')));
+  }
+  else {
+    $month_title = $title;
+  }
+
+  // Build the week starting with
+  $first_day_of_week = variable_get('date_first_day', 0);
+  $week = array(t('Sun'), t('Mon'), t('Tue'), t('Wed'), t('Thu'), t('Fri'), t('Sat'));
+  $day_headers = array();
+  for ($i = $first_day_of_week; $i < $first_day_of_week + 7; $i++) {
+    $day_headers[] = $week[$i%7];
+  }
+
+  // Grab the first day of the month using the user's timezone
+  list($start_year, $start_month) = explode(' ', format_date($timestamp, 'custom', 'Y m'));
+  $start = gmmktime( 0, 0, 0, (int)$start_month, 1, (int)$start_year);
+  $weekday = gmdate('w', $start);
+  if ($first_day_of_week) {
+    $weekday = ($weekday ? $weekday : 7) - $first_day_of_week;
+  }
+  $days_row = array();
+
+  // From http://www.theadminzone.com/forums/showthread.php?t=17490
+  for ($i = 1-$weekday;$i <= ceil(($weekday+$num_days)/7)*7;$i++) {
+    if ($i > 0) {
+      if (array_key_exists($i, $date->days)) {
+        $days_row[] = l($i,
+        _archive_url('all', $year, $month, $i),
+        array('attributes' => array('title' => format_plural($date->days[$i], '1 post', '@count posts'))));
+      }
+      else if ($i <= $num_days) {
+        $days_row[] = $i;
+      }
+      // Add days for the next month.
+      else {
+        $curr_cal_date = $i - $num_days;
+        if (isset($date->next_month_days[$curr_cal_date])) {
+          $data = l($curr_cal_date,
+          _archive_url('all', $next_year, $next_month, $curr_cal_date),
+          array('attributes' => array('title' => format_plural($date->next_month_days[$curr_cal_date], '1 post', '@count posts'))));
+        }
+        else {
+          $data = $curr_cal_date;
+        }
+        $days_row[] = array(
+          'data' => $data,
+          'class' => 'out-of-month'
+        );
+      }
+
+      // Add the week table row we just created if we've finished it
+      if (($i+$weekday)%7 == 0) {
+        $rows[] = $days_row;
+        $days_row = array();
+      }
+    }
+    // Add days for previous month also.
+    else {
+      $curr_cal_date = $num_days_prev + $i;
+      if (isset($date->prev_month_days[$curr_cal_date])) {
+        $data = l($curr_cal_date,
+        _archive_url('all', $prev_year, $prev_month, $curr_cal_date),
+        array('attributes' => array('title' => format_plural($date->prev_month_days[$curr_cal_date], '1 post', '@count posts'))));
+      }
+      else {
+        $data = $curr_cal_date;
+      }
+      $days_row[] = array(
+        'data' => $data,
+        'class' => 'out-of-month'
+      );
+    }
+  }
+  return theme('table', $day_headers, $rows, array(), $month_title);
+}
+
+/**
+ * Return a list of links suitable to be passed to theme_links() that represent
+ * months containing posts. Limit the number of past months to 6 and then have a
+ * link to the general archives page.
+ */
+function archive_month_list() {
+  $node_query = db_query(db_rewrite_sql('SELECT n.created FROM {node} n WHERE n.status = 1 AND DATE(FROM_UNIXTIME(n.created)) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 MONTH) AND CURDATE() ORDER BY n.created DESC'));
+  $months = array();
+  $total_months = 0;
+  $max_months = variable_get('archive_block_months', 6);
+  while ($node = db_fetch_object($node_query)) {
+    list($month_name, $year, $month) = explode(' ', format_date($node->created, 'custom', 'F Y n'));
+    if (isset($months[$year][$month])) {
+      $months[$year][$month]['count']++;
+    }
+    else if ($total_months++ < $max_months) { // Limit total months to 10
+      $months[$year][$month] = array(
+        'count' => 1,
+        'month_name' => $month_name
+      );
+    }
+  }
+
+  return $months;
+}
+
+/**
+ * Returns a list of archive months.
+ */
+function theme_archive_block_month_list($list_items) {
+  // Sort by year then by month
+  krsort($list_items);
+  foreach ($list_items as $year => $v) {
+    krsort($list_items[$year]);
+  }
+  $links = array();
+  foreach ($list_items as $year => $months) {
+    foreach ($months as $month => $data) {
+      $links[] = l(t($data['month_name'] . ' ' . $year . ' (' . $data['count'] . ')'), 'archive/all/' . $year . '/' . $month, array('title' => format_plural($data['count'], '1 post', '@count posts')));
+    }
+  }
+  if (count($links) == variable_get('archive_block_months', 6)) {
+    $links[] = '<div class="more-link">' . l(t('all'), 'archive', array('title' => t('Browse all of the archives'))) . '</div>';
+  }
+  return theme('item_list', $links);
+}
+
+
+/**
+ * Implementation of hook_block().
+ */
+function archive_block($op = 'list', $delta = 0) {
+  if ($op == 'list') {
+    $blocks[0] = array('info' => t('Current calendar month with archive links'));
+    $blocks[1] = array('info' => t('Archive: months list'));
+    return $blocks;
+  }
+  else if ($op == 'view') {
+    switch($delta) {
+      case 0:
+        drupal_add_css(drupal_get_path('module', 'archive') . '/archive.css');
+        $block = array(
+          'subject' => t('Archives'),
+          'content' => theme('archive_block_calendar', time()),
+        );
+        break;
+      case 1:
+        $block = array(
+          'subject' => t('Archives'),
+          'content' => theme('archive_block_month_list', archive_month_list()),
+        );
+        break;
+    }
+    return $block;
+  }
+}
+
+/**
+ * Generate an archive URL based on the $y, $m and $d provided.
+ *
+ * @param $type
+ *   The node type to use if valid.
+ * @param $y
+ *   The year to use if valid.
+ * @param $m
+ *   The month to use if valid.
+ * @param $d
+ *   The day to use if valid.
+ * @return
+ *   A string with the generated archive URL.
+ */
+function _archive_url($type, $y = 0, $m = 0, $d = 0) {
+  $url = 'archive';
+  if (_archive_validate_type($type)) {
+    $url .= '/'. $type;
+  }
+  else {
+    $url .= '/all';
+  }
+
+  if (_archive_validate_date($y, $m, $d)) {
+    $url .= '/'. $y .'/'. $m .'/'. $d;
+  }
+  else if (_archive_validate_date($y, $m)) {
+    $url .= '/'. $y .'/'. $m;
+  }
+  else if (_archive_validate_date($y)) {
+    $url .= '/'. $y;
+  }
+  return $url;
+}
+
+/**
+ * Parses the current URL and populates an archive date object.
+ *
+ * @param $year
+ *   Number of year.
+ * @param $month
+ *   Number of month.
+ * @param $day
+ *   Number of day.
+ * @return
+ *   A date object with GMT date values and a timezone value.
+ */
+function _archive_date($type, $year = 0, $month = 0, $day = 0) {
+  $date = new stdClass();
+  $date->tz = _archive_get_timezone();
+
+  $date->year  = 0;
+  $date->month = 0;
+  $date->day   = 0;
+
+  if (_archive_validate_date($year, $month, $day)) {
+    $date->year = $year;
+    $date->month = $month;
+    $date->day = $day;
+  }
+  else if (_archive_validate_date($year, $month)) {
+    $date->year = $year;
+    $date->month = $month;
+  }
+  else if (_archive_validate_date($year)) {
+    $date->year = $year;
+  }
+
+  $post_counts = _archive_post_count($type, $date);
+  $date->years  = $post_counts['years'];
+  ksort($date->years);
+  $date->months = $post_counts['months'];
+  ksort($date->months);
+  $date->days   = $post_counts['days'];
+  ksort($date->days);
+  $date->next_month_days = $post_counts['next_month_days'];
+  $date->prev_month_days = $post_counts['prev_month_days'];
+
+  return $date;
+}
+
+/**
+ * Determine timezone to use for the dates (from format_date).
+ *
+ * @return
+ *   Timezone offset to use in time operations.
+ */
+function _archive_get_timezone() {
+  global $user;
+  if (variable_get('configurable_timezones', 1) && $user->uid && strlen($user->timezone)) {
+    return $user->timezone;
+  }
+  else {
+    return variable_get('date_default_timezone', 0);
+  }
+}
+
+function _archive_types_sql_string($type) {
+  // Validate type and specify node types to include
+  $final_types = '';
+  if (_archive_validate_type($type) && $type != 'all') {
+    $final_types = $type;
+  }
+  else {
+    $types = variable_get('archive_type_filters', array());
+    // If no checkboxes selected
+    if (!array_key_exists('0', $types)) {
+      foreach ($types as $key => $value) {
+        if (!$value) {
+          unset($types[$key]);
+        }
+      }
+      $final_types = implode("', '", array_keys($types));
+    }
+  }
+  if (strlen($final_types) > 0) {
+    $final_types = "AND n.type IN ('". $final_types ."') ";
+  }
+  return $final_types;
+}
+
+/**
+ * Check if given year, month and date combination is valid for the archive.
+ *
+ * @param $year
+ *   The year to check.
+ * @param $month
+ *   The month to check.
+ * @param $day
+ *   The day to check.
+ * @return
+ *   TRUE or FALSE.
+ */
+function _archive_validate_date($year, $month = NULL, $day = NULL) {
+  $valid = FALSE;
+  if ($year && $year <= format_date(time(), 'custom', 'Y')) {
+    if (!is_null($month)) {
+      if (!is_null($day)) {
+        if ($last = gmdate('t', gmmktime(0, 0, 0, $month, 1, $year))) {
+          $valid = (0 < $day && $day <= $last);
+        }
+      }
+      else if (0 < $month && $month <= 12) {
+        $valid = TRUE;
+      }
+    }
+    else {
+      $valid = TRUE;
+    }
+  }
+  return $valid;
+}
+
+/**
+ * Check if given node type is valid for the archive.
+ *
+ * @param $type
+ *   The type to check.
+ * @return
+ *   TRUE or FALSE.
+ */
+function _archive_validate_type($type) {
+  $types = variable_get('archive_type_filters', array());
+  return in_array($type, $types);
+}
+
+/**
+ * Returns the range of dates with nodes. Returns an array with keys
+ * of 'years', 'months', and 'days' which map their respective timeframe
+ * to the number of posts in that timeframe.
+ *
+ * @param $type
+ *   The object that is being filtered.
+ * @param $date
+ *   A date object returned from _archive_date().
+ * @return
+ *   An array of the (first year with posts, last year with posts).
+ */
+function _archive_post_count($type, $date) {
+  $final_types = _archive_types_sql_string($type);
+  $node_query = db_query(db_rewrite_sql('SELECT n.uid, n.created FROM {node} n WHERE n.status = 1 '. $final_types));
+
+  $with_posts = array(
+    'years' => array(),
+    'months' => array(),
+    'days' => array(),
+    'next_month_days' => array(),
+    'prev_month_days' => array()
+  );
+
+  $next_month = $date->month==12?1:$date->month+1;
+  $next_year = $date->month==12?$date->year+1:$date->year;
+  $prev_month = $date->month==1?12:$date->month-1;
+  $prev_year = $date->month==1?$date->year-1:$date->year;
+
+  while ($o = db_fetch_object($node_query)) {
+    list($year, $month, $day) = explode(' ', format_date($o->created, 'custom', 'Y n j'));
+
+    // Check for current month.
+    $with_posts['years'][$year] = array_key_exists($year, $with_posts['years'])?$with_posts['years'][$year]+1:1;
+    if ($date->year && $year == $date->year) {
+      $with_posts['months'][$month] = array_key_exists($month, $with_posts['months'])?$with_posts['months'][$month]+1:1;
+      if ($date->month && $month == $date->month) {
+        $with_posts['days'][$day] = array_key_exists($day, $with_posts['days'])?$with_posts['days'][$day]+1:1;
+      }
+    }
+
+    // Check for previous month.
+    if ($year == $next_year && $month == $next_month) {
+      if (isset($with_posts['next_month_days'][$day])) {
+        $with_posts['next_month_days'][$day]++;
+      }
+      else {
+        $with_posts['next_month_days'][$day] = 1;
+      }
+    }
+    // Check for next month.
+    if ($year == $prev_year && $month == $prev_month) {
+      if (isset($with_posts['prev_month_days'][$day])) {
+        $with_posts['prev_month_days'][$day]++;
+      }
+      else {
+        $with_posts['prev_month_days'][$day] = 1;
+      }
+    }
+  }
+  return $with_posts;
+}

@@ -1,0 +1,13 @@
+To install the module, enable the module in the module administration panel.
+
+MODES OF OPERATION
+
+There are mainly two modes:
+
+A) Redirect mobile users to a mobile url. Switch theme based on the url
+=> Can be used when there is a domain for each device
+B) Switch theme based on device or device groups
+=> Can be used when there are multiple themes for different devices, but only one domain name
+
+
+No hybrids are possible

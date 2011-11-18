@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * Deleting all the Mobile tools variables
+ */
+function mobile_tools_uninstall() {
+  variable_del('default_main_nodes_mobile');
+  variable_del('default_main_nodes_original');
+  variable_del('site_frontpage_mobile');
+  variable_del('mobile_tools_enable_build_mode');
+  variable_del('desktop_notification');
+  variable_del('mobile_notification');
+  variable_del('mobile_tools_redirect_exceptions');
+  variable_del('mobile_tools_redirect_exceptions_type');
+  variable_del('mobile_tools_cookie_session');
+  variable_del('mobile_tools_redirect');
+  variable_del('mobile_tools_desktop_url');
+  variable_del('mobile_tools_mobile_url');
+  variable_del('mobile-tools-theme-switch');
+  variable_del('mobile_tools_theme_name');
+  variable_del('mobile-tools-device-detection');
+  variable_del('mobile-tools-device-capabilities');
+}
+
+

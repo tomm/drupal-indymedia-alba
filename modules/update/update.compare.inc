@@ -1,5 +1,4 @@
 <?php
-// $Id: update.compare.inc,v 1.8.2.3 2009/04/29 18:43:11 goba Exp $
 
 /**
  * @file
@@ -38,6 +37,8 @@ function update_get_projects() {
       // Still empty, so we have to rebuild the cache.
       _update_process_info_list($projects, module_rebuild_cache(), 'module');
       _update_process_info_list($projects, system_theme_data(), 'theme');
+      // Allow other modules to alter projects before fetching and comparing.
+      drupal_alter('update_projects', $projects);
       // Cache the site's project data for at most 1 hour.
       _update_cache_set('update_project_projects', $projects, time() + 3600);
     }
@@ -50,7 +51,22 @@ function update_get_projects() {
  */
 function _update_process_info_list(&$projects, $list, $project_type) {
   foreach ($list as $file) {
-    if (empty($file->status)) {
+    // A disabled base theme of an enabled sub-theme still has all of its code
+    // run by the sub-theme, so we include it in our "enabled" projects list.
+    if (!$file->status && !empty($file->sub_themes)) {
+      foreach ($file->sub_themes as $key => $name) {
+        // Build a list of enabled sub-themes.
+        if ($list[$key]->status) {
+          $file->enabled_sub_themes[$key] = $name;
+        }
+      }
+      // If there are no enabled subthemes, we should ingore this theme and go
+      // on to the next one.
+      if (empty($file->enabled_sub_themes)) {
+        continue;
+      }
+    }
+    elseif (empty($file->status)) {
       // Skip disabled modules or themes.
       continue;
     }
@@ -82,21 +98,47 @@ function _update_process_info_list(&$projects, $list, $project_type) {
       $file->info['_info_file_ctime'] = filectime($info_filename);
     }
 
+    if (!isset($file->info['datestamp'])) {
+      $file->info['datestamp'] = 0;
+    }
+
     $project_name = $file->info['project'];
+
+    // Add a list of sub-themes that "depend on" the project and a list of base
+    // themes that are "required by" the project.
+    if ($project_name == 'drupal') {
+      // Drupal core is always required, so this extra info would be noise.
+      $sub_themes = array();
+      $base_themes = array();
+    }
+    else {
+      // Add list of enabled sub-themes.
+      $sub_themes = !empty($file->enabled_sub_themes) ? $file->enabled_sub_themes : array();
+      // Add list of base themes.
+      $base_themes = !empty($file->base_themes) ? $file->base_themes : array();
+    }
+
     if (!isset($projects[$project_name])) {
       // Only process this if we haven't done this project, since a single
       // project can have multiple modules or themes.
       $projects[$project_name] = array(
         'name' => $project_name,
-        'info' => $file->info,
-        'datestamp' => isset($file->info['datestamp']) ? $file->info['datestamp'] : 0,
+        // Only save attributes from the .info file we care about so we do not
+        // bloat our RAM usage needlessly.
+        'info' => update_filter_project_info($file->info),
+        'datestamp' => $file->info['datestamp'],
         'includes' => array($file->name => $file->info['name']),
         'project_type' => $project_name == 'drupal' ? 'core' : $project_type,
+        'sub_themes' => $sub_themes,
+        'base_themes' => $base_themes,
       );
     }
     else {
       $projects[$project_name]['includes'][$file->name] = $file->info['name'];
       $projects[$project_name]['info']['_info_file_ctime'] = max($projects[$project_name]['info']['_info_file_ctime'], $file->info['_info_file_ctime']);
+      $projects[$project_name]['datestamp'] = max($projects[$project_name]['datestamp'], $file->info['datestamp']);
+      $projects[$project_name]['sub_themes'] = array_merge($projects[$project_name]['sub_themes'], $sub_themes);
+      $projects[$project_name]['base_themes'] = array_merge($projects[$project_name]['base_themes'], $base_themes);
     }
   }
 }
@@ -301,6 +343,11 @@ function update_calculate_project_data($available) {
               'data' => t('This project is no longer supported, and is no longer available for download. Disabling everything included by this project is strongly recommended!'),
             );
             break;
+          case 'not-fetched':
+            $projects[$project]['status'] = UPDATE_NOT_FETCHED;
+            $projects[$project]['reason'] = t('Failed to fetch available update data');
+            break;
+
           default:
             // Assume anything else (e.g. 'published') is valid and we should
             // perform the rest of the logic in this function.
@@ -620,4 +667,35 @@ function update_project_cache($cid) {
     }
   }
   return $projects;
+}
+
+/**
+ * Filter the project .info data to only save attributes we need.
+ *
+ * @param array $info
+ *   Array of .info file data as returned by drupal_parse_info_file().
+ *
+ * @return
+ *   Array of .info file data we need for the Update manager.
+ *
+ * @see _update_process_info_list()
+ */
+function update_filter_project_info($info) {
+  $whitelist = array(
+    '_info_file_ctime',
+    'datestamp',
+    'major',
+    'name',
+    'package',
+    'project',
+    'project status url',
+    'version',
+  );
+  $whitelist = array_flip($whitelist);
+  foreach ($info as $key => $value) {
+    if (!isset($whitelist[$key])) {
+      unset($info[$key]);
+    }
+  }
+  return $info;
 }

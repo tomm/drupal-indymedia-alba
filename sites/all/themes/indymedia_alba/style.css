@@ -226,6 +226,7 @@ blockquote cite {
 }
 .node img {
 	max-width: 600px;
+	border: 1px solid black;
 }
 .imgcaption {
 	font-size: 0.8em;
@@ -275,10 +276,14 @@ td.front-node-teaser-right {
 .event-block td, .event-block th {
   font-size: 70%;
 }
+.block {
+  clear: both;
+}
 .block ul {
   padding-left: 0;
 }
 .headline-node h2 {
+  font-size: 180%;
 }
 td#col-left {
 }
@@ -318,6 +323,27 @@ td.col-center-right {
 	font-size: 100%;
 }
 
+#block-views-featured_interviews-block_1 h2.title {
+	background-color: #c95000;
+	color: white;
+	padding: 0 5px;
+	font-size: 100%;
+}
+
+#block-views-featured_reviews-block_1 h2.title {
+	background-color: #6800c9;
+	color: white;
+	padding: 0 5px;
+	font-size: 100%;
+}
+
+#block-views-featured_culture-block_1 h2.title {
+	background-color: #a9a700;
+	color: white;
+	padding: 0 5px;
+	font-size: 100%;
+}
+
 #block-views-featured_commentary-block_1 h2.title {
 	background-color: #077;
 	color: white;
@@ -344,6 +370,7 @@ div.block h2.title {
 	color: white;
 	padding: 0 5px;
 	font-size: 100%;
+	line-height: 150%;
 }
 div.block h2.title a {
 	color: white;
@@ -395,3 +422,101 @@ div.block h2.title a {
 	clear: left;
 }
 
+.front-node-teaser-right h2.title,
+.front-node-teaser-left h2.title {
+	font-size: 120%;
+}
+
+/* customisation of node form */
+.node-form .menu-item-form,
+.node-form .attachments {
+	clear: left;
+}
+.node-form .wysiwyg .tips {
+	display: none;
+}
+.node-teaser-img {
+	float: left;
+	margin: 0;
+}
+.node-teaser-img img.imagecache {
+	border: 1px solid black;
+	margin: 0 0.5em 0.2em 0;
+}
+.front-feats p {
+	margin: 0;
+}
+.front-feats .teaser h2.title {
+	margin: 0 0 0.25em 0;
+}
+.front-feats .node {
+	margin-bottom: 1em;
+}
+table.front-feats {
+	margin-top: 1em;
+}
+.nodecomment .content {
+	clear: left;
+}
+table.views-view-grid td {
+	vertical-align: top;
+}
+/* newswire theme */
+.article-minilist .item-list h3 {
+	margin-bottom: 0;
+	color: #333;
+	font-size: 1em;
+	clear: left;
+}
+.article-minilist .views-field-filepath {
+	float: left;
+	padding-right: .5em;
+}
+.article-minilist .item-list ul li {
+	margin: 0.25em 0 0.5em 0;
+	list-style: none;
+	clear: left;
+}
+.node .content {
+	line-height: 150%;
+}
+.node.teaser .content {
+	font-size: 90%;
+	line-height: 150%;
+}
+.feature-list .views-row {
+	float: left;
+	width: 50%;
+}
+.feature-list .article {
+	border-top: 1px solid #ddd;
+}
+.front .feature-list .views-row-1 .article {
+	border-top: 0px;
+}
+.feature-list .views-row-even {
+	clear: left;
+}
+.feature-list .views-row-even .article {
+	margin-right: 2em;
+}
+.feature-list .views-row-1 {
+	width: 100%;
+}
+.feature-list .views-row-1 h2.title {
+	font-size: 180%;
+}
+/* (article) link in "Past news in pictures" block */
+.block .view-article-pictures {
+	margin: 1em;
+}
+.block .view-article-pictures .views-field-view-node {
+	float: left;
+}
+.ical-link {
+	float: left;
+	margin-right: 1em;
+}
+span.event-timeleft {
+	float: right;
+}

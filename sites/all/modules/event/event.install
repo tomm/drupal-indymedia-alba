@@ -1,5 +1,4 @@
 <?php
-// $Id: event.install,v 1.36 2008/12/30 21:44:03 killes Exp $ 
 
 /**
  * We need mysql >= 4.1.1
@@ -458,6 +457,38 @@ function event_update_6002() {
  */
 function event_update_6003() {
   db_query('TRUNCATE {cache}');
+  return array();
+}
+
+/**
+ * Update DST in timezones, might be screwed up.
+ */
+function event_update_6004() {
+  include_once(drupal_get_path('module', 'event') .'/event.module');
+  $timezones = event_install_timezones();
+  foreach ($timezones as $id => $timezone) {
+    $timezone = event_zonelist_by_id($id);
+    $status = event_is_dst($timezone['dst_region'], gmdate('Y-m-d H:i', time()));
+    db_query('UPDATE {event_timezones} SET is_dst = %d WHERE timezone = %d', $status, $id);
+  }
+  return array();
+}
+
+/**
+ * Update DST in events, might be screwed up.
+ */
+function event_update_6005() {
+  include_once(drupal_get_path('module', 'event') .'/event.module');
+  // get all events
+  $result = db_query('SELECT e.* FROM {event} e');
+  while ($event = db_fetch_object($result)) {
+    $timezone = event_zonelist_by_id($event->timezone);
+    $status_start = event_is_dst($timezone['dst_region'], $event->event_start);
+    $status_end = event_is_dst($timezone['dst_region'], $event->event_end);
+    if ($event->start_in_dst != $status_start || $event->end_in_dst != $status_end) {
+      db_query('UPDATE {event} SET start_in_dst = %d, end_in_dst = %d WHERE nid = %d', $status_start, $status_end, $event->nid);
+    }
+  }
   return array();
 }
 

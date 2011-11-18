@@ -1,5 +1,4 @@
 <?php
-// $Id: views_handler_field_numeric.inc,v 1.4 2008/10/23 01:04:24 merlinofchaos Exp $
 /**
  * Render a field as a numeric value
  *
@@ -17,6 +16,9 @@ class views_handler_field_numeric extends views_handler_field {
     $options['precision'] = array('default' => 0);
     $options['decimal'] = array('default' => '.', 'translatable' => TRUE);
     $options['separator'] = array('default' => ',', 'translatable' => TRUE);
+    $options['format_plural'] = array('default' => FALSE);
+    $options['format_plural_singular'] = array('default' => '1');
+    $options['format_plural_plural'] = array('default' => '@count');
     $options['prefix'] = array('default' => '', 'translatable' => TRUE);
     $options['suffix'] = array('default' => '', 'translatable' => TRUE);
 
@@ -57,6 +59,28 @@ class views_handler_field_numeric extends views_handler_field {
       '#description' => t('What single character to use as the thousands separator.'),
       '#size' => 2,
     );
+    $form['format_plural'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Format plural'),
+      '#description' => t('If checked, special handling will be used for plurality.'),
+      '#default_value' => $this->options['format_plural'],
+    );
+    $form['format_plural_singular'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Singular form'),
+      '#default_value' => $this->options['format_plural_singular'],
+      '#description' => t('Text to use for the singular form.'),
+      '#process' => array('views_process_dependency'),
+      '#dependency' => array('edit-options-format-plural' => array(TRUE)),
+    );
+    $form['format_plural_plural'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Plural form'),
+      '#default_value' => $this->options['format_plural_plural'],
+      '#description' => t('Text to use for the plural form, @count will be replaced with the value.'),
+      '#process' => array('views_process_dependency'),
+      '#dependency' => array('edit-options-format-plural' => array(TRUE)),
+    );
     $form['prefix'] = array(
       '#type' => 'textfield',
       '#title' => t('Prefix'),
@@ -78,12 +102,24 @@ class views_handler_field_numeric extends views_handler_field {
     }
     else {
       $remainder = abs($value) - intval(abs($value));
-      $value = number_format(floor($value), 0, '', $this->options['separator']);
+      $value = $value > 0 ? floor($value) : ceil($value);
+      $value = number_format($value, 0, '', $this->options['separator']);
       if ($remainder) {
         // The substr may not be locale safe.
         $value .= $this->options['decimal'] . substr($remainder, 2);
       }
     }
-    return check_plain($this->options['prefix'] . $value . $this->options['suffix']);
+
+    // Check to see if hiding should happen before adding prefix and suffix.
+    if ($this->options['hide_empty'] && empty($value) && ($value !== 0 || $this->options['empty_zero'])) {
+      return '';
+    }
+
+    // Should we format as a plural.
+    if (!empty($this->options['format_plural'])) {
+      $value = format_plural($value, $this->options['format_plural_singular'], $this->options['format_plural_plural']);
+    }
+
+    return filter_xss($this->options['prefix']) . check_plain($value) . filter_xss($this->options['suffix']);
   }
 }

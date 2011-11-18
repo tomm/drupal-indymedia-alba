@@ -1,9 +1,27 @@
 <?php
 
+function _article_create_imagecache_styles() {
+	$imagecachepreset = imagecache_preset_save(array('presetname' =>
+	'small_thumb'));
+	// Action
+	$imagecacheaction = new stdClass ();
+	$imagecacheaction->presetid = $imagecachepreset['presetid'];
+	$imagecacheaction->module = 'imagecache';
+	$imagecacheaction->action = 'imagecache_scale';
+	$imagecacheaction->data = array('width' => '150');
+	drupal_write_record('imagecache_action', $imagecacheaction);
+}
+
 function article_install() {
 	variable_set('node_options_article', array('status','revision'));
+	_article_create_imagecache_styles();
 }
 
 function article_uninstall() {
-	
+	imagecache_preset_delete(imagecache_preset_by_name('small_thumb'));
+}
+
+function article_update_6000() {
+	_article_create_imagecache_styles();
+	return array();
 }

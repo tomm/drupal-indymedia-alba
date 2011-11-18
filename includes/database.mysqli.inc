@@ -1,5 +1,4 @@
 <?php
-// $Id: database.mysqli.inc,v 1.54 2008/01/23 09:59:29 goba Exp $
 
 /**
  * @file
@@ -79,8 +78,15 @@ function db_connect($url) {
     _db_error_page(mysqli_connect_error());
   }
 
-  // Force UTF-8.
-  mysqli_query($connection, 'SET NAMES "utf8"');
+  // Force MySQL to use the UTF-8 character set. Also set the collation, if a
+  // certain one has been set; otherwise, MySQL defaults to 'utf8_general_ci'
+  // for UTF-8.
+  if (!empty($GLOBALS['db_collation'])) {
+    mysqli_query($connection, 'SET NAMES utf8 COLLATE ' . $GLOBALS['db_collation']);
+  }
+  else {
+    mysqli_query($connection, 'SET NAMES utf8');
+  }
 
   return $connection;
 }
@@ -339,6 +345,12 @@ function db_unlock_tables() {
 
 /**
  * Check if a table exists.
+ *
+ * @param $table
+ *   The name of the table.
+ *
+ * @return
+ *   TRUE if the table exists, and FALSE if the table does not exist.
  */
 function db_table_exists($table) {
   return (bool) db_fetch_object(db_query("SHOW TABLES LIKE '{". db_escape_table($table) ."}'"));
@@ -346,26 +358,17 @@ function db_table_exists($table) {
 
 /**
  * Check if a column exists in the given table.
+ *
+ * @param $table
+ *   The name of the table.
+ * @param $column
+ *   The name of the column.
+ *
+ * @return
+ *   TRUE if the column exists, and FALSE if the column does not exist.
  */
 function db_column_exists($table, $column) {
   return (bool) db_fetch_object(db_query("SHOW COLUMNS FROM {". db_escape_table($table) ."} LIKE '". db_escape_table($column) ."'"));
-}
-
-/**
- * Wraps the given table.field entry with a DISTINCT(). The wrapper is added to
- * the SELECT list entry of the given query and the resulting query is returned.
- * This function only applies the wrapper if a DISTINCT doesn't already exist in
- * the query.
- *
- * @param $table Table containing the field to set as DISTINCT
- * @param $field Field to set as DISTINCT
- * @param $query Query to apply the wrapper to
- * @return SQL query with the DISTINCT wrapper surrounding the given table.field.
- */
-function db_distinct_field($table, $field, $query) {
-  $field_to_select = 'DISTINCT('. $table .'.'. $field .')';
-  // (?<!text) is a negative look-behind (no need to rewrite queries that already use DISTINCT).
-  return preg_replace('/(SELECT.*)(?:'. $table .'\.|\s)(?<!DISTINCT\()(?<!DISTINCT\('. $table .'\.)'. $field .'(.*FROM )/AUsi', '\1 '. $field_to_select .'\2', $query);
 }
 
 /**

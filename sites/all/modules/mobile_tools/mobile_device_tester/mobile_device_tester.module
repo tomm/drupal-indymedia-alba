@@ -1,0 +1,84 @@
+<?php
+
+/***
+ * @file mobile_device_tester.module
+ * Basic module to test device capabilities as
+ */
+function mobile_device_tester_menu(){
+  $items['device/test'] = array(
+    'title' => 'Device tester',
+    'page callback' => 'theme',
+    'page arguments' => array('mobile_device_tester_test'),
+    'access arguments' => array('test device'),
+  );
+  return $items;
+}
+
+function mobile_device_tester_perm(){
+  return array("test device");
+}
+
+/**
+ * Implementation of hook_theme
+ */
+function mobile_device_tester_theme($existing, $type, $theme, $path){
+  $items['mobile_device_tester_test'] = array(
+    'template' => 'mobile-device-test',
+    'arguments' => array(),
+  );
+  return $items;
+}
+
+
+/**
+ * Reporting form
+ */
+function mobile_device_tester_report_form(){
+  $form['mail'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Email (optional)',
+  );
+  
+  $form['comments'] = array(
+    '#type' => 'textarea',
+    '#title' => '',
+    '#description' => 'Add your comments to this report form',
+  );
+  $form['user_agent'] = array(
+    '#type' => 'hidden',
+    '#value' => $_SERVER['HTTP_USER_AGENT'],
+  );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
+  return $form;
+}
+
+/**
+ * Submission of the test form
+ */
+function mobile_device_tester_report_form_submit($form, &$formstate){
+  watchdog('warning', $formstate['values']['user_agent'] . ' | '  .  $formstate['values']['comments']);
+  drupal_mail('mobile_device_tester', 'device_feedback', "tom_deryckere@northps.com", "eng", array('user-agent' => $formstate['values']['user_agent'], 'comments' =>  $formstate['values']['comments'] ));
+}
+
+/**
+ * Mailing the report
+ */
+function mobile_device_tester_mail($key, &$message, $params){
+  $message['subject'] = t('Device Feedback');
+  $message['body'][] = $params['user-agent'];
+  $message['body'][] = $params['comments'];
+  $message['body'][] = $params['email'];
+}
+
+/**
+ * Preprocess in order to get the WURFL requestingDevice class and 
+ * add the reporting form.
+ */
+function template_preprocess_mobile_device_tester_test(&$vars){
+  $vars['form'] = drupal_get_form('mobile_device_tester_report_form');
+  $vars['device'] = wurfl_get_requestingDevice();
+}

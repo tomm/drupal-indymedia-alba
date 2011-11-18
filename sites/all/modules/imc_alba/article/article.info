@@ -5,3 +5,4 @@ package = Indymedia
 version = "6.x-1.5"
 core = 6.x
 project = "imc_alba"
+dependencies[] = imagecache

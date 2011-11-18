@@ -1,5 +1,4 @@
 <?php
-// $Id: handlers.inc,v 1.105 2009/01/30 00:01:41 merlinofchaos Exp $
 /**
  * @file handlers.inc
  * Defines the various handler objects to help build and display views.
@@ -344,6 +343,11 @@ class views_handler extends views_object {
    */
   function exposed_info() { }
 
+  /**
+   * Determine if a handler can be exposed.
+   */
+  function can_expose() { return FALSE; }
+
  /**
   * Check whether current user has access to this handler.
   *
@@ -411,7 +415,6 @@ class views_handler extends views_object {
    */
   function ensure_my_table() {
     if (!isset($this->table_alias)) {
-      if (!method_exists($this->query, 'ensure_table')) { vpr_trace(); exit; }
       $this->table_alias = $this->query->ensure_table($this->table, $this->relationship);
     }
     return $this->table_alias;
@@ -519,7 +522,7 @@ class views_many_to_one_helper {
     $form['reduce_duplicates'] = array(
       '#type' => 'checkbox',
       '#title' => t('Reduce duplicates'),
-      '#description' => t('This filter can cause items that have more than one of the selected options to appear as duplicate results. If this filter causes duplicate results to occur, this checkbox can reduce those duplicates; however, the more terms it has to search for, the less performant the query will be, so use this with caution.'),
+      '#description' => t('This filter can cause items that have more than one of the selected options to appear as duplicate results. If this filter causes duplicate results to occur, this checkbox can reduce those duplicates; however, the more terms it has to search for, the less performant the query will be, so use this with caution. Shouldn\'t be set on single-value fields, as it may cause values to disappear from display, if used on an incompatible field.'),
       '#default_value' => !empty($this->handler->options['reduce_duplicates']),
     );
   }
@@ -572,10 +575,9 @@ class views_many_to_one_helper {
     while ($r_join->left_table != $base_table) {
       $r_join = views_get_table_join($r_join->left_table, $base_table);
     }
-
     // If we found that there are tables in between, add the relationship.
     if ($r_join->table != $join->table) {
-      $relationship = $this->handler->query->add_relationship(NULL, $r_join, $r_join->table, $this->handler->relationship);
+      $relationship = $this->handler->query->add_relationship($this->handler->table . '_' . $r_join->table, $r_join, $r_join->table, $this->handler->relationship);
     }
 
     // And now add our table, using the new relationship if one was used.
@@ -693,10 +695,10 @@ class views_many_to_one_helper {
           // The table alias needs to be unique to this value across the
           // multiple times the filter or argument is called by the view.
           if (!isset($this->handler->view->many_to_one_aliases[$field][$value])) {
-            if (!isset($this->handler->view->many_to_one_count[$field])) {
-              $this->handler->view->many_to_one_count[$field] = 0;
+            if (!isset($this->handler->view->many_to_one_count[$this->handler->table])) {
+              $this->handler->view->many_to_one_count[$this->handler->table] = 0;
             }
-            $this->handler->view->many_to_one_aliases[$field][$value] = $this->handler->table . '_value_' . ($this->handler->view->many_to_one_count[$field]++);
+            $this->handler->view->many_to_one_aliases[$field][$value] = $this->handler->table . '_value_' . ($this->handler->view->many_to_one_count[$this->handler->table]++);
           }
           $alias = $this->handler->table_aliases[$value] = $this->add_table($join, $this->handler->view->many_to_one_aliases[$field][$value]);
 
@@ -777,16 +779,29 @@ class views_many_to_one_helper {
  * @param $str
  *   The string to parse.
  * @param $filter
- *   The filter object to use as a base. If not specified one will
- *   be created.
+ *   The filter object to use as a base.
  *
  * @return $filter
  *   The new filter object.
  */
-function views_break_phrase($str, $filter = NULL) {
+function views_break_phrase($str, &$filter) {
   if (!$filter) {
     $filter = new stdClass();
   }
+
+  // Set up defaults:
+  if (!isset($filter->value)) {
+    $filter->value = array();
+  }
+
+  if (!isset($filter->operator)) {
+    $filter->operator = 'or';
+  }
+
+  if ($str == '') {
+    return $filter;
+  }
+
   if (preg_match('/^([0-9]+[+ ])+[0-9]+$/', $str)) {
     // The '+' character in a query string may be parsed as ' '.
     $filter->operator = 'or';
@@ -827,12 +842,20 @@ function views_get_timezone() {
   }
 
   // set up the database timezone
-  if (in_array($GLOBALS['db_type'], array('mysql', 'mysqli'))) {
+  if (in_array($GLOBALS['db_type'], array('mysql', 'mysqli', 'pgsql'))) {
+    $offset = '+00:00';
     static $already_set = false;
     if (!$already_set) {
-      if ($GLOBALS['db_type'] == 'mysqli' || version_compare(mysql_get_server_info(), '4.1.3', '>=')) {
-        db_query("SET @@session.time_zone = '+00:00'");
+      if ($GLOBALS['db_type'] == 'pgsql') {
+        db_query("SET TIME ZONE INTERVAL '$offset' HOUR TO MINUTE");
       }
+      elseif ($GLOBALS['db_type'] == 'mysqli') {
+        db_query("SET @@session.time_zone = '$offset'");
+      }
+      elseif ($GLOBALS['db_type'] == 'mysql' && version_compare(db_version, '4.1.3', '>=')) {
+        db_query("SET @@session.time_zone = '$offset'");
+      }
+
       $already_set = true;
     }
   }
@@ -846,7 +869,7 @@ function views_get_timezone() {
  * @param $field
  *   The real table and field name, like 'tablename.fieldname'.
  * @param $field_type
- *   The type of date field, 'int' or 'datetime'.
+ *  The type of date field, 'int' or 'datetime'.
  * @param $set_offset
  *   The name of a field that holds the timezone offset or a fixed timezone
  *   offset value. If not provided, the normal Drupal timezone handling
@@ -910,22 +933,42 @@ function views_date_sql_format($format, $field, $field_type = 'int', $set_offset
     case 'mysqli':
       $replace = array(
         'Y' => '%Y',
+        'y' => '%y',
+        'M' => '%%b',
         'm' => '%m',
+        'n' => '%c',
+        'F' => '%M',
+        'D' => '%a',
         'd' => '%%d',
+        'l' => '%W',
+        'j' => '%e',
+        'W' => '%v',
         'H' => '%H',
+        'h' => '%h',
         'i' => '%i',
-        's' => '%s',
+        's' => '%%s',
+        'A' => '%p',
         );
       $format = strtr($format, $replace);
       return "DATE_FORMAT($field, '$format')";
     case 'pgsql':
       $replace = array(
         'Y' => 'YYYY',
+        'y' => 'YY',
+        'M' => 'Mon',
         'm' => 'MM',
+        'n' => 'MM', // no format for Numeric representation of a month, without leading zeros
+        'F' => 'Month',
+        'D' => 'Dy',
         'd' => 'DD',
+        'l' => 'Day',
+        'j' => 'DD', // no format for Day of the month without leading zeros
+        'W' => 'WW',
         'H' => 'HH24',
+        'h' => 'HH12',
         'i' => 'MI',
         's' => 'SS',
+        'A' => 'AM',
         );
       $format = strtr($format, $replace);
       return "TO_CHAR($field, '$format')";
@@ -1031,6 +1074,9 @@ function views_views_handlers() {
       'views_handler_argument_null' => array(
         'parent' => 'views_handler_argument',
       ),
+      'views_handler_argument_broken' => array(
+        'parent' => 'views_handler_argument',
+      ),
 
       // field handlers
       'views_handler_field' => array(
@@ -1065,6 +1111,15 @@ function views_views_handlers() {
       'views_handler_field_custom' => array(
         'parent' => 'views_handler_field',
       ),
+      'views_handler_field_counter' => array(
+        'parent' => 'views_handler_field',
+      ),
+      'views_handler_field_math' => array(
+        'parent' => 'views_handler_field_numeric',
+      ),
+      'views_handler_field_broken' => array(
+        'parent' => 'views_handler_field',
+      ),
 
       // filter handlers
       'views_handler_filter' => array(
@@ -1088,16 +1143,25 @@ function views_views_handlers() {
       'views_handler_filter_numeric' => array(
         'parent' => 'views_handler_filter',
       ),
+      'views_handler_filter_float' => array(
+        'parent' => 'views_handler_filter_numeric',
+      ),
       'views_handler_filter_date' => array(
         'parent' => 'views_handler_filter_numeric',
       ),
       'views_handler_filter_many_to_one' => array(
         'parent' => 'views_handler_filter_in_operator',
       ),
+      'views_handler_filter_broken' => array(
+        'parent' => 'views_handler_filter',
+      ),
 
       // relationship handlers
       'views_handler_relationship' => array(
         'parent' => 'views_handler',
+      ),
+      'views_handler_relationship_broken' => array(
+        'parent' => 'views_handler_relationship',
       ),
 
 
@@ -1115,6 +1179,9 @@ function views_views_handlers() {
         'parent' => 'views_handler_sort',
       ),
       'views_handler_sort_random' => array(
+        'parent' => 'views_handler_sort',
+      ),
+      'views_handler_sort_broken' => array(
         'parent' => 'views_handler_sort',
       ),
     ),
@@ -1138,15 +1205,15 @@ function views_views_handlers() {
  *   // PHP 4 doesn't call constructors of the base class automatically from a
  *   // constructor of a derived class. It is your responsibility to propagate
  *   // the call to constructors upstream where appropriate.
- *   function construct($table, $left_table, $left_field, $field, $extra = array(), $type = 'LEFT') {
+ *   function construct($table = NULL, $left_table = NULL, $left_field = NULL, $field = NULL, $extra = array(), $type = 'LEFT') {
  *     parent::construct($table, $left_table, $left_field, $field, $extra, $type);
  *   }
  *
  *   function join($table, &$query) {
  *     $output = parent::join($table, $query);
+ *     $output .= "AND foo.bar = baz.boing";
+ *     return $output;
  *   }
- *   $output .= "AND foo.bar = baz.boing";
- *   return $output;
  * }
  * @endcode
  */
@@ -1211,9 +1278,23 @@ class views_join {
    * Build the SQL for the join this object represents.
    */
   function join($table, &$query) {
-    $left = $query->get_table_info($this->left_table);
-    $output = " $this->type JOIN {" . $this->table . "} $table[alias] ON $left[alias].$this->left_field = $table[alias].$this->field";
+    if (empty($this->definition['table formula'])) {
+      $right_table = "{" . $this->table . "}";
+    }
+    else {
+      $right_table = $this->definition['table formula'];
+    }
 
+    if ($this->left_table) {
+      $left = $query->get_table_info($this->left_table);
+      $left_field = "$left[alias].$this->left_field";
+    }
+    else {
+      // This can be used if left_field is a formula or something. It should be used only *very* rarely.
+      $left_field = $this->left_field;
+    }
+
+    $output = " $this->type JOIN $right_table $table[alias] ON $left_field = $table[alias].$this->field";
     // Tack on the extra.
     if (isset($this->extra)) {
       if (is_array($this->extra)) {
@@ -1233,7 +1314,7 @@ class views_join {
           // And now deal with the value and the operator.  Set $q to
           // a single-quote for non-numeric values and the
           // empty-string for numeric values, then wrap all values in $q.
-          $raw_value = $this->db_safe($info['value']);
+          $raw_value = $this->db_safe($info['value'], $info);
           $q = (empty($info['numeric']) ? "'" : '');
 
           if (is_array($raw_value)) {
@@ -1275,7 +1356,7 @@ class views_join {
    * so something that needs floats in their joins needs to do their
    * own type checking.
    */
-  function db_safe($input) {
+  function db_safe($input, $info) {
     if (is_array($input)) {
       $output = array();
       foreach ($input as $value) {
@@ -1316,28 +1397,66 @@ function views_views_api() {
   );
 }
 
-function aggregator_views_api() { return views_views_api(); }
+if (!function_exists('aggregator_views_api')) {
+  function aggregator_views_api() { return views_views_api(); }
+}
 
-function book_views_api() { return views_views_api(); }
+if (!function_exists('book_views_api')) {
+  function book_views_api() { return views_views_api(); }
+}
 
-function comment_views_api() { return views_views_api(); }
+if (!function_exists('comment_views_api')) {
+  function comment_views_api() { return views_views_api(); }
+}
 
-function node_views_api() { return views_views_api(); }
+if (!function_exists('locale_views_api')) {
+  function locale_views_api() { return views_views_api(); }
+}
 
-function poll_views_api() { return views_views_api(); }
+if (!function_exists('filter_views_api')) {
+  function filter_views_api() { return views_views_api(); }
+}
 
-function profile_views_api() { return views_views_api(); }
+if (!function_exists('node_views_api')) {
+  function node_views_api() { return views_views_api(); }
+}
 
-function search_views_api() { return views_views_api(); }
+if (!function_exists('poll_views_api')) {
+  function poll_views_api() { return views_views_api(); }
+}
 
-function statistics_views_api() { return views_views_api(); }
+if (!function_exists('profile_views_api')) {
+  function profile_views_api() { return views_views_api(); }
+}
 
-function system_views_api() { return views_views_api(); }
+if (!function_exists('search_views_api')) {
+  function search_views_api() { return views_views_api(); }
+}
 
-function taxonomy_views_api() { return views_views_api(); }
+if (!function_exists('statistics_views_api')) {
+  function statistics_views_api() { return views_views_api(); }
+}
 
-function translation_views_api() { return views_views_api(); }
+if (!function_exists('system_views_api')) {
+  function system_views_api() { return views_views_api(); }
+}
 
-function upload_views_api() { return views_views_api(); }
+if (!function_exists('taxonomy_views_api')) {
+  function taxonomy_views_api() { return views_views_api(); }
+}
 
-function user_views_api() { return views_views_api(); }
+if (!function_exists('translation_views_api')) {
+  function translation_views_api() { return views_views_api(); }
+}
+
+if (!function_exists('upload_views_api')) {
+  function upload_views_api() { return views_views_api(); }
+}
+
+if (!function_exists('user_views_api')) {
+  function user_views_api() { return views_views_api(); }
+}
+
+if (!function_exists('contact_views_api')) {
+  function contact_views_api() { return views_views_api(); }
+}

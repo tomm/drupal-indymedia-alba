@@ -1,5 +1,4 @@
 <?php
-// $Id: user.pages.inc,v 1.11.2.1 2008/10/08 20:12:18 goba Exp $
 
 /**
  * @file
@@ -44,17 +43,19 @@ function user_pass() {
 function user_pass_validate($form, &$form_state) {
   $name = trim($form_state['values']['name']);
   
-  // Blocked accounts cannot request a new password,
-  // check provided username and email against access rules.
-  if (drupal_is_denied('user', $name) || drupal_is_denied('mail', $name)) {
-    form_set_error('name', t('%name is not allowed to request a new password.', array('%name' => $name)));
-  }
 
   // Try to load by email.
   $account = user_load(array('mail' => $name, 'status' => 1));
   if (!$account) {
     // No success, try to load by name.
     $account = user_load(array('name' => $name, 'status' => 1));
+  }
+  if ($account) {
+    // Blocked accounts cannot request a new password,
+    // check provided username and email against access rules.
+    if (drupal_is_denied('user', $account->name) || drupal_is_denied('mail', $account->mail)) {
+      form_set_error('name', t('%name is not allowed to request a new password.', array('%name' => $name)));
+    }
   }
   if (isset($account->uid)) {
     form_set_value(array('#parents' => array('account')), $account, $form_state);
@@ -148,7 +149,9 @@ function user_logout() {
 
   // Destroy the current session:
   session_destroy();
-  module_invoke_all('user', 'logout', NULL, $user);
+  // Only variables can be passed by reference workaround.
+  $null = NULL;
+  user_module_invoke('logout', $null, $user);
 
   // Load the anonymous user
   $user = drupal_anonymous_user();

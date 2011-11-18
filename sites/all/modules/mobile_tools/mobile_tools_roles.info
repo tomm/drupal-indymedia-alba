@@ -1,0 +1,12 @@
+; $Id:
+name = Mobile User Roles
+description = "This module creates mobile user roles for each existing user role"
+core = 6.x
+package = Mobile
+dependencies[] = mobile_tools
+; Information added by drupal.org packaging script on 2011-05-25
+version = "6.x-2.3"
+core = "6.x"
+project = "mobile_tools"
+datestamp = "1306360917"
+

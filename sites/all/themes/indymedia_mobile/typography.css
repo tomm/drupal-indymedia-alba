@@ -1,0 +1,410 @@
+body {
+  font-size: 100%; /* font sizes done like zen theme */
+  font-family: Tahoma, "DejaVu Sans", sans-serif;
+  margin: 0px 0 28px 0;
+}
+
+a, a:link, a:active, a:visited {
+  text-decoration: none;
+}
+a:focus {
+  text-decoration: underline;
+}
+#main .node .content a, #main .node .content a:link, #main .node .content a:active,
+#main .help a, #main .help a:link, #main .help a:active {
+  font-weight: bold;
+}
+#main .node .content a:visited {
+}
+html > body #main .node .content a:visited:after {
+  font-size: 0.8em;
+  font-family: Times, serif;
+}
+
+h2.title {
+  font-size: 120%;
+  line-height: 1em;
+  margin: 1em 0 0 0;
+}
+h3.title {
+  font-size: 110%;
+  margin: 1em 0 0 0;
+}
+pre {
+  font-size: 0.9em;
+  font-family: monospace;
+  overflow: scroll;
+}
+abbr, acronym {
+  border-bottom: 0.1em dashed;
+  cursor: help;
+}
+blockquote {
+  padding: 0 0 0 1em;
+  margin: 0 0 0 2em;
+  font-style: italic;  
+}
+table {
+  margin: 0;
+  width: 100%;
+}
+td {
+  padding: 0.3em;
+}
+
+/*
+*  Wrapper
+*/
+#wrapper {
+  padding: 0 0 0 0;
+  font-size: 0.75em;
+}
+#content {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+}
+#main {  
+  margin: 0 0 0 0;
+}
+
+/*
+*  Header
+*/
+#header {
+  padding: 0;
+  margin: 0;
+}
+#branding {
+  margin: 0em 0em 0em 0em; /* for IE */
+  padding: 0;
+} #header > #branding { margin-left: 0em; }
+#header h1 {
+  font-size: 156%;
+  padding: 0 0 0 0;
+  margin: 0.3em 0 0 0;
+  font-weight: bold;
+}
+#header h1 a {
+  padding: 0;
+  margin: 0;
+}
+#header .slogan {
+  margin: 0 0 0 0;
+  padding: 0;
+}
+#header-additional {
+  margin: 0em 1em 1em 1em; /* for IE */
+} #wrapper > #header #header-additional { margin-right: 2em; }
+#search {
+  margin: 0.5em 0.5em 0.5em 0.5em; /* for IE */
+} #wrapper > #header #search { margin-right: 0.5em; }
+#search input { 
+  font-size: 1em;
+  padding: 0.2em 0.4em
+}
+#search input.form-submit {
+  padding: 0.125em
+}
+#search label {
+  display: none;
+}
+
+/*
+*  Menus
+*/
+#menu {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+  width: 100%;
+  text-align: left;
+  font-size: 100%;
+  line-height: 210%;
+}
+.primary_menu {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+.primary_menu li {
+  margin: 0 0 0 0;
+  padding: 0;
+  line-height: 210%;
+}
+.primary_menu a,
+.primary_menu a:link,
+.primary_menu a:active,
+.primary_menu a:visited {
+  text-decoration: none;
+  padding: 0.5em 0.4em 0.3em 0.4em;
+  font-size: 100%;
+}
+.primary_menu a.active,
+.primary_menu a.active:link,
+.primary_menu a.active:active,
+.primary_menu a.active:visited {
+  text-decoration: underline;
+}
+#menu .secondary_menu {
+  margin: 0;
+  padding: 0 0.5em;
+  width: auto;
+  list-style-type: none;
+  font-size: 0.85em;
+}
+.secondary_menu li {
+  margin: 0 0 0 0;
+  padding: 0;
+  line-height: 210%;
+}
+.secondary_menu a,
+.secondary_menu a:link,
+.secondary_menu a:active,
+.secondary_menu a:visited {
+  text-decoration: none;
+  padding: 0.5em 0 0.4em 0;
+  font-size: 100%; 
+}
+.secondary_menu a.active,
+.secondary_menu a.active:link,
+.secondary_menu a.active:active,
+.secondary_menu a.active:visited {
+  text-decoration: underline;
+}
+
+/*
+*  Sidebar
+*/
+.sidebar {
+  padding: 1em 0 1em 0;
+  margin: 0 0 0 0;
+  overflow: hidden;
+}
+/* Blocks */
+.sidebar .block {
+  margin: 0 5px;
+  padding: 0.5em 0;
+}
+.sidebar .block .title {
+  margin: 0 0 0 12px;
+}
+.sidebar .block .content {
+  padding: 0 0.5em;
+  overflow: hidden;
+}
+.sidebar a,
+.sidebar a:link,
+.sidebar a:active,
+.sidebar a:visited {
+  text-decoration: none;
+}
+.sidebar .block ul {
+  padding-left: 0.5em
+}
+.sidebar .block-block ul {
+  padding-left: 1.5em
+}
+.sidebar .block-user .item-list {
+  margin-top: 1em;
+}
+.sidebar .block-user .item-list li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8em
+}
+.sidebar .block-user .form-text {
+  width: 95%;
+}
+#block-node-0 .content {
+  padding: 0.5em 1em;
+}
+
+/*
+*  Footer
+*/
+#footer {
+  padding: 0.5em 0;
+  margin: 0;
+  text-align: center;
+  font-size: 85%;
+  line-height: 220%;
+}
+#footer p, #footer h2 {
+  margin: 0;
+}
+
+/*
+*  Content
+*/
+#breadcrumb {
+  margin: 0 0 1em 0;
+}
+#mission {
+  margin: 0 0 3em 0;
+  padding: 0;
+}
+#title  {
+  margin: 1em 0 0 0;
+  padding: 0 0 0 0;
+  font-size: 2em;
+}
+.messages {
+  margin: 1em 0;
+  padding: 0.5em;
+}
+.title {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+}
+.info {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+  font-size: 90%;
+  font-weight: bold;
+}
+.node .links {
+  text-align: left;
+  font-size: 12px;
+  margin: 0 0 0 0;
+  padding: 0;
+  clear: left;
+}
+.node .links li {
+  padding-left: 0;
+}
+.node .meta {
+  padding: 1em;
+  margin: 1em 0 1em 0;
+}
+.node .taxonomy a {
+  font-size: 12px;
+  font-style: italic;
+}
+.node .taxonomy {
+  margin: 1em 0 1em 0;
+  font-size: 13px;
+}
+.node.teaser {
+  margin: 0 0 2em 0;
+  clear: left;
+}
+.nodecomment.node.teaser {
+  margin: 0 0 1em 0;
+}
+.node.teaser .calendar {
+  float: left;
+  width: 3.5em;
+  margin: 0.5em 0 0 -0.5em; /* IE */
+  padding: 0 0 0 0;
+  font-size: 0.7em;
+  text-align: center; 
+} 
+.node.teaser .calendar span {
+  display: block;
+}
+.node.teaser .calendar .day {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+.node.teaser .calendar .time {
+  font-size: 0.9em;
+}
+.node.teaser .title {
+  margin: 0.5em 0 0 0;
+  padding: 0 0;
+}
+.node.teaser.cal .title {
+  margin-left: 40px;
+}
+.node.teaser.cal .newswire {
+  margin-left: 40px;
+  border-top: 1px solid;
+  border-top-color: #aaa;
+  padding: 0.2em;
+}
+.node.teaser .content {
+  padding: 0 0 0 0;
+}
+.node.teaser.cal .content {
+  padding-left: 40px;
+}
+.node.teaser.cal div.links {
+  margin-left: 40px;
+}
+.node.teaser .taxonomy {
+  margin: 0.5em 0 0.5em 0;
+}
+.node.teaser .author {
+  margin: 0.5em 15px 0.5em 15px;
+}
+.node.teaser .submitted {
+  float: left;
+  margin: 0.5em 0 0.5em 15px;
+}
+.node .box {
+ font-size: 0.9em;
+}
+.book-navigation .menu {
+  padding: 1em;
+}
+.book-navigation .page-links {
+  margin: 2em 0;
+  padding: 1em;
+}
+.comment {
+  margin: 0.5em 0 0.25em 0;
+  padding: 1em;
+}
+.comment .id {
+  margin: -0.3em 0 0 0;
+  float: right;
+  font-size: 2em;
+  font-weight: bold;
+}
+.comment h3 {
+  margin: 0 0 0 0;
+}
+.comment .submitted {
+  float: left;
+  margin-bottom: 0.5em;
+}
+#comment_form .form-submit {
+  display: block;
+  clear: left;
+  margin: 0.5em 0;
+}
+#attachments {
+  width: 100%;
+  margin: 1em 0 2em 0;
+}
+.pager a, .pager strong.pager-current {
+  padding: 0 0.5em;
+}
+.item-list .pager li {
+  margin: 0;
+}
+.box {
+  padding: 0 1em 1em;
+  font-size: 0.9em;
+}
+
+
+/*
+ * Images
+ */
+.node .content img {
+  margin: 0 0.5em 0 0.5em;
+}
+a.image:after {
+  display: none;
+}
+
+/*
+ * Administration
+ */
+#block_admin_display {
+  font-size: 0.7em;
+}
+#system_themes table img {
+  width: 75%;
+}

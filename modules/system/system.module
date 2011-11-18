@@ -1,5 +1,4 @@
 <?php
-// $Id: system.module,v 1.585.2.36 2009/05/13 19:11:04 goba Exp $
 
 /**
  * @file
@@ -9,7 +8,7 @@
 /**
  * The current system version.
  */
-define('VERSION', '6.12');
+define('VERSION', '6.22');
 
 /**
  * Core API compatibility.
@@ -81,6 +80,7 @@ function system_help($path, $arg) {
       $output .= '<p>'. t('It is important that <a href="@update-php">update.php</a> is run every time a module is updated to a newer version.', array('@update-php' => $base_url .'/update.php')) .'</p>';
       $output .= '<p>'. t('You can find all administration tasks belonging to a particular module on the <a href="@by-module">administration by module page</a>.', array('@by-module' => url('admin/by-module'))) .'</p>';
       $output .= '<p>'. t('To extend the functionality of your site, a number of <a href="@modules">contributed modules</a> are available.', array('@modules' => 'http://drupal.org/project/modules')) .'</p>';
+      $output .= '<p>'. t('To clear all caches, click the button on the <a href="@performance">Performance page</a>.', array('@performance' => url('admin/settings/performance', array('fragment' => 'edit-clear')))) .'</p>';
       return $output;
     case 'admin/build/modules/uninstall':
       return '<p>'. t('The uninstall process removes all data related to a module. To uninstall a module, you must first disable it. Not all modules support this feature.') .'</p>';
@@ -642,7 +642,7 @@ function system_admin_menu_block($item) {
     }
     // Prepare for sorting as in function _menu_tree_check_access().
     // The weight is offset so it is always positive, with a uniform 5-digits.
-    $content[(50000 + $item['weight']) .' '. $item['title'] .' '. $item['mlid']] = $item;
+    $content[(50000 + $item['weight']) .' '. drupal_strtolower($item['title']) .' '. $item['mlid']] = $item;
   }
   ksort($content);
   return $content;
@@ -893,9 +893,14 @@ function _system_theme_data() {
     // Now that we've established all our master themes, go back and fill in
     // data for subthemes.
     foreach ($sub_themes as $key) {
-      $base_key = system_find_base_theme($themes, $key);
-      if (!$base_key) {
+      $themes[$key]->base_themes = system_find_base_themes($themes, $key);
+      // Don't proceed if there was a problem with the root base theme.
+      if (!current($themes[$key]->base_themes)) {
         continue;
+      }
+      $base_key = key($themes[$key]->base_themes);
+      foreach (array_keys($themes[$key]->base_themes) as $base_theme) {
+        $themes[$base_theme]->sub_themes[$key] = $themes[$key]->info['name'];
       }
       // Copy the 'owner' and 'engine' over if the top level theme uses a
       // theme engine.
@@ -914,10 +919,59 @@ function _system_theme_data() {
     $themes_info = $themes;
   }
 
-  return $themes_info;
+  // To avoid side effects, we don't return the original objects.
+  $themes_info_cloned = array();
+  foreach ($themes_info as $key => $theme) {
+    $themes_info_cloned[$key] = drupal_clone($theme);
+  }
+
+  return $themes_info_cloned;
 }
 
 /**
+ * Find all the base themes for the specified theme.
+ *
+ * Themes can inherit templates and function implementations from earlier themes.
+ *
+ * @param $themes
+ *   An array of available themes.
+ * @param $key
+ *   The name of the theme whose base we are looking for.
+ * @param $used_keys
+ *   A recursion parameter preventing endless loops.
+ * @return
+ *   Returns an array of all of the theme's ancestors; the first element's value
+ *   will be NULL if an error occurred.
+ */
+function system_find_base_themes($themes, $key, $used_keys = array()) {
+  $base_key = $themes[$key]->info['base theme'];
+  // Does the base theme exist?
+  if (!isset($themes[$base_key])) {
+    return array($base_key => NULL);
+  }
+
+  $current_base_theme = array($base_key => $themes[$base_key]->info['name']);
+
+  // Is the base theme itself a child of another theme?
+  if (isset($themes[$base_key]->info['base theme'])) {
+    // Do we already know the base themes of this theme?
+    if (isset($themes[$base_key]->base_themes)) {
+      return $themes[$base_key]->base_themes + $current_base_theme;
+    }
+    // Prevent loops.
+    if (!empty($used_keys[$base_key])) {
+      return array($base_key => NULL);
+    }
+    $used_keys[$base_key] = TRUE;
+    return system_find_base_themes($themes, $base_key, $used_keys) + $current_base_theme;
+  }
+  // If we get here, then this is our parent theme.
+  return $current_base_theme;
+}
+
+/**
+ * This function has been deprecated in favor of system_find_base_themes().
+ *
  * Recursive function to find the top level base theme. Themes can inherit
  * templates and function implementations from earlier themes.
  *
@@ -1099,36 +1153,46 @@ function system_node_type($op, $info) {
 }
 
 /**
- * Output a confirmation form
+ * Generates a form array for a confirmation form.
  *
- * This function returns a complete form for confirming an action. A link is
- * offered to go back to the item that is being changed in case the user changes
- * his/her mind.
+ * This function returns a complete form array for confirming an action. The
+ * form contains a confirm button as well as a cancellation link that allows a
+ * user to abort the action.
  *
- * If the submit handler for this form is invoked, the user successfully
- * confirmed the action. You should never directly inspect $_POST to see if an
- * action was confirmed.
+ * If the submit handler for a form that implements confirm_form() is invoked,
+ * the user successfully confirmed the action. You should never directly
+ * inspect $_POST to see if an action was confirmed.
  *
- * @ingroup forms
+ * Note - if the parameters $question, $description, $yes, or $no could contain
+ * any user input (such as node titles or taxonomy terms), it is the
+ * responsibility of the code calling confirm_form() to sanitize them first with
+ * a function like check_plain() or filter_xss().
+ *
  * @param $form
- *   Additional elements to inject into the form, for example hidden elements.
+ *   Additional elements to add to the form; for example, hidden elements.
  * @param $question
  *   The question to ask the user (e.g. "Are you sure you want to delete the
- *   block <em>foo</em>?").
+ *   block <em>foo</em>?"). The page title will be set to this value.
  * @param $path
- *   The page to go to if the user denies the action.
- *   Can be either a drupal path, or an array with the keys 'path', 'query', 'fragment'.
+ *   The page to go to if the user cancels the action. This can be either:
+ *   - A string containing a Drupal path.
+ *   - An associative array with a 'path' key. Additional array values are
+ *     passed as the $options parameter to l().
+ *   If the 'destination' query parameter is set in the URL when viewing a
+ *   confirmation form, that value will be used instead of $path.
  * @param $description
- *   Additional text to display (defaults to "This action cannot be undone.").
+ *   Additional text to display. Defaults to t('This action cannot be undone.').
  * @param $yes
- *   A caption for the button which confirms the action (e.g. "Delete",
- *   "Replace", ...).
+ *   A caption for the button that confirms the action (e.g. "Delete",
+ *   "Replace", ...). Defaults to t('Confirm').
  * @param $no
- *   A caption for the link which denies the action (e.g. "Cancel").
+ *   A caption for the link which cancels the action (e.g. "Cancel"). Defaults
+ *   to t('Cancel').
  * @param $name
  *   The internal name used to refer to the confirmation item.
+ *
  * @return
- *   The form.
+ *   The form array.
  */
 function confirm_form($form, $question, $path, $description = NULL, $yes = NULL, $no = NULL, $name = 'confirm') {
   $description = isset($description) ? $description : t('This action cannot be undone.');
@@ -1329,7 +1393,7 @@ function system_actions_manage() {
   while ($action = db_fetch_object($result)) {
     $row[] = array(
       array('data' => $action->type),
-      array('data' => $action->description),
+      array('data' => filter_xss_admin($action->description)),
       array('data' => $action->parameters ? l(t('configure'), "admin/settings/actions/configure/$action->aid") : ''),
       array('data' => $action->parameters ? l(t('delete'), "admin/settings/actions/delete/$action->aid") : '')
     );
@@ -1535,9 +1599,8 @@ function system_actions_delete_form_submit($form, &$form_state) {
   $aid = $form_state['values']['aid'];
   $action = actions_load($aid);
   actions_delete($aid);
-  $description = check_plain($action->description);
-  watchdog('user', 'Deleted action %aid (%action)', array('%aid' => $aid, '%action' => $description));
-  drupal_set_message(t('Action %action was deleted', array('%action' => $description)));
+  watchdog('user', 'Deleted action %aid (%action)', array('%aid' => $aid, '%action' => $action->description));
+  drupal_set_message(t('Action %action was deleted', array('%action' => $action->description)));
   $form_state['redirect'] = 'admin/settings/actions/manage';
 }
 
@@ -1737,7 +1800,7 @@ function system_mail($key, &$message, $params) {
     );
   }
   $subject = strtr($context['subject'], $variables);
-  $body = strtr($context['message'], $variables);
+  $body = strtr(filter_xss_admin($context['message']), $variables);
   $message['subject'] .= str_replace(array("\r", "\n"), '', $subject);
   $message['body'][] = drupal_html_to_text($body);
 }
@@ -1786,11 +1849,11 @@ function system_message_action(&$object, $context = array()) {
     case 'taxonomy':
       $vocabulary = taxonomy_vocabulary_load($object->vid);
       $variables = array_merge($variables, array(
-        '%term_name' => $object->name,
-        '%term_description' => $object->description,
+        '%term_name' => check_plain($object->name),
+        '%term_description' => filter_xss_admin($object->description),
         '%term_id' => $object->tid,
-        '%vocabulary_name' => $vocabulary->name,
-        '%vocabulary_description' => $vocabulary->description,
+        '%vocabulary_name' => check_plain($vocabulary->name),
+        '%vocabulary_description' => filter_xss_admin($vocabulary->description),
         '%vocabulary_id' => $vocabulary->vid,
         )
       );
@@ -1805,13 +1868,13 @@ function system_message_action(&$object, $context = array()) {
       '%uid' => $node->uid,
       '%node_url' => url('node/'. $node->nid, array('absolute' => TRUE)),
       '%node_type' => check_plain(node_get_types('name', $node)),
-      '%title' => filter_xss($node->title),
-      '%teaser' => filter_xss($node->teaser),
-      '%body' => filter_xss($node->body),
+      '%title' => check_plain($node->title),
+      '%teaser' => check_markup($node->teaser, $node->format, FALSE),
+      '%body' => check_markup($node->body, $node->format, FALSE),
       )
     );
   }
-  $context['message'] = strtr($context['message'], $variables);
+  $context['message'] = strtr(filter_xss_admin($context['message']), $variables);
   drupal_set_message($context['message']);
 }
 
@@ -1844,7 +1907,7 @@ function system_goto_action($object, $context) {
  */
 function _system_zonelist() {
   $timestamp = time();
-  $zonelist = array(-11, -10, -9.5, -9, -8, -7, -6, -5, -4, -3.5, -3, -2, -1, 0, 1, 2, 3, 3.5, 4, 5, 5.5, 5.75, 6, 6.5, 7, 8, 9, 9.5, 10, 10.5, 11, 11.5, 12, 12.75, 13, 14);
+  $zonelist = array(-11, -10, -9.5, -9, -8, -7, -6, -5, -4.5, -4, -3.5, -3, -2.5, -2, -1, 0, 1, 2, 3, 3.5, 4, 5, 5.5, 5.75, 6, 6.5, 7, 8, 9, 9.5, 10, 10.5, 11, 11.5, 12, 12.75, 13, 14);
   $zones = array();
   foreach ($zonelist as $offset) {
     $zone = $offset * 3600;
@@ -1865,7 +1928,7 @@ function _system_zonelist() {
  */
 function system_check_http_request() {
   // Try to get the content of the front page via drupal_http_request().
-  $result = drupal_http_request(url('', array('absolute' => TRUE)));
+  $result = drupal_http_request(url('', array('absolute' => TRUE)), array(), 'GET', NULL, 0);
   // We only care that we get a http response - this means that Drupal
   // can make a http request.
   $works = isset($result->code) && ($result->code >= 100) && ($result->code < 600);

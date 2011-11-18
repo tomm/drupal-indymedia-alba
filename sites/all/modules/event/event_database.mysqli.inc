@@ -1,5 +1,4 @@
 <?php
-// $Id: event_database.mysqli.inc,v 1.15 2008/06/30 22:34:46 killes Exp $
 
 /**
  * @param $nid node ID

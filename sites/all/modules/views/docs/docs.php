@@ -1,5 +1,4 @@
 <?php
-// $Id: docs.php,v 1.13 2009/02/06 21:56:36 merlinofchaos Exp $
 /**
  * @file
  * This file contains no working PHP code; it exists to provide additional documentation
@@ -179,6 +178,8 @@ function hook_views_data() {
       'handler' => 'views_handler_filter_boolean_operator',
       'label' => t('Published'),
       'type' => 'yes-no',
+      // use boolean_field = 1 instead of boolean_field <> 0 in WHERE statment
+      'use equal' => TRUE,
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
@@ -205,6 +206,36 @@ function hook_views_data() {
 }
 
 /**
+ * Alter table structure.
+ *
+ * You can add/edit/remove to existing tables defined by hook_views_data().
+ *
+ * This hook should be placed in MODULENAME.views.inc and it will be auto-loaded.
+ * This must either be in the same directory as the .module file or in a subdirectory
+ * named 'includes'.
+ *
+ * The full documentation for this hook is in the advanced help.
+ * @link http://views-help.doc.logrus.com/help/views/api-tables @endlink
+ */
+function hook_views_data_alter(&$data) {
+  // This example alters the title of the node: nid field for the admin.
+  $data['node']['nid']['title'] = t('Node-Nid');
+
+  // This example adds a example field to the users table
+  $data['users']['example_field'] = array(
+    'title' => t('Example field'),
+    'help' => t('Some examüple content that references a user'),
+    'handler' => 'hook_handlers_field_example_field',
+  );
+
+  // This example changes the handler of the node title field.
+  // In this handler you could do stuff, like preview of the node, when clicking the node title.
+
+  $data['node']['title']['handler'] = 'modulename_handlers_field_node_title';
+}
+
+
+/**
  * The full documentation for this hook is now in the advanced help.
  *
  * This hook should be placed in MODULENAME.views.inc and it will be auto-loaded.
@@ -220,6 +251,14 @@ function hook_views_plugins() {
 }
 
 /**
+ * Alter existing plugins data, defined by modules.
+ */
+function hook_views_plugins_alter(&$plugins) {
+  // Add apachesolr to the base of the node row plugin.
+  $plugins['row']['node']['base'][] = 'apachesolr';
+}
+
+/**
  * Register handler, file and parent information so that handlers can be
  * loaded only on request.
  *
@@ -231,11 +270,21 @@ function hook_views_handlers() {
 
 /**
  * Register View API information. This is required for your module to have
- * its include files loaded.
+ * its include files loaded; for example, when implementing
+ * hook_views_default_views().
  *
- * The full documentation for this hook is in the advanced help.
+ * @return
+ *   An array with the following possible keys:
+ *   - api:  (required) The version of the Views API the module implements.
+ *   - path: (optional) If includes are stored somewhere other than within
+ *       the root module directory or a subdirectory called includes, specify
+ *       its path here.
  */
 function hook_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'example') . '/includes/views', 
+  );
 }
 
 /**
@@ -261,9 +310,7 @@ function hook_views_default_views() {
   $view->name = 'frontpage';
   $view->description = t('Emulates the default Drupal front page; you may set the default home page path to this view to make it your front page.');
   $view->tag = t('default');
-  $view->view_php = '';
   $view->base_table = 'node';
-  $view->is_cacheable = '0';
   $view->api_version = 2;
   $view->disabled = FALSE; // Edit this to true to make a default view disabled initially
   $view->display = array();
@@ -496,6 +543,17 @@ function hook_views_default_views() {
 }
 
 /**
+ * This hook is called right before all default views are cached to the
+ * database. It takes a keyed array of views by reference.
+ */
+function hook_views_default_views_alter(&$views) {
+  if (isset($views['taxonomy_term'])) {
+    $views['taxonomy_term']->set_display('default');
+    $views['taxonomy_term']->display_handler->set_option('title', 'Categories');
+  }
+}
+
+/**
  * Stub hook documentation
  *
  * This hook should be placed in MODULENAME.views_convert.inc and it will be auto-loaded.
@@ -517,8 +575,8 @@ function hook_views_query_substitutions() {
  * This hook is called at the very beginning of views processing,
  * before anything is done.
  *
- * Adding output to the view cam be accomplished by placing text on
- * $view->attachment_before and $view->attachment_after
+ * Adding output to the view can be accomplished by placing text on
+ * $view->attachment_before and $view->attachment_after.
  */
 function hook_views_pre_view(&$view, &$display_id, &$args) {
   // example code here
@@ -528,10 +586,21 @@ function hook_views_pre_view(&$view, &$display_id, &$args) {
  * This hook is called right before the build process, but after displays
  * are attached and the display performs its pre_execute phase.
  *
- * Adding output to the view cam be accomplished by placing text on
- * $view->attachment_before and $view->attachment_after
+ * Adding output to the view can be accomplished by placing text on
+ * $view->attachment_before and $view->attachment_after.
  */
 function hook_views_pre_build(&$view) {
+  // example code here
+}
+
+/**
+ * This hook is called right after the build process. The query is
+ * now fully built, but it has not yet been run through db_rewrite_sql.
+ *
+ * Adding output to the view can be accomplished by placing text on
+ * $view->attachment_before and $view->attachment_after.
+ */
+function hook_views_post_build(&$view) {
   // example code here
 }
 
@@ -539,10 +608,23 @@ function hook_views_pre_build(&$view) {
  * This hook is called right before the execute process. The query is
  * now fully built, but it has not yet been run through db_rewrite_sql.
  *
- * Adding output to the view cam be accomplished by placing text on
- * $view->attachment_before and $view->attachment_after
+ * Adding output to the view can be accomplished by placing text on
+ * $view->attachment_before and $view->attachment_after.
  */
 function hook_views_pre_execute(&$view) {
+  // example code here
+}
+
+/**
+ * This hook is called right after the execute process. The query has
+ * been executed, but the pre_render() phase has not yet happened for
+ * handlers.
+ *
+ * Adding output to the view can be accomplished by placing text on
+ * $view->attachment_before and $view->attachment_after. Altering the
+ * content can be achieved by editing the items of $view->result.
+ */
+function hook_views_post_execute(&$view) {
   // example code here
 }
 
@@ -551,11 +633,40 @@ function hook_views_pre_execute(&$view) {
  * been executed, and the pre_render() phase has already happened for
  * handlers, so all data should be available.
  *
- * Adding output to the view cam be accomplished by placing text on
- * $view->attachment_before and $view->attachment_after
+ * Adding output to the view can be accomplished by placing text on
+ * $view->attachment_before and $view->attachment_after. Altering the
+ * content can be achieved by editing the items of $view->result.
+ *
+ * This hook can be utilized by themes.
  */
 function hook_views_pre_render(&$view) {
   // example code here
+}
+
+/**
+ * Post process any rendered data.
+ *
+ * This can be valuable to be able to cache a view and still have some level of
+ * dynamic output. In an ideal world, the actual output will include HTML
+ * comment based tokens, and then the post process can replace those tokens.
+ *
+ * Example usage. If it is known that the view is a node view and that the
+ * primary field will be a nid, you can do something like this:
+ *
+ * <!--post-FIELD-NID-->
+ *
+ * And then in the post render, create an array with the text that should
+ * go there:
+ *
+ * strtr($output, array('<!--post-FIELD-1-->', 'output for FIELD of nid 1');
+ *
+ * All of the cached result data will be available in $view->result, as well,
+ * so all ids used in the query should be discoverable.
+ *
+ * This hook can be utilized by themes.
+ */
+function hook_views_post_render(&$view, &$output, &$cache) {
+
 }
 
 /**

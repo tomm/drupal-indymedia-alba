@@ -1,5 +1,5 @@
 <?php
-// $Id: indymedia_cities.theme.inc,v 1.1.2.7 2008/05/27 20:01:00 mfb Exp $
+// $Id: indymedia_cities.theme.inc,v 1.1.2.8 2009/06/08 22:51:45 mfb Exp $
 
 /**
  * @file
@@ -105,11 +105,11 @@ function indymedia_cities_parse($xml) {
   foreach ($xml->dict->array[0]->dict->array as $region) {
     $site_id = 0;
     if ($region_id == 0) {
-      $list[] = l($region->dict->key[$site_id], $region->dict->string[$site_id]); 
+      $list[] = l(strval($region->dict->key[$site_id]), strval($region->dict->string[$site_id]));
     }
     else {
       foreach ($region->dict->key as $site) {
-        $regions[$region_id]['children'][] = l($site, $region->dict->string[$site_id]); 
+        $regions[$region_id]['children'][] = l(strval($site), strval($region->dict->string[$site_id]));
         $site_id++;
       }
     }
@@ -126,7 +126,7 @@ function indymedia_cities_parse($xml) {
   $type_id = 3;
   $site_id = 0;
   foreach ($xml->dict->array[$type_id]->dict->array as $site) {
-    $types[$type_id]['children'][] = l($site->dict->key, $site->dict->string);
+    $types[$type_id]['children'][] = l(strval($site->dict->key), strval($site->dict->string));
     $site_id++;
   }
 
@@ -143,7 +143,7 @@ function indymedia_cities_parse($xml) {
 function indymedia_cities_render_type($xml, &$types, $type_id) {
   $site_id = 0;
   foreach ($xml->dict->array[$type_id]->dict->array->dict->key as $site) {
-    $types[$type_id]['children'][] = l($site, $xml->dict->array[$type_id]->dict->array->dict->string[$site_id]);
+    $types[$type_id]['children'][] = l(strval($site), strval($xml->dict->array[$type_id]->dict->array->dict->string[$site_id]));
     $site_id++;
   }
 }

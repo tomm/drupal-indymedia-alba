@@ -1,4 +1,3 @@
-// $Id: base.js,v 1.10 2009/01/27 22:11:26 merlinofchaos Exp $
 /**
  * @file base.js
  *
@@ -11,11 +10,9 @@ Drupal.Views = {};
  * jQuery UI tabs, Views integration component
  */
 Drupal.behaviors.viewsTabs = function (context) {
-  if ($.ui && $.ui.tabs) {
-    $('#views-tabset:not(.views-processed)').addClass('views-processed').tabs({
-      selectedClass: 'active'
-    });
-  }
+  $('#views-tabset:not(.views-processed)').addClass('views-processed').each(function() {
+    new Drupal.Views.Tabs($(this), {selectedClass: 'active'});
+  });
 
   $('a.views-remove-link')
     .addClass('views-processed')
@@ -66,10 +63,12 @@ Drupal.Views.parseQueryString = function (query) {
   }
   var pairs = query.split('&');
   for(var i in pairs) {
-    var pair = pairs[i].split('=');
-    // Ignore the 'q' path argument, if present.
-    if (pair[0] != 'q' && pair[1]) {
-      args[pair[0]] = decodeURIComponent(pair[1].replace(/\+/g, ' '));
+    if (typeof(pairs[i]) == 'string') {
+      var pair = pairs[i].split('=');
+      // Ignore the 'q' path argument, if present.
+      if (pair[0] != 'q' && pair[1]) {
+        args[pair[0]] = decodeURIComponent(pair[1].replace(/\+/g, ' '));
+      }
     }
   }
   return args;
@@ -121,5 +120,3 @@ Drupal.Views.getPath = function (href) {
   }
   return href;
 };
-
-

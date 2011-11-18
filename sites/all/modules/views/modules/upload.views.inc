@@ -1,5 +1,4 @@
 <?php
-// $Id: upload.views.inc,v 1.15 2008/11/24 19:58:31 merlinofchaos Exp $
 /**
  * @file
  *
@@ -129,7 +128,7 @@ function upload_views_data_alter(&$data) {
       'relationship table' => 'upload',
       'relationship field' => 'fid',
       'base' => 'files',
-      'field' => 'fid',
+      'base field' => 'fid',
       'handler' => 'views_handler_relationship',
       'label' => t('Files'),
     ),
@@ -150,7 +149,7 @@ function upload_views_handlers() {
         'parent' => 'views_handler_field_prerender_list',
       ),
       'views_handler_field_upload_description' => array(
-        'parent' => 'views_handler_field_prerender_list',
+        'parent' => 'views_handler_field',
       ),
       'views_handler_filter_upload_fid' => array(
         'parent' => 'views_handler_filter_boolean_operator',

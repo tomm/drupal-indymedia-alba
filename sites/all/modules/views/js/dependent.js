@@ -1,4 +1,3 @@
-// $Id: dependent.js,v 1.5 2008/06/23 20:00:58 merlinofchaos Exp $
 /**
  * @file dependent.js
  *
@@ -7,34 +6,32 @@
  *
  * To your $form item definition add:
  * - '#process' => array('views_process_dependency'),
- * - Add '#dependency' => array('id-of-form-item' => array(list, of, values, that, 
+ * - Add '#dependency' => array('id-of-form-item' => array(list, of, values, that,
      make, this, item, show),
  *
  * Special considerations:
  * - radios are harder. Because Drupal doesn't give radio groups individual ids,
- *   use 'radio:name-of-radio' 
+ *   use 'radio:name-of-radio'
  *
- * - Checkboxes don't have their own id, so you need to add one in a div 
+ * - Checkboxes don't have their own id, so you need to add one in a div
  *   around the checkboxes via #prefix and #suffix. You actually need to add TWO
  *   divs because it's the parent that gets hidden. Also be sure to retain the
  *   'expand_checkboxes' in the #process array, because the views process will
  *   override it.
  */
 
-Drupal.Views.dependent = {};
+Drupal.Views = Drupal.Views || {};
 
-Drupal.Views.dependent.bindings = {};
-Drupal.Views.dependent.activeBindings = {};
-Drupal.Views.dependent.activeTriggers = [];
+Drupal.Views.dependent = { bindings: {}, activeBindings: {}, activeTriggers: [] };
 
 Drupal.Views.dependent.inArray = function(array, search_term) {
   var i = array.length;
   if (i > 0) {
-	 do {
-		if (array[i] == search_term) {
-		   return true;
-		}
-	 } while (i--);
+   do {
+    if (array[i] == search_term) {
+       return true;
+    }
+   } while (i--);
   }
   return false;
 }
@@ -56,13 +53,13 @@ Drupal.Views.dependent.autoAttach = function() {
   // Iterate through all relationships
   for (id in Drupal.settings.viewsAjax.formRelationships) {
 
-    // Drupal.Views.dependent.activeBindings[id] is a boolean, 
+    // Drupal.Views.dependent.activeBindings[id] is a boolean,
     // whether the binding is active or not.  Defaults to no.
     Drupal.Views.dependent.activeBindings[id] = 0;
     // Iterate through all possible values
     for(bind_id in Drupal.settings.viewsAjax.formRelationships[id].values) {
       // This creates a backward relationship.  The bind_id is the ID
-      // of the element which needs to change in order for the id to hide or become shown.  
+      // of the element which needs to change in order for the id to hide or become shown.
       // The id is the ID of the item which will be conditionally hidden or shown.
       // Here we're setting the bindings for the bind
       // id to be an empty array if it doesn't already have bindings to it
@@ -75,7 +72,7 @@ Drupal.Views.dependent.autoAttach = function() {
       // Drupal.settings.viewsAjax.formRelationships[id].values[bind_id] holds the possible values
 
       if (bind_id.substring(0, 6) == 'radio:') {
-        var trigger_id = "input[@name='" + bind_id.substring(6) + "']";
+        var trigger_id = "input[name='" + bind_id.substring(6) + "']";
       }
       else {
         var trigger_id = '#' + bind_id;
@@ -83,6 +80,9 @@ Drupal.Views.dependent.autoAttach = function() {
 
       Drupal.Views.dependent.activeTriggers.push(trigger_id);
 
+      if (jQuery(trigger_id).attr('type') == 'checkbox') {
+        $(trigger_id).parent().addClass('hidden-options');
+      }
 
       var getValue = function(item, trigger) {
         if (item.substring(0, 6) == 'radio:') {
@@ -92,6 +92,14 @@ Drupal.Views.dependent.autoAttach = function() {
           switch (jQuery(trigger).attr('type')) {
             case 'checkbox':
               var val = jQuery(trigger).attr('checked') || 0;
+
+              if (val) {
+                $(trigger).parent().removeClass('hidden-options').addClass('expanded-options');
+              }
+              else {
+                $(trigger).parent().removeClass('expanded-options').addClass('hidden-options');
+              }
+
               break;
             default:
               var val = jQuery(trigger).val();
@@ -107,7 +115,7 @@ Drupal.Views.dependent.autoAttach = function() {
 
           for (i in Drupal.Views.dependent.bindings[bind_id]) {
             var id = Drupal.Views.dependent.bindings[bind_id][i];
-            
+
             // Fix numerous errors
             if (typeof id != 'string') {
               continue;
@@ -136,9 +144,15 @@ Drupal.Views.dependent.autoAttach = function() {
               object = jQuery('#' + id).parent();
             }
 
-            if (Drupal.settings.viewsAjax.formRelationships[id].num <= len) {
+            var rel_num = Drupal.settings.viewsAjax.formRelationships[id].num;
+            if (typeof rel_num === 'object') {
+              rel_num = Drupal.settings.viewsAjax.formRelationships[id].num[0];
+            }
+
+            if (rel_num <= len) {
               // Show if the element if criteria is matched
               object.show(0);
+              object.addClass('dependent-options');
             }
             else {
               // Otherwise hide

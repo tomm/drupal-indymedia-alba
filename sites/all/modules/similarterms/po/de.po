@@ -1,0 +1,65 @@
+# $Id: de.po,v 1.1 2008/06/30 03:15:39 rmiddle Exp $
+#
+# German translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  similarterms.module,v 1.1.2.9 2008/06/23 21:18:53 rmiddle
+#  similarterms.info,v 1.1.2.1 2007/06/06 21:43:25 jjeff
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2008-06-29 23:08-0400\n"
+"PO-Revision-Date: 2008-06-29 23:08-0400\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: German <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=0; plural=;\n"
+
+#: similarterms.module:26
+msgid "Similar entries from ANY vocabulary."
+msgstr "Ähnliche Einträge aus IRGENDEINER Kategorie."
+
+#: similarterms.module:30
+msgid "Similar entries from the @vocab vocabulary."
+msgstr "Ähnliche Einträge aus der Kategorie @vocab."
+
+#: similarterms.module:39
+msgid "Item count"
+msgstr "Anzahl der Einträge"
+
+#: similarterms.module:42
+msgid "The maximum number of similar items to display"
+msgstr "Maximale Anzahl angezeigter ähnlicher Einträge"
+
+#: similarterms.module:45
+msgid "same as current"
+msgstr ""
+
+#: similarterms.module:52
+msgid "Content type limit"
+msgstr ""
+
+#: similarterms.module:55
+msgid "Limit to pages of this or these content type(s)"
+msgstr ""
+
+#: similarterms.module:66;70
+msgid "Similar"
+msgstr "Ähnlich"
+
+#: similarterms.module:0
+msgid "similarterms"
+msgstr "similarterms"
+
+#: similarterms.info:0
+msgid "Similar By Terms"
+msgstr "Ähnliche Einträge zu Begriffen"
+
+#: similarterms.info:0
+msgid "Display a block of other content that is similar by keywords (taxonomy terms)."
+msgstr "Zeigt einen Block von anderen ähnlichen Inhalten nach Begriffen an."
+

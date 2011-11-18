@@ -38,10 +38,11 @@ function imceditor_block($op='list', $delta=0) {
 	} else if ($op == 'view') {
 		if (!user_access('moderate content')) return;
 		$num_proms = db_result(db_query("SELECT COUNT(*) FROM {imc_feature_proposal} WHERE active = 1"));
-		$num_to_moderate = db_result(db_query("SELECT COUNT(*) FROM
+		$num_rss_to_moderate = db_result(db_query("SELECT COUNT(*) FROM
 					{imc_node_moderation} WHERE
 					status=%d",
 					IMCEDITOR_NODE_STATUS_HIDDEN_PENDING_PROMOTION));
+		$num_to_moderate = db_result(db_query("SELECT COUNT(*) FROM {node} WHERE moderate=0"));
 		$out = '';
 
 		if ($num_proms) {
@@ -49,9 +50,14 @@ function imceditor_block($op='list', $delta=0) {
 				l(sprintf(t("There are %d feature proposals"), $num_proms), 'imceditor/proposals')
 				. '</div>';
 		}
+		if ($num_rss_to_moderate) {
+			$out .= '<div>' .
+				l(sprintf(t("There are %d articles imported from RSS feeds awaiting editing or deletion"), $num_rss_to_moderate), 'imceditor/pending')
+				. '</div>';
+		}
 		if ($num_to_moderate) {
 			$out .= '<div>' .
-				l(sprintf(t("There are %d articles imported from RSS feeds awaiting editing or deletion"), $num_to_moderate), 'imceditor/pending')
+				l(sprintf(t("There are %d items awaiting moderation"), $num_to_moderate), 'admin/content/imceditor/unmoderated')
 				. '</div>';
 		}
 
@@ -76,6 +82,9 @@ function imceditor_cron()
 				WHERE m.status=%d AND n.created < %d",
 				IMCEDITOR_NODE_STATUS_DELETED,
 				time() - 60*60*24*$days_to_expire_deleted);
+		// need to be superuser to delete stuff
+		global $user;
+		$user->uid = 1;
 		while ($a = db_fetch_array($r)) {
 			node_delete($a['nid']);
 		}
@@ -192,27 +201,34 @@ function imceditor_menu() {
 		'file' => 'imceditor.admin.inc',
 	);
 	// Tabs:
-	$items['admin/content/imceditor/promoted/%'] = array(
+	$items['admin/content/imceditor/unmoderated'] = array(
+		'title' => t('Awaiting moderation'),
+		'type' => MENU_LOCAL_TASK,
+		'weight' => -15,
+		'access arguments' => array('moderate content'),
+		'file' => 'imceditor.admin.inc',
+	);
+	$items['admin/content/imceditor/promoted'] = array(
 		'title' => t('Promoted'),
 		'type' => MENU_LOCAL_TASK,
 		'weight' => -15,
 		'access arguments' => array('moderate content'),
 		'file' => 'imceditor.admin.inc',
 	);
-	$items['admin/content/imceditor/visible/%'] = array(
+	$items['admin/content/imceditor/visible'] = array(
 		'title' => t('Published'),
 		'type' => MENU_LOCAL_TASK,
 		'access arguments' => array('moderate content'),
 		'weight' => -10,
 	);
-	$items['admin/content/imceditor/hidden/%'] = array(
+	$items['admin/content/imceditor/hidden'] = array(
 		'title' => t('Hidden'),
 		'type' => MENU_LOCAL_TASK,
 		'weight' => -5,
 		'access arguments' => array('moderate content'),
 		'file' => 'imceditor.admin.inc',
 	);
-	$items['admin/content/imceditor/deleted/%'] = array(
+	$items['admin/content/imceditor/deleted'] = array(
 		'title' => t('Deleted'),
 		'type' => MENU_LOCAL_TASK,
 		'access arguments' => array('moderate content'),
@@ -421,6 +437,7 @@ function imceditor_propose_feature($nid, $comment) {
 		}
 	}
 	if ($do_propose) {
+		db_query("UPDATE {node} SET moderate = 1 WHERE nid = %d", $nid);
 		db_query("DELETE FROM {imc_feature_proposal} WHERE nid = %d", $nid);
 		db_query("INSERT INTO {imc_feature_proposal} (nid, active, comment, uid, timestamp) VALUES (%d,%d,'%s',%d,%d)",
 			$nid, 1, $comment, $user->uid, time());
@@ -459,7 +476,7 @@ function imceditor_unhide($nids, $reason) {
 	global $user;
 	foreach ($nids as $nid) {
 		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
-		db_query("UPDATE {node} SET status = 1 WHERE nid = %d", $nid);
+		db_query("UPDATE {node} SET status = 1, moderate = 1 WHERE nid = %d", $nid);
 		watchdog('imceditor', 'Hidden article unhidden with message \'%reason\'', 
 			array('%reason' => $reason),
 			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
@@ -473,18 +490,27 @@ function imceditor_hide($nids, $reason) {
 		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
 		db_query("INSERT INTO {imc_node_moderation} (nid, status, comment, uid, timestamp) VALUES (%d,%d,'%s',%d,%d)",
 			$nid, IMCEDITOR_NODE_STATUS_HIDDEN, $reason, $user->uid, time());
-		db_query("UPDATE {node} SET status = 0 WHERE nid = %d", $nid);
+		db_query("UPDATE {node} SET status = 0, moderate = 1 WHERE nid = %d", $nid);
 		watchdog('imceditor', 'Hidden article with message \'%reason\'', 
 			array('%reason' => $reason),
 			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
 	}
 	cache_clear_all();
 }
+function imceditor_markmoderated($nids) {
+	global $user;
+	foreach ($nids as $nid) {
+		db_query("UPDATE {node} SET moderate = 1 WHERE nid = %d", $nid);
+		watchdog('imceditor', 'User %username marked content as moderated', 
+			array('%username' => $user->name),
+			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
+	}
+}
 function imceditor_undelete($nids, $reason) {
 	global $user;
 	foreach ($nids as $nid) {
 		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
-		db_query("UPDATE {node} SET status = 1 WHERE nid = %d", $nid);
+		db_query("UPDATE {node} SET status = 1, moderate = 1 WHERE nid = %d", $nid);
 		watchdog('imceditor', 'Deleted article undeleted with message \'%reason\'', 
 			array('%reason' => $reason),
 			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
@@ -498,7 +524,7 @@ function imceditor_delete($nids, $reason) {
 		db_query("DELETE FROM {imc_node_moderation} WHERE nid=%d", $nid);
 		db_query("INSERT INTO {imc_node_moderation} (nid, status, comment, uid, timestamp) VALUES (%d,%d,'%s',%d,%d)",
 			$nid, IMCEDITOR_NODE_STATUS_DELETED, $reason, $user->uid, time());
-		db_query("UPDATE {node} SET status = 0 WHERE nid = %d", $nid);
+		db_query("UPDATE {node} SET status = 0, moderate = 1 WHERE nid = %d", $nid);
 		watchdog('imceditor', 'Deleted article with message \'%reason\'', 
 			array('%reason' => $reason),
 			WATCHDOG_NOTICE, l(t('Article'), 'node/'.$nid));
@@ -734,4 +760,10 @@ function imceditor_generic_access($op, $node, $type) {
 	}
 	return NULL;
 } 
+
+function imceditor_views_api() {
+	return array(
+		'api' => 2.0,
+	);
+}
 

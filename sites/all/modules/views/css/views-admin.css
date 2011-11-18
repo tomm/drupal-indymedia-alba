@@ -1,4 +1,3 @@
-/* $Id: views-admin.css,v 1.12 2008/12/02 19:09:25 merlinofchaos Exp $ */
 
 /*
  * Summary pad
@@ -211,6 +210,7 @@ div.views-display-deleted div.tab-section {
 
 #views-ajax-title {
   background: #f6f6f6;
+  color: #000;
   border-left: #D6DBDE 1px solid;
   border-right: #D6DBDE 1px solid;
   margin: 0 0 0 118px;
@@ -220,6 +220,7 @@ div.views-display-deleted div.tab-section {
 
 #views-ajax-pad .message {
   background: #f6f6f6;
+  color: #000;
   margin-left: 118px;
   border: #D6DBDE 1px solid;
   border-top: 0;
@@ -230,6 +231,7 @@ div.views-display-deleted div.tab-section {
 
 #views-ajax-pad form {
   background: #fff;
+  color: #000;
   margin-left: 118px;
   border: #D6DBDE 1px solid;
   padding-top: 3px;
@@ -384,6 +386,22 @@ html.js #views-ajax-pad {
 #views-ajax-pad table td .form-item select {
   padding: 0;
   margin: 0;
+}
+
+#views-ajax-pad label.hidden-options {
+  background: transparent url(../images/arrow-active.png) no-repeat right;
+  height: 12px;
+  padding-right: 12px;
+}
+
+#views-ajax-pad label.expanded-options {
+  background: transparent url(../images/expanded-options.png) no-repeat right;
+  height: 12px;
+  padding-right: 16px;
+}
+
+#views-ajax-pad .dependent-options {
+  padding-left: 30px;
 }
 
 /*
@@ -590,6 +608,8 @@ html.js .views-hidden {
   white-space: pre-wrap; /* CSS 2.1 */
   white-space: pre-line; /* CSS 3 (and 2.1 as well, actually) */
   word-wrap: break-word; /* IE */
+  max-height: 200px;
+  overflow: scroll;
 }
 
 .views-quick-links {
@@ -618,6 +638,7 @@ html.js .views-hidden {
   max-width: 95%;
 }
 
+.clone-display,
 .remove-display {
   float: right;
   margin: 0;
@@ -627,7 +648,9 @@ html.js .views-hidden {
 }
 
 .views-display .remove-display form,
-.remove-display input {
+.remove-display input,
+.views-display .clone-display form,
+.clone-display input {
   margin: 0 !important;
 }
 

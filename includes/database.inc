@@ -1,5 +1,4 @@
 <?php
-// $Id: database.inc,v 1.92.2.4 2009/02/16 14:41:58 goba Exp $
 
 /**
  * @file
@@ -32,11 +31,11 @@ define('DB_ERROR', 'a515ac9c2796ca0e23adbe92c68fc9fc');
  * For example, one might wish to return a list of the most recent 10 nodes
  * authored by a given user. Instead of directly issuing the SQL query
  * @code
- *   SELECT n.title, n.body, n.created FROM node n WHERE n.uid = $uid LIMIT 0, 10;
+ *   SELECT n.nid, n.title, n.created FROM node n WHERE n.uid = $uid LIMIT 0, 10;
  * @endcode
  * one would instead call the Drupal functions:
  * @code
- *   $result = db_query_range('SELECT n.title, n.body, n.created
+ *   $result = db_query_range('SELECT n.nid, n.title, n.created
  *     FROM {node} n WHERE n.uid = %d', $uid, 0, 10);
  *   while ($node = db_fetch_object($result)) {
  *     // Perform operations on $node->body, etc. here.
@@ -208,7 +207,19 @@ function _db_query_callback($match, $init = FALSE) {
 
   switch ($match[1]) {
     case '%d': // We must use type casting to int to convert FALSE/NULL/(TRUE?)
-      return (int) array_shift($args); // We don't need db_escape_string as numbers are db-safe
+      $value = array_shift($args);
+      // Do we need special bigint handling?
+      if ($value > PHP_INT_MAX) {
+        $precision = ini_get('precision');
+        @ini_set('precision', 16);
+        $value = sprintf('%.0f', $value);
+        @ini_set('precision', $precision);
+      }
+      else {
+        $value = (int) $value;
+      }
+      // We don't need db_escape_string as numbers are db-safe.
+      return $value;
     case '%s':
       return db_escape_string(array_shift($args));
     case '%n':
@@ -377,6 +388,32 @@ function db_rewrite_sql($query, $primary_table = 'n', $primary_field = 'nid',  $
 }
 
 /**
+ * Adds the DISTINCT flag to the supplied query and returns the altered query.
+ *
+ * The supplied query should not contain a DISTINCT flag. This will not, and
+ * never did guarantee that you will obtain distinct values of $table.$field.
+ *
+ * @param $table
+ *   Unused. Kept to retain API compatibility.
+ * @param $field
+ *   Unused. Kept to retain API compatibility.
+ * @param $query
+ *   Query to which the DISTINCT flag should be applied.
+ *
+ * @return
+ *   SQL query with the DISTINCT flag set.
+ */
+function db_distinct_field($table, $field, $query) {
+  $matches = array();
+  if (!preg_match('/^SELECT\s*DISTINCT/i', $query, $matches)) {
+    // Only add distinct to the outer SELECT to avoid messing up subqueries.
+    $query = preg_replace('/^SELECT/i', 'SELECT DISTINCT', $query);
+  }
+
+  return $query;
+}
+
+/**
  * Restrict a dynamic table, column or constraint name to safe characters.
  *
  * Only keeps alphanumeric and underscores.
@@ -416,7 +453,6 @@ function db_escape_table($string) {
  *   - 'fields': An associative array ('fieldname' => specification)
  *     that describes the table's database columns.  The specification
  *     is also an array.  The following specification parameters are defined:
- *
  *     - 'description': A string describing this field and its purpose.
  *       References to other tables should be enclosed in
  *       curly-brackets.  For example, the node table vid field
@@ -427,13 +463,14 @@ function db_escape_table($string) {
  *       just map to the according database engine specific
  *       datatypes.  Use 'serial' for auto incrementing fields. This
  *       will expand to 'int auto_increment' on mysql.
+ *     - 'serialize': A boolean indicating whether the field will be stored
+         as a serialized string.
  *     - 'size': The data size: 'tiny', 'small', 'medium', 'normal',
  *       'big'.  This is a hint about the largest value the field will
  *       store and determines which of the database engine specific
  *       datatypes will be used (e.g. on MySQL, TINYINT vs. INT vs. BIGINT).
  *       'normal', the default, selects the base type (e.g. on MySQL,
  *       INT, VARCHAR, BLOB, etc.).
- *
  *       Not all sizes are available for all data types. See
  *       db_type_map() for possible combinations.
  *     - 'not null': If true, no NULL values will be allowed in this
@@ -443,7 +480,7 @@ function db_escape_table($string) {
  *       specify '0' as the default value for a type 'int' field it
  *       will not work because '0' is a string containing the
  *       character "zero", not an integer.
- *     - 'length': The maximal length of a type 'varchar' or 'text'
+ *     - 'length': The maximal length of a type 'char', 'varchar' or 'text'
  *       field.  Ignored for other field types.
  *     - 'unsigned': A boolean indicating whether a type 'int', 'float'
  *       and 'numeric' only is signed or unsigned.  Defaults to
@@ -452,10 +489,8 @@ function db_escape_table($string) {
  *       the precision (total number of significant digits) and scale
  *       (decimal digits right of the decimal point).  Both values are
  *       mandatory.  Ignored for other field types.
- *
  *     All parameters apart from 'type' are optional except that type
  *     'numeric' columns must specify 'precision' and 'scale'.
- *
  *  - 'primary key': An array of one or more key column specifiers (see below)
  *    that form the primary key.
  *  - 'unique keys': An associative array of unique keys ('keyname' =>

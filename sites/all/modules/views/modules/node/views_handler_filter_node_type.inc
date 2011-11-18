@@ -1,5 +1,4 @@
 <?php
-// $Id: views_handler_filter_node_type.inc,v 1.1 2008/09/03 19:21:29 merlinofchaos Exp $
 /**
  * Filter by node type
  */
@@ -9,8 +8,9 @@ class views_handler_filter_node_type extends views_handler_filter_in_operator {
       $this->value_title = t('Node type');
       $types = node_get_types();
       foreach ($types as $type => $info) {
-        $options[$type] = $info->name;
+        $options[$type] = t($info->name);
       }
+      asort($options);
       $this->value_options = $options;
     }
   }
