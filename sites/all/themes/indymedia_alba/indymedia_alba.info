@@ -9,6 +9,7 @@ scripts[] = upload-wysiwyg-insert.js
 
 regions[left] = Left sidebar
 regions[right] = Right sidebar
+regions[ultraleft] = Ultra Left Sidebar
 regions[before_content] = Before content
 regions[content] = Content
 regions[left_after_content] = Left column after content

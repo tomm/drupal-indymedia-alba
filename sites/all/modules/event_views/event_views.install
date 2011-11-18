@@ -1,0 +1,66 @@
+<?php
+function event_views_schema_alter(&$schema)
+{
+   // Add field to existing schema.
+   $schema['event']['fields']['unix_event_start'] = array(
+   'type' => 'int',
+   'default' => 0,
+   //'mysql_type' => 'timestamp',
+   //'pgsql_type' => 'timestamp',
+   );
+
+   $schema['event']['fields']['unix_event_end'] = array(
+   'type' => 'int',
+   'default' => 0,
+   //'mysql_type' => 'timestamp',
+   //'pgsql_type' => 'timestamp',
+   );
+}
+
+/**
+* Implementation of hook_install().
+*/
+function event_views_install()
+{
+   $ret = array();
+
+   //Load the initial schema
+   $schema = drupal_get_schema('event');
+
+   // Get fields altered fields from hook_schema_alter()
+   event_views_schema_alter($schema);
+   foreach ($schema['event']['fields'] as $name => $spec) 
+   {
+      db_add_field($ret, 'event', $name, $spec);
+   }
+
+   //drupal_set_message("Schema Updated");
+   //Now populate that new field with timestamps
+   $query = "SELECT event_end, event_start, nid FROM {event}";
+   $results = db_query($query);
+   while ($rows = db_fetch_object($results))
+   {
+      $timestamp = strtotime($rows->event_start);
+      $query = "UPDATE {event} SET unix_event_start = '%d' WHERE nid = '%d'";
+      db_query($query, $timestamp, $rows->nid);
+
+      $timestamp = strtotime($rows->event_end);
+      $query = "UPDATE {event} SET unix_event_end = '%d' WHERE nid = '%d'";
+      db_query($query, $timestamp, $rows->nid);
+   }
+}
+
+/**
+* Implementation of hook_uninstall().
+*/
+function event_views_uninstall()
+{
+   $ret = array();
+   $schema = drupal_get_schema('event');
+   //drupal_set_message("Schema Updated");
+   event_views_schema_alter($schema);
+   foreach ($schema['event']['fields'] as $name => $spec) 
+   {
+      db_drop_field($ret, 'event', $name);
+   }
+}

@@ -59,6 +59,13 @@ td#col-right {
   margin-right: 0.5em;
   overflow: hidden;
 }
+td#col-ultraleft {
+  width: 25%;
+  padding: 0 1em 0 1em;
+  vertical-align: top;
+  margin-left: 0.5em;
+  overflow: hidden;
+}
 table#content {
   padding: 0px;
   margin: 5px 0 0 0;
