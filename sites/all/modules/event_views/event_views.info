@@ -1,0 +1,11 @@
+name = "Event Views"
+description = "This module allows views to use the fields from the event module.  Only for Views API 2!! If you use D6, you need this module.  If you use D5, use the original Event Views module."
+package = Event
+dependencies[] = event
+core = 6.x
+; Information added by drupal.org packaging script on 2010-04-03
+version = "6.x-2.4"
+core = "6.x"
+project = "event_views"
+datestamp = "1270259705"
+

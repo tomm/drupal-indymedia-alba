@@ -64,6 +64,11 @@ advantage of the latest features of Indymedia Scotland</a> </div> <![endif]-->
 
 <table id="content">
 	<tr>
+      <?php if ($ultraleft != ''){ ?>
+	    <td valign="top" id="col-ultraleft">
+	    <?php print $ultraleft; ?>
+	    </td>
+	  <?php } ?>
 	<td valign="top" id="col-center">
 		<?php if (0) /*($breadcrumb && !$is_front)*/{ ?>
 		  <div id="breadcrumb"><?php print $breadcrumb ?></div>
