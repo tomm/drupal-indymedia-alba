@@ -1,0 +1,61 @@
+<?php
+//
+/**
+* Implementation of hook_views_api().
+*/
+function event_views_views_api()
+{
+   return array(
+   'api' => 2,
+   );
+}
+
+function event_views_init()
+{
+   //Quick hack to fix old installs.  This will eventually be taken out.
+   if (!event_views_check_schema())
+   {
+      drupal_set_message("Note:  Event Views detected that you were very likely running the old version of event_views and has updated your DB tables with new fields required to use the new event_views module.");
+   }
+}
+
+//This checks to see if fields we need actually exist.  If they dont, then re-run the install script.
+function event_views_check_schema()
+{
+   if (db_column_exists('event', 'unix_event_start') && db_column_exists('event', 'unix_event_end'))
+   {
+      return TRUE;
+   }
+
+   require_once(drupal_get_path('module', 'event_views').'/event_views.install');
+   event_views_install();
+   return FALSE;
+}
+
+function event_views_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL)
+{
+   //Update the timestamp fields in the event table
+   if ($op == 'update' || $op == 'insert')
+   {
+      if ($node->event['start_exploded']['month'])
+      {
+         $date = $node->event['start_exploded']['year'].'-'.
+         $node->event['start_exploded']['month'].'-'.
+         $node->event['start_exploded']['day'].' '.
+         $node->event['start_exploded']['hour'].':'.
+         $node->event['start_exploded']['minute'].':00';
+         $timestamp = strtotime($date);
+         $query = "UPDATE {event} SET unix_event_start = '%d' WHERE nid = '%d'";
+         db_query($query, $timestamp, $node->nid);
+
+         $date = $node->event['end_exploded']['year'].'-'.
+         $node->event['end_exploded']['month'].'-'.
+         $node->event['end_exploded']['day'].' '.
+         $node->event['end_exploded']['hour'].':'.
+         $node->event['end_exploded']['minute'].':00';
+         $timestamp = strtotime($date);
+         $query = "UPDATE {event} SET unix_event_end = '%d' WHERE nid = '%d'";
+         db_query($query, $timestamp, $node->nid);
+      }
+   }
+}
