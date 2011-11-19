@@ -457,14 +457,14 @@ function taxonomy_views_plugins() {
         'path' => drupal_get_path('module', 'views') . '/modules/taxonomy',
       ),
     ),
-//    'argument default' => array(
-//      'taxonomy_tid' => array(
-//        'title' => t('Taxonomy Term ID from URL'),
-//        'handler' => 'views_plugin_argument_default_taxonomy_tid',
-//        'path' => drupal_get_path('module', 'views') . '/modules/taxonomy',
-//        'parent' => 'fixed',
-//      ),
-//    ),
+   'argument default' => array(
+     'taxonomy_tid' => array(
+       'title' => t('Taxonomy Term ID from URL'),
+       'handler' => 'views_plugin_argument_default_taxonomy_tid',
+       'path' => drupal_get_path('module', 'views') . '/modules/taxonomy',
+       'parent' => 'fixed',
+     ),
+   ),
   );
 }
 
