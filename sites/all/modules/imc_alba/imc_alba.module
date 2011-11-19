@@ -2,13 +2,6 @@
 
 function imc_alba_menu() {
 	$items = array();
-	$items['user/%user/articles'] = array(
-		'title' => 'Authored articles',
-		'page callback' => 'imc_alba_show_user_articles',
-		'page arguments' => array(1),
-		'access callback' => TRUE,
-		'type' => MENU_LOCAL_TASK
-	);
 	$items['admin/settings/imcalba'] = array(
 		'title' => 'Indymedia basic settings',
 		'description' => '',
@@ -65,28 +58,6 @@ function imc_alba_admin() {
 			to be permanent for some users.")
 	);
 	return system_settings_form($form);
-}
-
-define('ARTICLES_DEFAULT_ITEMS', 20);
-
-function imc_alba_show_user_articles($arg) {
-	$uid = $arg->uid;
-	
-	// show visible but not front page articles
-	$q = pager_query(db_rewrite_sql(
-		'SELECT n.nid, n.created, n.status, n.title, n.promote FROM {node} n WHERE n.type = "article" AND n.status=1 AND n.uid='.intval($uid).' ORDER BY n.created DESC'),
-				ARTICLES_DEFAULT_ITEMS, 0);
-	$out = "<h3>" . t('Articles authored by this user'). "</h3>\n";
-	$out .= "<p>" . t('Featured articles <strong>emphasized</strong>.'). "</p>\n";
-	while ($a = db_fetch_array($q)) {
-		if ($a['promote']==1) $out .= '<strong>';
-		$out .= format_date($a['created'], 'small') . ': ' . l($a['title'],
-				'node/' . $a['nid']) . '<br />';
-		if ($a['promote']==1) $out .= '</strong>';
-	}
-	$out .= theme('pager', NULL, 10);
-	
-	return $out;
 }
 
 function imc_alba_cron() {
