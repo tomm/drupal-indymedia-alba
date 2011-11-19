@@ -170,6 +170,7 @@ class views_handler_field extends views_handler {
     $options['empty'] = array('default' => '', 'translatable' => TRUE);
     $options['hide_empty'] = array('default' => FALSE);
     $options['empty_zero'] = array('default' => FALSE);
+    $options['hide_alter_empty'] = array('default' => TRUE);
 
     return $options;
   }
@@ -427,7 +428,13 @@ If you would like to have the characters %5B and %5D please use the html entity 
       '#type' => 'checkbox',
       '#title' => t('Hide if empty'),
       '#default_value' => $this->options['hide_empty'],
-      '#description' => t('Do not display anything for this field if it is empty. Note that the field label may still be displayed. Check style or row style settings to hide labels for empty fields.'),
+      '#description' => t('Enable to hide this field if it is empty. Note that the field label or rewritten output may still be displayed. To hide labels, check the style or row style settings for empty fields. To hide rewritten content, check the Hide rewriting if empty checkbox.'),
+    );
+
+    $form['hide_alter_empty'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Do not rewrite if empty'),
+      '#default_value' => $this->options['hide_alter_empty'],
     );
   }
 
@@ -524,7 +531,7 @@ If you would like to have the characters %5B and %5D please use the html entity 
       $value = $this->render_altered($alter, $tokens);
     }
 
-    if ($this->options['hide_empty'] && empty($value) && ($value !== 0 || $this->options['empty_zero'])) {
+    if ((($this->options['hide_empty'] && empty($value)) || ($this->options['hide_alter_empty'] && empty($this->original_value))) && ($value !== 0 || $this->options['empty_zero'])) {
       return '';
     }
 
