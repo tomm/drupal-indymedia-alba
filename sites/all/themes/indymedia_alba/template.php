@@ -1,5 +1,15 @@
 <?php
 
+function indymedia_alba_preprocess_page(&$vars, $hook) {
+  if ( (arg(0) == 'user') AND (arg(2) == 'contact') ) $vars['title'] = 'Contact';
+  if ( (arg(0) == 'user') AND (arg(2) == 'edit') ) $vars['title'] = 'Edit Profile';
+  if ($hook == 'page') {
+    if (arg(0) == 'user') {
+      $vars['tabs'] = str_replace('View', 'Articles', $vars['tabs']);
+    }
+  }
+}
+
 function phptemplate_preprocess_node(&$vars) {
   $node = $vars['node'];
   if (count($node->taxonomy)) {
@@ -30,11 +40,14 @@ function phptemplate_username($object) {
 
   if ($object->uid && $object->name) {
     // Shorten the name when it is too long or it will break many tables.
-    if (drupal_strlen($object->name) > 20) {
-      $name = drupal_substr($object->name, 0, 15) .'...';
-    }
-    else {
+    if (arg(0) == 'user') {
       $name = $object->name;
+    } else {
+      if (drupal_strlen($object->name) > 20) {
+        $name = drupal_substr($object->name, 0, 15) .'...';
+      } else {
+        $name = $object->name;
+      }
     }
 
     if (user_access('access user profiles')) {
