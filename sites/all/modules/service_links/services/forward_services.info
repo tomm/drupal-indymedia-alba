@@ -1,0 +1,13 @@
+name = "Forward Services"
+description = "Add the support for Forward module which send the link through email."
+core = 6.x
+package = Service Links - Services
+dependencies[] = service_links 
+dependencies[] = forward
+
+; Information added by drupal.org packaging script on 2011-10-07
+version = "6.x-2.1"
+core = "6.x"
+project = "service_links"
+datestamp = "1317978410"
+

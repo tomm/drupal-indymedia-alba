@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file
+ * Provide the bookmarking support for various browser
+ */
+
+/**
+ * Implementation of hook_service_links().
+ */
+function favorite_services_service_links() {
+  $links['favorite'] = array(
+    'name' => t('Favorite'),
+    'description' => t('Add this page in your favorites'),
+    'link' => '<url>&favtitle=<raw-encoded-title>',
+    'attributes' => array('style' => 'display:none;'),
+    'javascript' => 'favorite_services.js',
+  );
+  return $links;
+}

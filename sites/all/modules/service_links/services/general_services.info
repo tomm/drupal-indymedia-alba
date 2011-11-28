@@ -1,0 +1,12 @@
+name = "General Services"
+description = "Provide the Services: Blinklist, Box, del.icio.us, Digg, Diigo, Facebook, Furl, Google Bookmark, Google Buzz, Icerocket, Identi.ca, Linkedin, Mister Wong, Mixx, MySpace, Newsvine, Newskicks, Phing this, Reddit, StumbleUpon, Technorati, Technorati favorite, Twitter, Yahoo Bookmark
+core = "6.x"
+package = Service Links - Services
+dependencies[] = service_links
+
+; Information added by drupal.org packaging script on 2011-10-07
+version = "6.x-2.1"
+core = "6.x"
+project = "service_links"
+datestamp = "1317978410"
+

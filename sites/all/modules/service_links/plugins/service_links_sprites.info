@@ -1,0 +1,12 @@
+name = "Service Links Sprites"
+description = "Add the ability to handle sprites with Service Links"
+core = 6.x
+package = Service Links
+dependencies[] = service_links
+
+; Information added by drupal.org packaging script on 2011-10-07
+version = "6.x-2.1"
+core = "6.x"
+project = "service_links"
+datestamp = "1317978410"
+
