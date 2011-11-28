@@ -1,0 +1,11 @@
+name = "Basque Services"
+description = "Provide the Basque Services: Zabaldu, Bildu, Aupatu"
+core = 6.x
+package = Service Links - Services
+dependencies[] = service_links
+; Information added by drupal.org packaging script on 2011-10-07
+version = "6.x-2.1"
+core = "6.x"
+project = "service_links"
+datestamp = "1317978410"
+

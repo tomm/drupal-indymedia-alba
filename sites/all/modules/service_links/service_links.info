@@ -1,0 +1,12 @@
+name = "Service links"
+description = "Module engine for add various service links about sharing networks to nodes."
+core = 6.x
+php = 5.1
+package = Service Links
+
+; Information added by drupal.org packaging script on 2011-10-07
+version = "6.x-2.1"
+core = "6.x"
+project = "service_links"
+datestamp = "1317978410"
+
