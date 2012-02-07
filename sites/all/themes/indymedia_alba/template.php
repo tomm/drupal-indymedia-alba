@@ -40,7 +40,7 @@ function phptemplate_username($object) {
 
   if ($object->uid && $object->name) {
     // Shorten the name when it is too long or it will break many tables.
-    if (arg(0) == 'user') {
+    if (arg(0) == 'user' OR 'groups') {
       $name = $object->name;
     } else {
       if (drupal_strlen($object->name) > 20) {
