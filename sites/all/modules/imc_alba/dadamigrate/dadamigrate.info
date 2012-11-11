@@ -5,7 +5,6 @@ package = Indymedia
 
 version = "6.x-1.5"
 core = 6.x
-dependencies[] = imceditor
 dependencies[] = nodextradata
 project = "imc_alba"
 
