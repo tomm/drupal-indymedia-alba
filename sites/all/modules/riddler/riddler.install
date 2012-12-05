@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the CAPTCHA module.
+ */
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function riddler_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'riddler_%'");
+  cache_clear_all('variables', 'cache');
+}
