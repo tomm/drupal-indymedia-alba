@@ -1,0 +1,183 @@
+<?php
+
+/**
+ * @file
+ * Adds a question and answer type to the Captcha module.
+ *
+ * When enabled this module will add a required field to forms of your choice
+ * asking a simple question to avoid automatic content creation by
+ * spambots. The question and answers are custimizable.
+ * Thanks to: nkoponen. Ported to D6 by awolfey.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+
+function riddler_help($path, $arg) {
+  switch ($path) {
+      case 'admin/modules#description':
+            return t('Requires anonymous users to answer a simple question to be answered forms are processed. A primitive but effective way to counter spam.');
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+
+function riddler_perm() {
+  return array(
+    'administer riddler',
+  );
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+
+function riddler_menu() {
+  $items = array();
+    $items['admin/user/captcha/riddler'] = array(
+      'title' => 'Riddler',
+      'description' => 'Allows you to force a question to a number of forms to counter f.e. spammers.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('riddler_settings'),
+      'access arguments' => array('administer riddler'),
+      'type' => MENU_LOCAL_TASK
+    );
+  return $items;
+}
+
+// Riddler settings form, called by drupal_get_form in menu.
+function riddler_settings() {
+  $form = array();
+  $form['riddler_weight'] = array(
+    '#type' => 'select',
+    '#title' => t('Weight'),
+    '#default_value' => variable_get('riddler_weight', 0),
+    '#options' => drupal_map_assoc(range(-10, 10)),
+    '#description' => t('Weight of the Riddler form element'),
+    '#required' => TRUE,
+  );
+  $form['riddler_groups'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Riddles'),
+    '#description' => t('If you need more riddles, just submit the form, 3 empty riddles will appear.'),
+  );
+  $form['riddler_groups']['riddler_group_0'] = array(
+    '#type' => 'fieldset',
+    '#title' => variable_get('riddler_question_0', '') ? 'Default riddle: '. variable_get('riddler_question_0', '') : t('Riddle !i', array('!i' => 1)),
+    '#description' => t('Empty question and answer to erase this group.'),
+    '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+  );
+  $form['riddler_groups']['riddler_group_0']['riddler_question_0'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Question'),
+    '#description' => t('A question that you require anonymous users to answer'),
+    '#default_value' => variable_get('riddler_question_0', 'Do you hate spam? (yes or no)'),
+    '#required' => FALSE,
+  );
+  $form['riddler_groups']['riddler_group_0']['riddler_answer_0'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Answer'),
+    '#default_value' => variable_get('riddler_answer_0', 'yes'),
+    '#description' => t('Answer to the above question. You may allow more than one correct answer by entering a comma or space-separated list. Answers are not case sensitive. Answers must be only one word.'),
+    '#required' => FALSE,
+  );
+  $number = variable_get('riddler_number', 1);
+  for ( $i=1; $i<$number + 3; $i++) {
+    $form['riddler_groups']['riddler_group_'. $i] = array(
+      '#type' => 'fieldset',
+      '#title' => variable_get('riddler_question_'. $i, '') ? 'Riddle '.  $i . ': '. variable_get('riddler_question_'. $i, '') : t('Riddle !i', array('!i' => $i)),
+      '#description' => t('Empty question and answer to erase this group.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => $i < $number,
+    );
+    $form['riddler_groups']['riddler_group_'. $i]['riddler_question_'. $i] = array(
+      '#type' => 'textfield',
+      '#title' => t('Question'),
+      '#description' => t('A question that you require anonymous users to answer'),
+      '#default_value' => variable_get('riddler_question_'. $i, ''),
+      '#required' => FALSE,
+    );
+    $form['riddler_groups']['riddler_group_'. $i]['riddler_answer_'. $i] = array(
+      '#type' => 'textfield',
+      '#title' => t('Answer'),
+      '#default_value' => variable_get('riddler_answer_'. $i, ''),
+    '#description' => t('Answer to the above question. You may allow more than one correct answer by entering a comma or space-separated list. Answers are not case sensitive.  Answers must be only one word.'),
+      '#required' => FALSE,
+    );
+  }
+  $form['#validate'][] = 'riddler_settings_validate';
+  $form['#submit'][] = 'riddler_settings_submit';
+
+  return system_settings_form($form);
+}
+
+// Validating the settings form.
+function riddler_settings_validate($form, &$form_state) {
+  $i = 0;
+  while (array_key_exists('riddler_question_'. $i, $form_state['values'])) {
+    if ($form_state['values']['riddler_question_'. $i] != '' && $form_state['values']['riddler_answer_'. $i] == '') {
+      form_set_error('riddler_answer_'. $i, t('Group !i is incomplete (answer is missing).', array('!i' => $i+1)));
+    }
+    if ($form_state['values']['riddler_question_'. $i] == '' && $form_state['values']['riddler_answer_'. $i] != '') {
+      form_set_error('riddler_question_'. $i, t('Group !i is incomplete (question is missing).', array('!i' => $i+1)));
+    }
+    $i++;
+  }
+}
+
+// Processing the settings form.
+function riddler_settings_submit($form, &$form_state) {
+  variable_set('riddler_weight', $form_state['values']['riddler_weight']);
+  $i = 0;
+  $number = 0;
+  while (array_key_exists('riddler_question_'. $i, $form_state['values'])) {
+    if ($form_state['values']['riddler_question_'. $i] != '') {
+      variable_set('riddler_question_'. $number, $form_state['values']['riddler_question_'. $i]);
+      variable_set('riddler_answer_'. $number, $form_state['values']['riddler_answer_'. $i]);
+      $number++;
+    }
+    $i++;
+  }
+  variable_set('riddler_number', $number);
+}
+
+/**
+ * Implementation of hook_captcha().
+ */
+function riddler_captcha($op, $captcha_type='') {
+  switch ($op) {
+    case 'list' :
+      return array('Riddler');
+      break;
+    case 'generate' :
+      $result = array();
+      if ($captcha_type == 'Riddler') {
+        $i = rand(1, variable_get('riddler_number', 1)) - 1;
+        $result['form']['captcha_response'] = array(
+          '#type' => 'textfield',
+          '#title' => variable_get('riddler_question_'. $i, 'Do you hate spam? (yes or no)'),
+          '#description' => t('Fill in the blank'),
+          '#size' => 50,
+          '#maxlength' => 50,
+          '#required' => TRUE,
+          '#weight' => variable_get('riddler_weight', 0),
+        );
+        $result['solution'] = (string)(drupal_strtolower(variable_get('riddler_answer_'. $i, 'yes')));
+        $result['captcha_validate'] = 'riddler_captcha_validate';
+        return $result;
+      }
+    break;
+  }
+}
+
+// Custom captcha validation.
+function riddler_captcha_validate($solution, $response) {
+  $solution = str_ireplace(',', ' ', $solution);
+  $solution = explode(' ', $solution);
+  return in_array(drupal_strtolower($response), $solution);
+}

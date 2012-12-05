@@ -1,0 +1,11 @@
+name = Captcha Riddler
+description = Allows site administrators to add a simple question to form validation
+package = Spam control
+dependencies[] = captcha
+core = 6.x
+; Information added by drupal.org packaging script on 2011-05-18
+version = "6.x-1.2"
+core = "6.x"
+project = "riddler"
+datestamp = "1305750419"
+
