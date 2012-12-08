@@ -4,7 +4,7 @@
  * @file mobile_tools_cache.inc
  *  This files allow to override the default drupal cache in order to support theme switching based
  *  on device type and device group.
- *  
+ *
  *  In order to enable this file, add the following to your settings.php file
  *  $conf['page_cache_fastpath'] = FALSE;
  *  $conf['cache_inc'] = './sites/all/modules/mobile_tools/mobile_tools_cache.inc';
@@ -199,7 +199,7 @@ function cache_clear_all($cid = NULL, $table = NULL, $wildcard = FALSE) {
 }
 
 /**
- * Rewriting the cid support the usage of caching with mobile tools when using theme switching 
+ * Rewriting the cid support the usage of caching with mobile tools when using theme switching
  * for several device groups
  */
 function cache_rewrite_cid(&$cid){

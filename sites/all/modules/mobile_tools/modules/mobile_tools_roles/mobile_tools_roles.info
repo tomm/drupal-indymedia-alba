@@ -1,0 +1,12 @@
+name = Mobile Tools Roles
+description = Enables Mobile Tools to provide mobile versions of existing user roles.
+core = 6.x
+package = Mobile
+dependencies[] = mobile_tools
+
+; Information added by drupal.org packaging script on 2012-11-05
+version = "6.x-2.7"
+core = "6.x"
+project = "mobile_tools"
+datestamp = "1352149903"
+

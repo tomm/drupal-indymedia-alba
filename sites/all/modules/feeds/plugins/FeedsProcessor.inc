@@ -106,8 +106,8 @@ abstract class FeedsProcessor extends FeedsPlugin {
       $convert_to_array = TRUE;
     }
     foreach ($this->config['mappings'] as $mapping) {
-      if (isset($targets[$mapping['target']]['real_target'])) {
-        unset($target_item->{$targets[$mapping['target']]['real_target']});
+      if (isset($targets[$this->id][$mapping['target']]['real_target'])) {
+        unset($target_item->{$targets[$this->id][$mapping['target']]['real_target']});
       }
       elseif (isset($target_item->{$mapping['target']})) {
         unset($target_item->{$mapping['target']});

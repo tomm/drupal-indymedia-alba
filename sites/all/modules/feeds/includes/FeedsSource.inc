@@ -40,12 +40,12 @@ interface FeedsSourceInterface {
   public function sourceFormValidate(&$source_config);
 
   /**
-   * A source is being deleted.
+   * A source is being saved.
    */
   public function sourceSave(FeedsSource $source);
 
   /**
-   * A source is being saved.
+   * A source is being deleted.
    */
   public function sourceDelete(FeedsSource $source);
 }

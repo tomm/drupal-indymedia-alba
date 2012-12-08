@@ -8,9 +8,9 @@ files[] = feeds_import.test
 name = "Feeds Import"
 package = "Feeds"
 
-; Information added by drupal.org packaging script on 2011-06-28
-version = "6.x-1.0-beta11"
+; Information added by drupal.org packaging script on 2012-05-08
+version = "6.x-1.0-beta12"
 core = "6.x"
 project = "feeds"
-datestamp = "1309301816"
+datestamp = "1336486856"
 

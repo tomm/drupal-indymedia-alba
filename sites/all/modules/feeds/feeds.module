@@ -375,6 +375,11 @@ function feeds_nodeapi(&$node, $op, $form) {
       case 'update':
         // A node may not have been validated, make sure $node_feeds is present.
         if (empty($node_feeds)) {
+          // If $node->feeds is empty here, nodes are being programatically
+          // created in some fashion without Feeds stuff being added.
+          if (empty($node->feeds)) {
+            return;
+          }
           $node_feeds = $node->feeds;
         }
         // Add configuration to feed source and save.
@@ -396,7 +401,7 @@ function feeds_nodeapi(&$node, $op, $form) {
         break;
       case 'delete':
         $source = feeds_source($importer_id, $node->nid);
-        if ($source->importer->processor->config['delete_with_source']) {
+        if (!empty($source->importer->processor->config['delete_with_source'])) {
           feeds_batch_set(t('Deleting'), 'clear', $importer_id, $node->nid);
         }
         // Remove attached source.

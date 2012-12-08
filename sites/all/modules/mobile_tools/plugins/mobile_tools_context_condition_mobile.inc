@@ -1,6 +1,6 @@
 <?php
 /**
- * @file 
+ * @file
  * Integration with the Context module
  */
 class mobile_tools_context_condition_mobile extends context_condition {

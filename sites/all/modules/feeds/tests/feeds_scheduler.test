@@ -1,5 +1,5 @@
 <?php
-module_load_include('test', 'feeds', 'test/feeds');
+module_load_include('test', 'feeds', 'tests/feeds');
 
 /**
  * @file
@@ -189,8 +189,8 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
     $this->drupalLogout();
     sleep(1);
     $this->cronRun();
-    $new_max_last = db_result(db_query("SELECT MAX(last) FROM {job_schedule} WHERE type = 'syndication' AND name = 'feeds_source_import' AND period = 3600"));
-    $new_min_last = db_result(db_query("SELECT MIN(last) FROM {job_schedule} WHERE type = 'syndication' AND name = 'feeds_source_import' AND period = 3600"));
+    $new_max_last = db_result(db_query("SELECT MAX(last) FROM {job_schedule} WHERE type = 'syndication' AND callback = 'feeds_source_import' AND period = 3600"));
+    $new_min_last = db_result(db_query("SELECT MIN(last) FROM {job_schedule} WHERE type = 'syndication' AND callback = 'feeds_source_import' AND period = 3600"));
     $this->assertNotEqual($new_max_last, $max_last);
     $this->assertNotEqual($new_min_last, $min_last);
     $this->assertEqual($new_max_last, $new_min_last);
@@ -214,6 +214,8 @@ class FeedsSchedulerTestCase extends FeedsWebTestCase {
    * Test batching on cron.
    */
   function testBatching() {
+    // Set up an importer.
+    $this->createImporterConfiguration();
     // Verify that there are 150 nodes total.
     $nid = $this->createFeedNode('syndication', $GLOBALS['base_url'] .'/'. drupal_get_path('module', 'feeds') .'/tests/feeds/many_items.rss2');
     $this->assertText('Created 150 Story nodes.');

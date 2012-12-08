@@ -4,9 +4,9 @@ package = ImageCache
 dependencies[] = imageapi
 core = 6.x
 
-; Information added by drupal.org packaging script on 2011-05-16
-version = "6.x-2.0-beta12"
+; Information added by drupal.org packaging script on 2012-05-23
+version = "6.x-2.0-rc1"
 core = "6.x"
 project = "imagecache"
-datestamp = "1305566515"
+datestamp = "1337742655"
 
