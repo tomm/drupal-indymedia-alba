@@ -1,0 +1,53 @@
+<?php
+
+/**
+ * @file
+ * Primarily Drupal hooks.
+ */
+
+/**
+ * Implementatation of hook_detect_mobile_device().
+ */
+function mt_browscap_detect_mobile_device() {
+  // Assume that the site visitor is using a desktop browser until we can prove
+  // otherwise
+  $device_information = array(
+    'type' => 'desktop',
+    'group' => '',
+  );
+
+  // Get Browscap information about the current user agent
+  $user_agent = browscap_get_browser();
+
+  // Check the browscap information to see if the current user agent is flagged
+  // as a mobile device
+  if (isset($user_agent['ismobiledevice']) && $user_agent['ismobiledevice'] == TRUE) {
+    $device_information['type'] = 'mobile';
+  }
+
+  // Get the currently defined device groups
+  $groups = mt_browscap_device_groups_info();
+
+  // Check if the current user agent name can be found within the list of
+  // device groups
+  if (isset($user_agent['browser']) && in_array($user_agent['browser'], $groups)) {
+    $device_information['group'] = array_search($user_agent['browser'], $groups);
+  }
+
+  return $device_information;
+}
+
+/**
+ * Implementatation of hook_device_groups_info().
+ */
+function mt_browscap_device_groups_info() {
+  return array(
+    'android' => 'Android',
+    'blackberry' => 'BlackBerry',
+    'ipad' => 'iPad',
+    'iphone' => 'iPhone',
+    'ipod' => 'iPod',
+    'opera_mini' => 'Opera Mini',
+    'windows_phone' => 'Windows Phone',
+  );
+}

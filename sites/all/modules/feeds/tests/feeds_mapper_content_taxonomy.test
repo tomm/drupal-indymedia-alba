@@ -1,5 +1,5 @@
 <?php
-module_load_include('test', 'feeds', 'test/feeds_mapper');
+module_load_include('test', 'feeds', 'tests/feeds_mapper');
 
 /**
  * Class for testing Feeds <em>content</em> mapper.

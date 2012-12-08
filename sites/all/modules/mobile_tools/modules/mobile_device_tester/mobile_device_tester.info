@@ -1,0 +1,12 @@
+name = Mobile Device Tester
+description = Allows easy testing of a device for certain characteristics
+package = Mobile
+core = 6.x
+dependencies[] = wurfl
+
+; Information added by drupal.org packaging script on 2012-11-05
+version = "6.x-2.7"
+core = "6.x"
+project = "mobile_tools"
+datestamp = "1352149903"
+

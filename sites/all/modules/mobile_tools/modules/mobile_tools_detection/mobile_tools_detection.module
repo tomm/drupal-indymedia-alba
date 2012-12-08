@@ -1,0 +1,231 @@
+<?php
+
+/**
+ * @file
+ * Primarily Drupal hooks.
+ */
+
+/**
+ * Implementatation of hook_is_mobile_site().
+ */
+function mobile_tools_detection_is_mobile_site() {
+  global $base_url, $mobile_tools_device;
+
+  // Easy detection in case redirection is disabled and device specific theme switching is enabled
+  if (!variable_get('mobile_tools_redirect', 0) && variable_get('mobile-tools-theme-switch', '') == 'mobile-tools-mobile-device') {
+    if ($mobile_tools_device['type'] == 'mobile') {
+      return 'mobile';
+    }
+    else {
+      return 'desktop';
+    }
+  }
+
+  // Check if $_SERVER variables are set if not, just return desktop... Still unclear what best solution is:
+  if (!isset($_SERVER['HTTP_HOST']) && !isset($_SERVER['SERVER_NAME'])) {
+    return 'desktop';
+  }
+
+  $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : $_SERVER['SERVER_NAME'];
+
+  // Check if the url is a m.* or .mobi url
+  $server_domain_elements = explode('.', $host);
+
+  if (count($server_domain_elements) > 0 ) {
+    if ($server_domain_elements[0] == 'm') { // check for m.* domain
+      return 'mobile';
+    }
+    if ($server_domain_elements[count($server_domain_elements) - 1] == 'mobi') { // check for *.mobi
+      return 'mobile';
+    }
+  }
+
+  // If this doesn't return an answer, we will have to do a comparison of the mobile and desktop url!
+  $mobile = variable_get('mobile_tools_mobile_url', mobile_tools_create_mobile_url($base_url));
+  $mobile_url  = parse_url($mobile);
+  $mobile_url['host'] = _mobile_tools_detection_prepare_url($mobile_url['host']);
+  $desktop = variable_get('mobile_tools_desktop_url', $base_url);
+  $desktop_url = parse_url($desktop);
+  $desktop_url['host'] = _mobile_tools_detection_prepare_url($desktop_url['host']);
+
+  if (!array_key_exists('path', $desktop_url)) {
+    $desktop_url['path'] = '';
+  }
+  if (!array_key_exists('path', $mobile_url)) {
+    $mobile_url['path'] = '';
+  }
+
+  // If $_SERVER['HTTP_HOST'] is not set just return desktop
+  if (!isset($_SERVER['HTTP_HOST'])) {
+    return 'desktop';
+  }
+
+  $server_name = _mobile_tools_detection_prepare_url($_SERVER['HTTP_HOST']);
+
+  // Check domain first
+  if ($mobile_url['host'] == $server_name && $desktop_url['host'] != $server_name) {
+    return 'mobile';
+  }
+  elseif ($mobile_url['host'] != $server_name && $desktop_url['host'] == $server_name) {
+    return 'desktop';
+  }
+
+  // Find the longest url
+  $longest_url = strlen($mobile) > strlen($desktop) ? $mobile : $desktop ;
+  $protocol = isset($_SERVER['HTTPS']) ? 'https://' : 'http://';
+  $uri = $protocol . $_SERVER['HTTP_HOST'] .    request_uri();
+  $pos = strpos($uri, preg_replace('{/$}', '', $longest_url));
+
+  if ($pos === FALSE) {
+    return $longest_url == $mobile ? 'desktop' : 'mobile';
+  }
+  else {
+    return $longest_url == $mobile ? 'mobile' : 'desktop';
+  }
+}
+
+/**
+ * Helper function to add 'www.' to URLs which lack a subdomain.
+ */
+function _mobile_tools_detection_prepare_url($url) {
+  // Parse the URL and find its components
+  $url_components = parse_url($url);
+
+  // Check if the URL contained a host component
+  if (isset($url_components['host'])) {
+    // Get the URL's host component
+    $host = $url_components['host'];
+
+    // Split the host components
+    $host_components = explode('.', $host);
+
+    // If there are only two host components then add 'www.' to the host components
+    if (count($host_components) == 2) {
+      $url = 'www'. implode('.', $host_components);
+    }
+  }
+
+  return $url;
+}
+
+/**
+ * Implementation of hook_detect_mobile_device().
+ */
+function mobile_tools_detection_detect_mobile_device() {
+  // Assume that the site visitor is using a desktop browser until we can prove
+  // otherwise
+  $browser = array(
+    'type' => 'desktop',
+    'group' => '',
+  );
+
+  if (isset($_SERVER['HTTP_USER_AGENT'])) {
+    // Get the HTTP_USER_AGENT of the current site visitor
+    $user_agent = check_plain($_SERVER['HTTP_USER_AGENT']);
+
+    switch (TRUE) {
+      case (stripos($user_agent, 'ipad') != FALSE);
+        $browser = array(
+          'type' => 'desktop',
+          'group' => 'ipad',
+        );
+        break;
+      case (stripos($user_agent, 'ipod') != FALSE);
+        $browser = array(
+          'type' => 'mobile',
+          'group' => 'ipod',
+        );
+        break;
+      case (stripos($user_agent, 'iphone') != FALSE);
+        $browser = array(
+          'type' => 'mobile',
+          'group' => 'iphone',
+        );
+        break;
+      case (stripos($user_agent, 'android') != FALSE);
+        $browser = array(
+          'type' => 'mobile',
+          'group' => 'android',
+        );
+        break;
+      case (stripos($user_agent, 'opera mini') != FALSE);
+        $browser = array(
+          'type' => 'mobile',
+          'group' => 'opera_mini',
+        );
+        break;
+      case (stripos($user_agent, 'opera mobi') != FALSE);
+        $browser = array(
+          'type' => 'mobile',
+          'group' => 'opera_mobi',
+        );
+        break;
+      case (stripos($user_agent, 'blackberry') != FALSE);
+        $browser = array(
+          'type' => 'mobile',
+          'group' => 'blackberry',
+        );
+        break;
+      case (stripos($user_agent, 'windows phone') != FALSE);
+        $browser = array(
+          'type' => 'mobile',
+          'group' => 'windows_phone',
+        );
+        break;
+      // Check for some of the most common terms used in agents to identify them as being mobile devices - the i at the end makes it case insensitive
+      case (preg_match('/(up.browser|up.link|mmp|symbian|smartphone|midp|wap|vodafone|o2|pocket|kindle|mobile|pda|psp|treo)/i', $user_agent));
+        $browser = array(
+          'type' => 'mobile',
+          'group' => '',
+        );
+        break;
+      // Is the device giving us a HTTP_X_WAP_PROFILE or HTTP_PROFILE header - only mobile devices would do this
+      case (isset($_SERVER['HTTP_X_WAP_PROFILE']) || isset($_SERVER['HTTP_PROFILE']));
+        $browser = array(
+          'type' => 'mobile',
+          'group' => '',
+        );
+        break;
+      // Check against a list of trimmed user agents to see if we find a match
+      case (in_array(strtolower(substr($user_agent, 0, 4)), array('1207'=>'1207','3gso'=>'3gso','4thp'=>'4thp','501i'=>'501i','502i'=>'502i','503i'=>'503i','504i'=>'504i','505i'=>'505i','506i'=>'506i','6310'=>'6310','6590'=>'6590','770s'=>'770s','802s'=>'802s','a wa'=>'a wa','acer'=>'acer','acs-'=>'acs-','airn'=>'airn','alav'=>'alav','asus'=>'asus','attw'=>'attw','au-m'=>'au-m','aur '=>'aur ','aus '=>'aus ','abac'=>'abac','acoo'=>'acoo','aiko'=>'aiko','alco'=>'alco','alca'=>'alca','amoi'=>'amoi','anex'=>'anex','anny'=>'anny','anyw'=>'anyw','aptu'=>'aptu','arch'=>'arch','argo'=>'argo','bell'=>'bell','bird'=>'bird','bw-n'=>'bw-n','bw-u'=>'bw-u','beck'=>'beck','benq'=>'benq','bilb'=>'bilb','blac'=>'blac','c55/'=>'c55/','cdm-'=>'cdm-','chtm'=>'chtm','capi'=>'capi','comp'=>'comp','cond'=>'cond','craw'=>'craw','dall'=>'dall','dbte'=>'dbte','dc-s'=>'dc-s','dica'=>'dica','ds-d'=>'ds-d','ds12'=>'ds12','dait'=>'dait','devi'=>'devi','dmob'=>'dmob','doco'=>'doco','dopo'=>'dopo','el49'=>'el49','erk0'=>'erk0','esl8'=>'esl8','ez40'=>'ez40','ez60'=>'ez60','ez70'=>'ez70','ezos'=>'ezos','ezze'=>'ezze','elai'=>'elai','emul'=>'emul','eric'=>'eric','ezwa'=>'ezwa','fake'=>'fake','fly-'=>'fly-','fly_'=>'fly_','g-mo'=>'g-mo','g1 u'=>'g1 u','g560'=>'g560','gf-5'=>'gf-5','grun'=>'grun','gene'=>'gene','go.w'=>'go.w','good'=>'good','grad'=>'grad','hcit'=>'hcit','hd-m'=>'hd-m','hd-p'=>'hd-p','hd-t'=>'hd-t','hei-'=>'hei-','hp i'=>'hp i','hpip'=>'hpip','hs-c'=>'hs-c','htc '=>'htc ','htc-'=>'htc-','htca'=>'htca','htcg'=>'htcg','htcp'=>'htcp','htcs'=>'htcs','htct'=>'htct','htc_'=>'htc_','haie'=>'haie','hita'=>'hita','huaw'=>'huaw','hutc'=>'hutc','i-20'=>'i-20','i-go'=>'i-go','i-ma'=>'i-ma','i230'=>'i230','iac'=>'iac','iac-'=>'iac-','iac/'=>'iac/','ig01'=>'ig01','im1k'=>'im1k','inno'=>'inno','iris'=>'iris','jata'=>'jata','java'=>'java','kddi'=>'kddi','kgt'=>'kgt','kgt/'=>'kgt/','kpt '=>'kpt ','kwc-'=>'kwc-','klon'=>'klon','lexi'=>'lexi','lg g'=>'lg g','lg-a'=>'lg-a','lg-b'=>'lg-b','lg-c'=>'lg-c','lg-d'=>'lg-d','lg-f'=>'lg-f','lg-g'=>'lg-g','lg-k'=>'lg-k','lg-l'=>'lg-l','lg-m'=>'lg-m','lg-o'=>'lg-o','lg-p'=>'lg-p','lg-s'=>'lg-s','lg-t'=>'lg-t','lg-u'=>'lg-u','lg-w'=>'lg-w','lg/k'=>'lg/k','lg/l'=>'lg/l','lg/u'=>'lg/u','lg50'=>'lg50','lg54'=>'lg54','lge-'=>'lge-','lge/'=>'lge/','lynx'=>'lynx','leno'=>'leno','m1-w'=>'m1-w','m3ga'=>'m3ga','m50/'=>'m50/','maui'=>'maui','mc01'=>'mc01','mc21'=>'mc21','mcca'=>'mcca','medi'=>'medi','meri'=>'meri','mio8'=>'mio8','mioa'=>'mioa','mo01'=>'mo01','mo02'=>'mo02','mode'=>'mode','modo'=>'modo','mot '=>'mot ','mot-'=>'mot-','mt50'=>'mt50','mtp1'=>'mtp1','mtv '=>'mtv ','mate'=>'mate','maxo'=>'maxo','merc'=>'merc','mits'=>'mits','mobi'=>'mobi','motv'=>'motv','mozz'=>'mozz','n100'=>'n100','n101'=>'n101','n102'=>'n102','n202'=>'n202','n203'=>'n203','n300'=>'n300','n302'=>'n302','n500'=>'n500','n502'=>'n502','n505'=>'n505','n700'=>'n700','n701'=>'n701','n710'=>'n710','nec-'=>'nec-','nem-'=>'nem-','newg'=>'newg','neon'=>'neon','netf'=>'netf','noki'=>'noki','nzph'=>'nzph','o2 x'=>'o2 x','o2-x'=>'o2-x','opwv'=>'opwv','owg1'=>'owg1','opti'=>'opti','oran'=>'oran','p800'=>'p800','pand'=>'pand','pg-1'=>'pg-1','pg-2'=>'pg-2','pg-3'=>'pg-3','pg-6'=>'pg-6','pg-8'=>'pg-8','pg-c'=>'pg-c','pg13'=>'pg13','phil'=>'phil','pn-2'=>'pn-2','ppc;'=>'ppc;','pt-g'=>'pt-g','palm'=>'palm','pana'=>'pana','pire'=>'pire','pock'=>'pock','pose'=>'pose','psio'=>'psio','qa-a'=>'qa-a','qc-2'=>'qc-2','qc-3'=>'qc-3','qc-5'=>'qc-5','qc-7'=>'qc-7','qc07'=>'qc07','qc12'=>'qc12','qc21'=>'qc21','qc32'=>'qc32','qc60'=>'qc60','qci-'=>'qci-','qwap'=>'qwap','qtek'=>'qtek','r380'=>'r380','r600'=>'r600','raks'=>'raks','rim9'=>'rim9','rove'=>'rove','s55/'=>'s55/','sage'=>'sage','sams'=>'sams','sc01'=>'sc01','sch-'=>'sch-','scp-'=>'scp-','sdk/'=>'sdk/','se47'=>'se47','sec-'=>'sec-','sec0'=>'sec0','sec1'=>'sec1','semc'=>'semc','sgh-'=>'sgh-','shar'=>'shar','sie-'=>'sie-','sk-0'=>'sk-0','sl45'=>'sl45','slid'=>'slid','smb3'=>'smb3','smt5'=>'smt5','sp01'=>'sp01','sph-'=>'sph-','spv '=>'spv ','spv-'=>'spv-','sy01'=>'sy01','samm'=>'samm','sany'=>'sany','sava'=>'sava','scoo'=>'scoo','send'=>'send','siem'=>'siem','smar'=>'smar','smit'=>'smit','soft'=>'soft','sony'=>'sony','t-mo'=>'t-mo','t218'=>'t218','t250'=>'t250','t600'=>'t600','t610'=>'t610','t618'=>'t618','tcl-'=>'tcl-','tdg-'=>'tdg-','telm'=>'telm','tim-'=>'tim-','ts70'=>'ts70','tsm-'=>'tsm-','tsm3'=>'tsm3','tsm5'=>'tsm5','tx-9'=>'tx-9','tagt'=>'tagt','talk'=>'talk','teli'=>'teli','topl'=>'topl','tosh'=>'tosh','up.b'=>'up.b','upg1'=>'upg1','utst'=>'utst','v400'=>'v400','v750'=>'v750','veri'=>'veri','vk-v'=>'vk-v','vk40'=>'vk40','vk50'=>'vk50','vk52'=>'vk52','vk53'=>'vk53','vm40'=>'vm40','vx98'=>'vx98','virg'=>'virg','vite'=>'vite','voda'=>'voda','vulc'=>'vulc','wapj'=>'wapj','wapp'=>'wapp','wapu'=>'wapu','wapm'=>'wapm','wig '=>'wig ','wapi'=>'wapi','wapr'=>'wapr','wapv'=>'wapv','wapy'=>'wapy','wapa'=>'wapa','waps'=>'waps','wapt'=>'wapt','winc'=>'winc','winw'=>'winw','wonu'=>'wonu','x700'=>'x700','xda2'=>'xda2','xdag'=>'xdag','yas-'=>'yas-','your'=>'your','zte-'=>'zte-','zeto'=>'zeto','acs-'=>'acs-','alav'=>'alav','alca'=>'alca','amoi'=>'amoi','aste'=>'aste','audi'=>'audi','avan'=>'avan','benq'=>'benq','bird'=>'bird','blac'=>'blac','blaz'=>'blaz','brew'=>'brew','brvw'=>'brvw','bumb'=>'bumb','ccwa'=>'ccwa','cell'=>'cell','cldc'=>'cldc','cmd-'=>'cmd-','dang'=>'dang','doco'=>'doco','eml2'=>'eml2','eric'=>'eric','fetc'=>'fetc','hipt'=>'hipt','http'=>'http','ibro'=>'ibro','idea'=>'idea','ikom'=>'ikom','inno'=>'inno','ipaq'=>'ipaq','jbro'=>'jbro','jemu'=>'jemu','java'=>'java','jigs'=>'jigs','kddi'=>'kddi','keji'=>'keji','kyoc'=>'kyoc','kyok'=>'kyok','leno'=>'leno','lg-c'=>'lg-c','lg-d'=>'lg-d','lg-g'=>'lg-g','lge-'=>'lge-','libw'=>'libw','m-cr'=>'m-cr','maui'=>'maui','maxo'=>'maxo','midp'=>'midp','mits'=>'mits','mmef'=>'mmef','mobi'=>'mobi','mot-'=>'mot-','moto'=>'moto','mwbp'=>'mwbp','mywa'=>'mywa','nec-'=>'nec-','newt'=>'newt','nok6'=>'nok6','noki'=>'noki','o2im'=>'o2im','opwv'=>'opwv','palm'=>'palm','pana'=>'pana','pant'=>'pant','pdxg'=>'pdxg','phil'=>'phil','play'=>'play','pluc'=>'pluc','port'=>'port','prox'=>'prox','qtek'=>'qtek','qwap'=>'qwap','rozo'=>'rozo','sage'=>'sage','sama'=>'sama','sams'=>'sams','sany'=>'sany','sch-'=>'sch-','sec-'=>'sec-','send'=>'send','seri'=>'seri','sgh-'=>'sgh-','shar'=>'shar','sie-'=>'sie-','siem'=>'siem','smal'=>'smal','smar'=>'smar','sony'=>'sony','sph-'=>'sph-','symb'=>'symb','t-mo'=>'t-mo','teli'=>'teli','tim-'=>'tim-','tosh'=>'tosh','treo'=>'treo','tsm-'=>'tsm-','upg1'=>'upg1','upsi'=>'upsi','vk-v'=>'vk-v','voda'=>'voda','vx52'=>'vx52','vx53'=>'vx53','vx60'=>'vx60','vx61'=>'vx61','vx70'=>'vx70','vx80'=>'vx80','vx81'=>'vx81','vx83'=>'vx83','vx85'=>'vx85','wap-'=>'wap-','wapa'=>'wapa','wapi'=>'wapi','wapp'=>'wapp','wapr'=>'wapr','webc'=>'webc','whit'=>'whit','winw'=>'winw','wmlb'=>'wmlb','xda-'=>'xda-',)));
+        if (!ereg('w3c_css_validator', strtolower($user_agent))) {
+          $browser = array(
+            'type' => 'mobile',
+            'group' => '',
+          );
+        }
+        break;
+    }
+  }
+  elseif (isset($_SERVER['HTTP_ACCEPT'])) {
+    // Get the HTTP_ACCEPT of the current site visitor
+    $accept = check_plain($_SERVER['HTTP_ACCEPT']);
+
+    switch (TRUE) {
+      // The device shows signs of support for text/vnd.wap.wml or application/vnd.wap.xhtml+xml
+      case ((strpos($accept, 'text/vnd.wap.wml') != FALSE) || (strpos($accept, 'application/vnd.wap.xhtml+xml') != FALSE));
+        $browser = array(
+          'type' => 'mobile',
+          'group' => '',
+        );
+        break;
+    }
+  }
+
+  return $browser;
+}
+
+/**
+ * Implementation of the hook_device_groups_info().
+ */
+function mobile_tools_detection_device_groups_info() {
+  return array(
+    'android' => 'Android',
+    'blackberry' => 'BlackBerry',
+    'ipad' => 'iPad',
+    'iphone' => 'iPhone',
+    'ipod' => 'iPod',
+    'opera_mini' => 'Opera Mini',
+    'windows_phone' => 'Windows Phone',
+  );
+}

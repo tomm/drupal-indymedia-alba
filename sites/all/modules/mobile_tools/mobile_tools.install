@@ -1,9 +1,92 @@
 <?php
 
 /**
- * Deleting all the Mobile tools variables
+ * @file
+ * Mobile Tools's install and uninstall code.
+ */
+
+/**
+ * Implementation of hook_requirements().
+ */
+function mobile_tools_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    // Check for a site detection method
+    $site_detection = variable_get('mobile-tools-site-type-detection', NULL);
+
+    if (isset($site_detection)) {
+      $requirements['mobile_tools_site_detection'] = array(
+        'title' => t('Site detection'),
+        'value' => t('Configured'), 
+        'severity' => REQUIREMENT_OK, 
+        'description' => t('A site detection method has been configured.'),
+      );
+    }
+    else {
+      $requirements['mobile_tools_site_detection'] = array(
+        'title' => t('Site detection'),
+        'value' => t('Not configured'), 
+        'severity' => REQUIREMENT_WARNING, 
+        'description' => t('A site detection method has not been configured. You can configure a site detection method on the <a href="@url">detection</a> page.', array('@url' => '/admin/settings/mobile-tools/detection')),
+      );
+    }
+    // Check for a device detection method
+    $device_detection = variable_get('mobile-tools-device-detection', NULL);
+
+    if (isset($device_detection)) {
+      $requirements['mobile_tools_device_detection'] = array(
+        'title' => t('Device detection'),
+        'value' => t('Configured'), 
+        'severity' => REQUIREMENT_OK, 
+        'description' => t('A device detection method has been configured.'),
+      );
+    }
+    else {
+      $requirements['mobile_tools_device_detection'] = array(
+        'title' => t('Device detection'),
+        'value' => t('Not configured'), 
+        'severity' => REQUIREMENT_WARNING, 
+        'description' => t('A device detection method has not been configured. You can configure a device detection method on the <a href="@url">detection</a> page.', array('@url' => '/admin/settings/mobile-tools/detection')),
+      );
+    }
+    // Check for a device capabilities detection method
+    $device_capabilities_detection = variable_get('mobile-tools-device-capabilities', NULL);
+
+    if (isset($device_capabilities_detection)) {
+      $requirements['mobile_tools_device_capabilities_detection'] = array(
+        'title' => t('Device capabilities'),
+        'value' => t('Configured'), 
+        'severity' => REQUIREMENT_OK, 
+        'description' => t('A device capabilities detection method has been configured.'),
+      );
+    }
+    else {
+      $requirements['mobile_tools_device_capabilities_detection'] = array(
+        'title' => t('Device capabilities'),
+        'value' => t('Not configured'), 
+        'severity' => REQUIREMENT_WARNING, 
+        'description' => t('A device capabilities detection method has not been configured. You can configure a device capabilities detection method on the <a href="@url">detection</a> page.', array('@url' => '/admin/settings/mobile-tools/detection')),
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function mobile_tools_install() {
+  // Assign Mobile Tools a heavy weight so it runs after other modules
+  db_query("UPDATE {system} SET weight = 50 WHERE name = 'mobile_tools'");
+}
+
+/**
+ * Implementation of hook_uninstall().
  */
 function mobile_tools_uninstall() {
+  // Delete all Mobile Tools variables
   variable_del('default_main_nodes_mobile');
   variable_del('default_main_nodes_original');
   variable_del('site_frontpage_mobile');
@@ -22,4 +105,72 @@ function mobile_tools_uninstall() {
   variable_del('mobile-tools-device-capabilities');
 }
 
+/**
+ * Delete the unused mobile_tools_cookie_lifetime variable.
+ */
+function mobile_tools_update_6201() {
+  $ret = array();
+  variable_del('mobile_tools_cookie_lifetime');
+  return $ret;
+}
 
+/**
+ * Update Mobile Tools' module weight.
+ */
+function mobile_tools_update_6202() {
+  $ret = array();
+  // Assign Mobile Tools a heavy weight so it runs after other modules
+  db_query("UPDATE {system} SET weight = 50 WHERE name = 'mobile_tools'");
+  return $ret;
+}
+
+/**
+ * Delete the unused mobile_tools_hide_address_bar variable.
+ */
+function mobile_tools_update_6203() {
+  $ret = array();
+  variable_del('mobile_tools_hide_address_bar');
+  return $ret;
+}
+
+/**
+ * Clear the site cache and rebuilt the menus.
+ */
+function mobile_tools_update_6204() {
+  $ret = array();
+  menu_rebuild();
+  menu_cache_clear_all();
+  return $ret;
+}
+
+/**
+ * Removed.
+ */
+function mobile_tools_update_6205() {
+}
+
+/**
+ * Migrate device detection to new Mobile Tools Detection module.
+ */
+function mobile_tools_update_6206() {
+  $ret = array();
+  $detection_module = variable_get('mobile-tools-device-detection', NULL);
+  if (!isset($detection_module) || $detection_module == 'mobile_tools') {
+    module_enable(array('mobile_tools_detection'));
+    variable_set('mobile-tools-device-detection', 'mobile_tools_detection');
+  }
+  return $ret;
+}
+
+/**
+ * Migrate site detection to new Mobile Tools Detection module.
+ */
+function mobile_tools_update_6207() {
+  $ret = array();
+  $detection_module = variable_get('mobile-tools-site-type-detection', NULL);
+  if (!isset($detection_module) || $detection_module == 'mobile_tools') {
+    module_enable(array('mobile_tools_detection'));
+    variable_set('mobile-tools-site-type-detection', 'mobile_tools_detection');
+  }
+  return $ret;
+}

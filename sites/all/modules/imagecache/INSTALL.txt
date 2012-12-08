@@ -23,6 +23,3 @@ IIS 6:
     End If
     Response.Redirect("index.htm")
   %>
-
-
-

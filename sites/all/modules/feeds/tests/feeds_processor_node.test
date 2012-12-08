@@ -1,5 +1,5 @@
 <?php
-module_load_include('test', 'feeds', 'test/feeds');
+module_load_include('test', 'feeds', 'tests/feeds');
 
 /**
  * @file
@@ -202,7 +202,11 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
 
     // Set to update existing, remove authorship of above nodes and import again.
     $this->setSettings('syndication', 'FeedsNodeProcessor', array('update_existing' => 2));
-    db_query("UPDATE {node} n JOIN {feeds_node_item} fi ON n.nid = fi.nid SET n.uid = 0, fi.hash=''");
+    $result = db_query("SELECT nid FROM {node} n INNER JOIN {feeds_node_item} USING (nid)");
+    while ($reset_nid = db_result($result)) {
+      db_query("UPDATE {node} SET uid = 0 WHERE nid = %d", $reset_nid);
+      db_query("UPDATE {feeds_node_item} SET hash = '' WHERE nid = %d", $reset_nid);
+    }
     $this->drupalPost('node/'. $nid .'/import', array(), 'Import');
     $this->drupalGet('node');
     $this->assertNoPattern('/<span class="submitted">(.*?)'. check_plain($author->name) .'<\/span>/');
@@ -384,7 +388,7 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
       'files[feeds]' => $this->absolutePath() .'/tests/feeds/drupalplanet.rss2',
     );
     $this->drupalPost('node/add/page', $edit, 'Save');
-    $this->assertText('has been created.');
+    $this->assertText('Page drupal.org aggregator has been created.');
     $this->assertText('Created 25 Story nodes.');
   }
 
@@ -418,7 +422,7 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
 
       $edit['feeds[FeedsHTTPFetcher][source]'] = $feed_url;
       $this->drupalPost('node/add/page', $edit, 'Save');
-      $this->assertText('Basic page Development Seed - Technological Solutions for Progressive Organizations has been created.');
+      $this->assertText('Page Development Seed - Technological Solutions for Progressive Organizations has been created.');
       $this->assertText('Created 10 Story nodes.');
       $this->assertFeedItemCount($item_count + 10);
       $item_count += 10;
@@ -431,11 +435,11 @@ class FeedsRSStoNodesTest extends FeedsWebTestCase {
   function testNonFeedNodeUI() {
     // There should not be feed links on an article node.
     $non_feed_node = $this->drupalCreateNode(array('type' => 'story'));
-    $this->drupalGet('node/'. $non_feed_node->nid);
-    $this->assertNoLink('Import');
+    $this->drupalGet('node/' . $non_feed_node->nid);
+    $this->assertNoLinkByHref('node/' . $non_feed_node->nid . '/import');
     $this->assertNoLink('Delete items');
 
-    // Navigat to a non-feed node form, there should be no Feed field visible.
+    // Navigate to a non-feed node form, there should be no Feed field visible.
     $this->drupalGet('node/add/article');
     $this->assertNoFieldByName('feeds[FeedsHTTPFetcher][source]');
   }

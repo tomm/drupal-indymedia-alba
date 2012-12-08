@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * @file
+ * Mobile Tools Roles module's install and uninstall code.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function mobile_tools_roles_install() {
+  drupal_install_schema('mobile_tools_roles');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function mobile_tools_roles_uninstall() {
+  // Build a query to select all Mobile Tools Roles relations
+  $query = "SELECT * FROM {mobile_tools_roles_relations}";
+
+  // Execute the query
+  $result = db_query($query);
+
+  // Delete the role associated with each relation
+  while ($item = db_fetch_object($result)) {
+    db_query("DELETE FROM {role} WHERE rid = %d", $item->mrid);
+  }
+
+  // Remove all of the Mobile Tools Roles tables
+  drupal_uninstall_schema('mobile_tools_roles');
+
+  // Delete all of the Mobile Tools Roles variables
+  variable_del('mobile_tools_roles');
+  variable_del('mobile_tools_enable_roles');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function mobile_tools_roles_schema() {
+  $schema['mobile_tools_roles_relations'] = array(
+    'fields' => array(
+      'rid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'mrid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+  );
+  return $schema;
+}

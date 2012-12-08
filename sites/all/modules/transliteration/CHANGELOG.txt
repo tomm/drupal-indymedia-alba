@@ -1,7 +1,13 @@
-// $Id: CHANGELOG.txt,v 1.11.2.5 2010/03/15 06:41:30 smk Exp $
 
 Transliteration 6.x-3.x, xxxx-xx-xx
 -----------------------------------
+#1058064 by msti, smk-ka and amateescu: Transliterate search string and index.
+#881644 by jwilson3: Support for path_redirect to redirect from old filenames.
+#909670 by jishan, smk-ka: Fixed Vietnamese input.
+#1243974 by cyborg_572: Supporting files uploaded as an array.
+#1256416 by mariogalan: Better Spanish transliteration.
+#1215872 by yannisc and rootatwc: Better Greek transliteration.
+#1033832 by joachim: hook_uninstall doesn't clean up variables.
 by smk-ka: More accurate detection of file names requiring retroactive
   transliteration. Removed support for MS SQL due to missing regexp support.
 by smk-ka: Added admin UI for settings and retroactive file name

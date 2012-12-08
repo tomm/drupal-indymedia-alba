@@ -1,3 +1,81 @@
+Feeds 6.x 1.0 Beta 12, 2012-05-08
+---------------------------------
+
+- Issue #1213472 by paulgemini, Nigel_S, emarchak, Jorenm: Fixed ' Fatal error:
+  Unsupported operand types in /FeedsConfigurable.inc' when importing.
+- Issue #996808 by twistor, marcvangend, joshuajabbour: Fixed Update existing
+  doesn't reset targets that have real_target set.
+- Issue #712304 by derhasi, twistor, jerdavis, alex_b, rjbrown99, rbayliss |
+  ManyNancy: Fixed Batch import does not continue where it left off, instead 
+  starts from the beginning.
+- Issue #1035684 by mikejoconnor: Source / Target sort order
+- Issue #1382208 by slcp: Fixed FeedsSource.inc sourceSave() and sourceDelete() 
+  function descriptions are the wrong way round.
+- Issue #1298326 by twistor, Dave Reid, emackn: Fixed Only execute 
+  rebuild_menu() when necessary.  Port for D6
+- Issue #1248712: Show an empty row result and hide the Save button if no 
+  importers are available.
+- Issue #1197646: Skip importer config form validation if a machine name was not 
+  provided.
+- Issue #1248682: Fixed failures in scheduler tests.
+- Issue #1248648 by twistor, Dave Reid: Fixed bugs and inconsistencies in 
+  FeedsRSStoNodesTest.
+- Issue #1203578: Fixed wrong path to test files after test directory rename.
+- Issue #1230538: Removed unnecessary filter_xss() from 
+  theme_feeds_ui_mapping_form().
+- Issue #1161810: Fixed declaration of FeedsSource::instance() should be 
+  compatible with that of FeedsConfigurable::instance().
+- Fixing PHP strict error in _parser_common_syndication_atom10_parse().
+- Issue #1191554: Fixed failures in FeedsUIUserInterfaceTestCase.
+- Issue #1191564: Use FeedsWebTestCase for FeedsDateTimeTest.
+- Issue #1191494 by twistor, Dave Reid: Fixed link to node type feed importer 
+  did not use node_access().
+- Fixed coder violations and standards. Fixed possible XSS with field labels in 
+  Feed importer mapping settings.
+- Fixed strict notice: definition of FeedsFeedNodeProcessor::map() did not match 
+  FeedsProcessor::map().
+- Issue #963842 by ceardach: Fixed feeds_update_6010() should not enable 
+  non-essential modules.
+- Issue #723548: Added support for feed URLs with feed:// and webcal://.
+- Re-exported features with latest code.
+- Fixed error when calling form_set_error() and title field on follow-up to fix 
+  feed node title fields not actually un-required.
+- Issue #1191210: Added feeds_content_extra_fields() so the 'Feed' fieldset can 
+  be re-ordered through the CCK field UI.
+- Issue #1191194: Fixed test failure in FeedsCSVtoUsersTest due to lack of 
+  'administer users' permission.
+- Use module_load_include() for test files and fix PHP notice in 
+  FeedsProcessor.inc.
+- Issue #1066286: Added test to ensure 'Feed items' doesn't display on non-feed 
+  nodes.
+- Cleanup feeds_form_alter().
+- Simplify FeedsMapperTestCase::createContentType() using 
+  DrupalWebTestCase::drupalCreateContentType().
+- Issue #743528 by Souvent22, Dave Reid: Fixed _feeds_node_delete() fails if the 
+  node does not load or exist.
+- Fixed _feeds_node_delete() wasn't exactly a copy of node_delete().
+- Fixes and cleanups to tests.
+- Issue #914210 by jyee, Dave Reid: Added mapper for user raw password.
+- Backports from Drupal 7: Removed t() from feeds_schema(). Cleanups for 
+  documentation and tests.
+- Issue #797228 by alex_b: Fixed records not removed from {feeds_node_item} when 
+  a feed node is deleted.
+- Issue #769084: Fixed use of isset() rather than !empty() causes import 
+  problems with _parser_common_syndication_RSS20_parse().
+- Fixed various PHP notices and strict errors.
+- Issue #974494: Fixed PHP notice 'Undefined property: stdClass::$openid in 
+  FeedsUserProcessor->entitySave()'.
+- Issue #1170714: Fixed debugging functions left in code.
+- Issue #1055582: Fixed strict notice that FeedsDateTime::setTimezone() is not 
+  compatible with DateTime::setTimezone().
+- Issue #1085194: Not all selected mappings are removed.
+- Issue #1152694: Fixed use of deprecated split() with explode().
+- Issue #1066822: Fixed bugs and inconsistencies with test files and getInfo() 
+  declarations.
+
+Feeds 6.x 1.0 Beta 11, 2011-06-28
+---------------------------------
+
 - Issue #980212 by joshuajabbour,David Goode: Added Support guid/url for
   taxonomy term importer.
 - Issue #992590 by Jan van Diepen: Fixed Description and weight on

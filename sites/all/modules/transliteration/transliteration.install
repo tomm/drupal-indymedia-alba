@@ -1,5 +1,4 @@
 <?php
-// $Id: transliteration.install,v 1.4.2.3 2009/11/28 12:48:53 smk Exp $
 
 /**
  * @file
@@ -28,5 +27,12 @@ function transliteration_install() {
  * Implementation of hook_uninstall().
  */
 function transliteration_uninstall() {
-}
+  variable_del('transliteration_file_uploads');
+  variable_del('transliteration_file_lowercase');
+  variable_del('transliteration_search');
 
+  // Delete all the transliteration_filter_no_known_transliteration_* variables
+  // and then clear the variable cache.
+  db_query("DELETE FROM {variable} WHERE name LIKE 'transliteration_filter_no_known_transliteration_%'");
+  cache_clear_all('variables', 'cache');
+}

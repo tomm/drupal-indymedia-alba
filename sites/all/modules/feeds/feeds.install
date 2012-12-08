@@ -70,7 +70,7 @@ function feeds_schema() {
         'description' => 'Main source resource identifier. E. g. a path or a URL.',
       ),
       'batch' => array(
-        'type' => 'text',
+        'type' => 'blob',
         'size' => 'big',
         'not null' => FALSE,
         'description' => 'Cache for batching.',
@@ -618,6 +618,25 @@ function feeds_update_6014() {
   db_add_index($ret, 'feeds_term_item', 'imported', array('imported'));
   db_add_index($ret, 'feeds_term_item', 'url', array(array('url', 255)));
   db_add_index($ret, 'feeds_term_item', 'guid', array(array('guid', 255)));
+
+  return $ret;
+}
+
+/**
+ * Change batch field from text to blob.
+ */
+function feeds_update_6015() {
+  $ret = array();
+
+  $spec = array(
+    'type' => 'blob',
+    'size' => 'big',
+    'not null' => FALSE,
+    'description' => t('Cache for batching.'),
+    'serialize' => TRUE,
+  );
+
+  db_change_field($ret, 'feeds_source', 'batch', 'batch', $spec);
 
   return $ret;
 }

@@ -1,8 +1,0 @@
-; $Id: article.info,v 1.3.2.1 2009/01/17 18:15:45 tomm Exp $
-name = Indymedia Article
-description = "Content type of a news article."
-package = Indymedia
-version = "6.x-1.5"
-core = 6.x
-project = "imc_alba"
-dependencies[] = imagecache

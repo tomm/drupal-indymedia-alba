@@ -70,7 +70,7 @@ function imc_alba_cron() {
 		db_query("DELETE FROM {users_roles} WHERE rid=%d", $member_rid);
 		$r = db_query("SELECT u.uid FROM {users} u WHERE u.status=1 AND EXISTS (SELECT * FROM
 		{node} n WHERE n.status=1 AND n.created > %d AND n.created < %d AND
-		n.uid=u.uid AND n.type='article')", time()-60*60*24*365,
+		n.uid=u.uid AND n.type='story')", time()-60*60*24*365,
 			time()-60*60*24*7);
 		while ($a = db_fetch_array($r)) {
 			db_query("INSERT INTO {users_roles} (uid, rid) VALUES (%d, %d)",

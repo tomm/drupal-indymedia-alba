@@ -164,8 +164,8 @@ function feeds_ui_create_form(&$form_state, $from_importer = NULL) {
   );
   $form['id'] = array(
     '#type' => 'textfield',
-    '#title' => t('Machine name'),
-    '#description' => t('A unique identifier for this configuration. Example: rss_feed. Must only contain lower case characters, numbers and underscores.'),
+    '#title' => t('Machine-readable name'),
+    '#description' => t('A unique machine-readable name. Can only contain lowercase letters, numbers, and underscores.'),
     '#required' => TRUE,
     '#maxlength' => 128,
     '#attributes' => array('class' => 'feed-id'),
@@ -187,11 +187,13 @@ function feeds_ui_create_form(&$form_state, $from_importer = NULL) {
  */
 function feeds_ui_create_form_validate($form, &$form_state) {
   ctools_include('export');
-  $importer = feeds_importer($form_state['values']['id']);
   if (ctools_export_load_object('feeds_importer', 'conditions', array('id' => $form_state['values']['id']))) {
     form_set_error('id', t('Id is taken.'));
   }
-  $importer->configFormValidate($form_state['values']);
+  if (!empty($form_state['values']['id'])) {
+    $importer = feeds_importer($form_state['values']['id']);
+    $importer->configFormValidate($form_state['values']);
+  }
 }
 
 /**
@@ -640,6 +642,7 @@ function _feeds_ui_format_options($options) {
       $result[$k] = $v;
     }
   }
+  asort($result);
   return $result;
 }
 
@@ -668,11 +671,21 @@ function theme_feeds_ui_overview_form($form) {
       }
     }
   }
-  $output = '';
-  if (count($rows)) {
-    $output .= theme('table', $form['#header'], $rows, array('class' => 'feeds-admin-importers'));
+
+  $is_empty = empty($rows);
+  if ($is_empty) {
+    $rows[] = array(array(
+      'data' => t('No importers available.'),
+      'colspan' => 6,
+    ));
   }
-  $output .= drupal_render($form);
+
+  $output = theme('table', $form['#header'], $rows, array('class' => 'feeds-admin-importers'));
+
+  if (!$is_empty) {
+    $output .= drupal_render($form);
+  }
+
   return $output;
 }
 
@@ -826,7 +839,7 @@ function theme_feeds_ui_mapping_form($form) {
 
   // Stick tables into collapsible fieldset.
   $form['legendset']['legend'] = array(
-    '#value' => '<div>'. filter_xss($legend) .'</div>',
+    '#value' => '<div>' . $legend . '</div>',
   );
 
   $output .= drupal_render($form['legendset']);

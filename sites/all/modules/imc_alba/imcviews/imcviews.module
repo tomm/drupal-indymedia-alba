@@ -14,12 +14,12 @@ define('OTHERPRESS_TID',24); // dirty dirty dirty
 define('IMCVIEWS_FRONT_MAX_CATS', 10);
 
 define('ALL_NEWSWIRE_QUERY',
-	'SELECT n.nid FROM {node} n WHERE n.type = "article" AND n.status = 1
+	'SELECT n.nid FROM {node} n WHERE n.type = "story" AND n.status = 1
 	AND NOT EXISTS (SELECT * FROM {term_node} t WHERE n.nid = t.nid AND n.vid = t.vid AND t.tid = '.OTHERPRESS_TID.')
 	ORDER BY created DESC');
 
 define('NEWSWIRE_QUERY',
-	'SELECT n.nid FROM {node} n WHERE n.type = "article" AND n.promote = 0 AND n.status = 1
+	'SELECT n.nid FROM {node} n WHERE n.type = "story" AND n.promote = 0 AND n.status = 1
 	AND NOT EXISTS (SELECT * FROM {term_node} t WHERE n.nid = t.nid AND n.vid = t.vid AND t.tid = '.OTHERPRESS_TID.')
 	ORDER BY created DESC');
 
@@ -27,11 +27,11 @@ define('NEWSWIRE_QUERY_HIDDEN',
 	'SELECT n.nid FROM {node} n
 	 INNER JOIN {imc_node_moderation} nmod
 	 	ON n.nid = nmod.nid AND nmod.status = 1
-	WHERE n.type = "article" AND n.status = 0 ORDER BY created DESC');
+	WHERE n.type = "story" AND n.status = 0 ORDER BY created DESC');
 
 define('IMCVIEWS_OTHERPRESS_BLOCK_QUERY',
 	'SELECT DISTINCT n.nid FROM {node} n
-	WHERE n.type = "article" AND n.status = 1
+	WHERE n.type = "story" AND n.status = 1
 	AND EXISTS (SELECT * FROM {term_node} t WHERE n.nid = t.nid AND n.vid = t.vid AND t.tid = '.OTHERPRESS_TID.')
 	ORDER BY n.sticky DESC, n.created DESC');
 
@@ -247,7 +247,7 @@ function imcviews_feature_rssfeed() {
 	$headline_tid = variable_get('imcviews_front_first_tid', IMCVIEWS_DEFAULT_FRONT_FIRST_TID);
 	// News only (tid=19)
 	$q = db_query("SELECT n.nid FROM {node} n
-			WHERE n.type = 'article' AND n.status = 1 AND n.promote=1
+			WHERE n.type = 'story' AND n.status = 1 AND n.promote=1
 			AND EXISTS (SELECT * FROM {term_node} t WHERE n.nid = t.nid AND n.vid = t.vid AND t.tid = ".$headline_tid.")
 			ORDER BY n.created DESC LIMIT %d", variable_get('feed_default_items', 10));
 	$nids = array();
@@ -259,7 +259,7 @@ function imcviews_feature_rssfeed() {
 function imcviews_newswire_rssfeed() {
 	// All but otherpress
 	$q = db_query("SELECT n.nid FROM {node} n
-			WHERE n.type = 'article' AND n.status = 1 AND n.promote=0
+			WHERE n.type = 'story' AND n.status = 1 AND n.promote=0
 			AND NOT EXISTS (SELECT * FROM {term_node} t WHERE n.nid = t.nid AND n.vid = t.vid AND t.tid = ".OTHERPRESS_TID.")
 			ORDER BY n.created DESC LIMIT %d", variable_get('feed_default_items', 10));
 	$nids = array();
@@ -333,7 +333,7 @@ function imcviews_menu() {
 
 define('IMCVIEWS_FRONT_QUERY',
 	'SELECT DISTINCT n.nid FROM {node} n
-	WHERE n.type = "article" AND n.promote = 1 AND n.status = 1
+	WHERE n.type = "story" AND n.promote = 1 AND n.status = 1
 	AND EXISTS (SELECT * FROM {term_node} t WHERE n.nid = t.nid AND n.vid = t.vid AND t.tid = %d)
 	ORDER BY n.sticky DESC, n.created DESC LIMIT 16');
 

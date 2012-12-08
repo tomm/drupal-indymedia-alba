@@ -1,0 +1,119 @@
+<?php
+
+/**
+ * @file
+ * Primarily Drupal hooks.
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function mobile_tools_roles_menu(){
+  $items['admin/settings/mobile-tools/roles'] = array(
+    'title' => 'Mobile roles',
+    'description' => 'Configure mobile versions of existing user roles.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mobile_tools_roles_configuration_form'),
+    'access arguments' => array('configure Mobile Tools'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'mobile_tools_roles.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */ 
+function mobile_tools_roles_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    case 'user_profile_form':
+      // Get the currently available mobile roles
+      $mobile_roles = mobile_tools_roles_mobile_user_roles();
+
+      // Remove all of the mobile roles from the user profile page
+      if (!empty($mobile_roles)) {
+        foreach ($mobile_roles as $mobile_role) {
+          unset($form['account']['roles']['#options'][$mobile_role->mrid]);
+        }
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_init().
+ */
+function mobile_tools_roles_init() {
+  // Check the status of mobile roles
+  if (variable_get('mobile_tools_enable_roles', 0)) {
+    // Get the current user
+    global $user;
+
+    // Get the current user's roles
+    $roles = $user->roles;
+
+    // Process each of the user's roles and
+    foreach ($roles as $rid => $role_name) {
+      $mobile_role = mobile_tools_roles_get_mobile_role($rid);
+      if (!empty($mobile_role) && mobile_tools_site_type() == 'mobile') {
+        unset($user->roles[$rid]);
+        $user->roles[$mobile_role['mrid']] = $mobile_role['name'];
+      }
+    }
+  }
+}
+
+/**
+ * Function to get the mobile equivalent of a currently defined user role.
+ *
+ * @param $rid
+ *   A user role ID.
+ *
+ * @return
+ *   An array whose keys are role properties otherwise FALSE.
+ *   - mrid: The mobile role ID of the equivalent user role.
+ *   - name: The role name of the equivalent user role.
+ */
+function mobile_tools_roles_get_mobile_role($rid) {
+  // Build a query to select the role ID and role name of the mobile equivalent of a user role
+  $query = "SELECT m.mrid, r.name FROM {mobile_tools_roles_relations} m JOIN {role} r ON m.mrid = r.rid WHERE m.rid = %d";
+
+  // Execute the query
+  $mobile_role = db_fetch_array(db_query($query, $rid));
+
+  // If a user role has a mobile equivalent return its role ID and role name,
+  // otherwise return FALSE
+  if (!empty($mobile_role)) {
+    return $mobile_role;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Function to get the currently defined mobile user roles.
+ *
+ * @return
+ *   An array of mobile role objects.
+ *   - mrid: The ID of the mobile role.
+ *   - name: The name of the mobile role.
+ */
+function mobile_tools_roles_mobile_user_roles() {
+  // Build a query to select the role IDs and role names of the currently defined mobile roles
+  $query = "SELECT m.mrid, r.name FROM {mobile_tools_roles_relations} m LEFT JOIN {role} r ON m.mrid = r.rid";
+
+  // Execute the query
+  $result = db_query($query);
+
+  // Create an array to hold the mobile role objects
+  $mobile_roles = array();
+
+  // Add each mobile role object to the array of mobile role objects
+  while ($mobile_role = db_fetch_object($result)) {
+    $mobile_roles[] = $mobile_role;
+  }
+
+  return $mobile_roles;
+}

@@ -341,7 +341,12 @@ function imagecache_action_definition($action) {
  *   A Boolean indicating that the URL should be absolute. Defaults to TRUE.
  */
 function imagecache_create_url($presetname, $filepath, $bypass_browser_cache = FALSE, $absolute = TRUE) {
-  $args = array('query' => empty($bypass_browser_cache) ? NULL : time());
+  $args = array(
+    'query' => empty($bypass_browser_cache) ? NULL : time(),
+    // Little hack to avoid having language_url_rewrite() prefix the path with the
+    // language code, but preserve the domain rewriting.
+    'language' => (object) array('language' => '', 'domain' => $GLOBALS['language']->domain),
+  );
   $file_directory = file_directory_path();
 
   // Determine the path of the derivative inside the files directory.
@@ -885,14 +890,16 @@ function theme_imagecache($presetname, $path, $alt = '', $title = '', $attribute
   if (is_null($attributes)) {
     $attributes = array('class' => 'imagecache imagecache-'. $presetname);
   }
+  $ours = array(
+    'src' => imagecache_create_url($presetname, $path, FALSE, $absolute),
+    'alt' => $alt,
+    'title' => $title,
+  );
   if ($getsize && ($image = image_get_info(imagecache_create_path($presetname, $path)))) {
-    $attributes['width'] = $image['width'];
-    $attributes['height'] = $image['height'];
+    $ours += array('width' => $image['width'], 'height' => $image['height']);
   }
 
-  $attributes = drupal_attributes($attributes);
-  $imagecache_url = imagecache_create_url($presetname, $path, FALSE, $absolute);
-  return '<img src="'. $imagecache_url .'" alt="'. check_plain($alt) .'" title="'. check_plain($title) .'" '. $attributes .' />';
+  return '<img' . drupal_attributes($ours + $attributes) . '/>';
 }
 
 /**
