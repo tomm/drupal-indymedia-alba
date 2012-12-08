@@ -95,6 +95,11 @@ DirectoryIndex index.php
   # uncomment and adapt the following:
   # RewriteCond %{HTTP_HOST} ^www\.example\.com$ [NC]
   # RewriteRule ^(.*)$ http://example.com/$1 [L,R=301]
+  RewriteCond %{HTTP_HOST} ^indymediascotland\.org$ [NC]
+  RewriteRule ^(.*)$ http://www.indymediascotland.org/$1 [L,R=301]
+  
+  RewriteCond %{HTTP_HOST} ^scotland\.indymedia\.org$ [NC]
+  RewriteRule ^(.*)$ http://www.indymediascotland.org/$1 [L,R=301]
 
   # Modify the RewriteBase if you are using Drupal in a subdirectory or in a
   # VirtualDocumentRoot and the rewrite rules are not working properly.
@@ -113,4 +118,4 @@ DirectoryIndex index.php
   RewriteRule ^(.*)$ index.php?q=$1 [L,QSA]
 </IfModule>
 
-# $Id$
+# $Id: .htaccess,v 1.90.2.5 2010/02/02 07:25:22 dries Exp $
