@@ -1,0 +1,172 @@
+<?php
+// $Id: publishcontent.module,v 1.3.4.18 2010/07/02 14:41:48 ambiguator Exp $
+
+/**
+ * @file
+ * Add button to publish or unpublish a node,
+ * with access control based on the node type
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function publishcontent_menu() {
+  $items = array();
+  $items['node/%node/publish/%publishcontent_security_token'] = array(
+    'title' => 'Publish',
+    'page callback' => 'publishcontent_toggle_status',
+    'page arguments' => array(1),
+    'access callback' => '_publishcontent_publish_access',
+    'access arguments' => array(1, 3),
+    'weight' => 5,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['node/%node/unpublish/%publishcontent_security_token'] = array(
+    'title' => 'Unpublish',
+    'page callback' => 'publishcontent_toggle_status',
+    'page arguments' => array(1),
+    'access callback' => '_publishcontent_unpublish_access',
+    'access arguments' => array(1, 3),
+    'weight' => 5,
+    'type' => MENU_LOCAL_TASK,
+  );
+  return $items;
+}
+
+/**
+ * Used to append a security token to prevent XSS.
+ *
+ * @see Dynamic argument replacement (wildcard) for hook_menu at
+ *      http://drupal.org/node/109153
+ */
+function publishcontent_security_token_to_arg($arg, $map, $index) {
+  return drupal_get_token();
+}
+
+/**
+ * DEPRECATED: This function will be going away. publish_content_menu_alter was
+ * using this function. Leaving in place to avoid fatal errors due to outdated
+ * menu cache.
+ */
+function _publishcontent_view_access($node) {
+  return user_access('un/publish '. check_plain($node->type) .' content') ||
+         user_access('un/publish *all* content') ||
+         node_access('view', $node);
+}
+
+function _publishcontent_publish_access($node, $token = FALSE) {
+  if ($token && !drupal_valid_token($token)) {
+    return FALSE;
+  }
+
+  global $user;
+  return !$node->status && (user_access('publish any content') ||
+                           (user_access('publish own '. check_plain($node->type) .' content', $user) && $user->uid == $node->uid) ||
+                            user_access('publish any '. check_plain($node->type) .' content'));
+}
+function _publishcontent_unpublish_access($node, $token = FALSE) {
+  if ($token && !drupal_valid_token($token)) {
+    return FALSE;
+  }
+  global $user;
+  return $node->status && (user_access('unpublish any content') ||
+                          (user_access('unpublish own '. check_plain($node->type) .' content', $user) && $user->uid == $node->uid) ||
+                           user_access('unpublish any '. check_plain($node->type) .' content'));
+}
+
+/**
+ * Implementation of hook_perm().
+ *
+ * @note: the 2 extra spaces is a hack: Drupal 5-6 user permissions page set
+ *        'publish any content' auto-magically when 'unpublish any content'
+ *        is set.
+ */
+function publishcontent_perm() {
+  $perms = array(
+    'publish any content',
+    'unpublish any content',
+  );
+
+  foreach (node_get_types() as $type) {
+    if (isset($type->type)) {
+      $perms[] = 'publish any '. check_plain($type->type) .' content';
+      $perms[] = 'publish own '. check_plain($type->type) .' content';
+      $perms[] = 'unpublish any '. check_plain($type->type) .' content';
+      $perms[] = 'unpublish own '. check_plain($type->type) .' content';
+    }
+  }
+  return $perms;
+}
+
+function _publishcontent_get_message($nid, $title, $status) {
+  return t($status ? '"@title" [@nid] has been published'
+                         : '"@title" [@nid] has been unpublished',
+           array('@title' => $title, '@nid' => $nid));
+}
+/**
+ * @param $node a node object
+ */
+function publishcontent_toggle_status($node) {
+  $node->status = !$node->status;
+  node_save($node);
+  drupal_set_message(_publishcontent_get_message($node->nid, $node->title, $node->status));
+  drupal_goto('node/'. $node->nid);
+}
+
+/**
+ * Use views_data_alter to add items to the node table that are
+ * relevant to publishcontent.
+ */
+function publishcontent_views_data_alter(&$data) {
+  // new comments
+  $data['node']['publishcontent'] = array(
+    'title' => t('Publish link'),
+    'help' => t('Display a link to publish the node.'),
+    'field' => array(
+      'handler' => 'publishcontent_views_handler_field_node_link',
+    ),
+  );
+}
+
+function publishcontent_views_handlers() {
+  return array(
+    'info' => array(
+      'path' => drupal_get_path('module', 'publishcontent'),
+    ),
+    'handlers' => array(
+      // field handlers
+      'publishcontent_views_handler_field_node_link' => array(
+        'parent' => 'views_handler_field',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_form_alter()
+ *
+ * allow to use the 'Publishing options' on the edit/add page
+ */
+function publishcontent_form_alter(&$form, $form_state, $form_id) {
+  if (user_access('administer nodes')
+  || empty($form['type']['#value']) || empty($form['#node'])
+  || $form['type']['#value'] . '_node_form' != $form_id
+  || (!_publishcontent_unpublish_access($form['#node'])
+      && !_publishcontent_publish_access($form['#node']))) {
+     return;
+  }
+  $form['options']['status']['#access'] = TRUE;
+  if (!empty($form['options']['#access'])) {
+    return;
+  }
+  else {
+    $form['options']['#access'] = TRUE;
+  }
+  foreach (element_children($form['options']) as $key) {
+    // If another form has afforded access to a particular option, do not
+    // override that access. Otherwise, disable it.
+    $form['options'][$key]['#access'] =
+     isset($form['options'][$key]['#access'])
+     ? $form['options'][$key]['#access'] : FALSE;
+  }
+}
